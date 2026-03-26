@@ -1,11 +1,47 @@
 import { Icon } from "@iconify/react";
-import { Badge, Dropdown } from "flowbite-react";
-import React from "react";
+import { Badge, Dropdown, Button } from "flowbite-react";
+import React, { useEffect, useState } from "react";
 import * as profileData from "./Data";
 import Link from "next/link";
 import Image from "next/image";
 import SimpleBar from "simplebar-react";
+import { useRouter } from "next/navigation";
+import axiosServices from "@/utils/axios";
+
 const Profile = () => {
+  const router = useRouter();
+  const [userData, setUserData] = useState({
+    username: "User",
+    role: "User"
+  });
+
+  useEffect(() => {
+    const username = localStorage.getItem("userName");
+    const role = localStorage.getItem("userRole");
+    if (username && role) {
+      setUserData({ username, role });
+    }
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await axiosServices.post("/Auth/logout");
+    } catch (error) {
+      console.error("Logout error", error);
+    } finally {
+      localStorage.removeItem("token");
+      localStorage.removeItem("refreshToken");
+      localStorage.removeItem("userRole");
+      localStorage.removeItem("userName");
+      localStorage.removeItem("permissions");
+      
+      // Clear cookie for middleware
+      document.cookie = "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
+      
+      router.push("/auth/auth1/login");
+    }
+  };
+
   return (
     <div className="relative ">
       <Dropdown
@@ -42,9 +78,9 @@ const Profile = () => {
             />
             <div>
               <h5 className="text-15 font-semibold">
-                David McMichael <span className="text-success">Pro</span>
+                {userData.username} <span className="text-success">{userData.role}</span>
               </h5>
-              <p className="text-sm text-ld opacity-80">info@MatDash.com</p>
+              <p className="text-sm text-ld opacity-80">{userData.username}@admin.com</p>
             </div>
           </div>
         </div>
@@ -70,6 +106,15 @@ const Profile = () => {
               </Dropdown.Item>
             </div>
           ))}
+          <div className="px-6 mt-4">
+            <Button
+              color={"primary"}
+              className="w-full text-center"
+              onClick={handleLogout}
+            >
+              Logout
+            </Button>
+          </div>
         </SimpleBar>
       </Dropdown>
     </div>

@@ -1,12 +1,18 @@
 "use client";
 import React from "react";
 import Image from "next/image";
-import Logo from "@/../public/images/logos/logo.svg";
 import Link from "next/link";
+
 const FullLogo = () => {
   return (
     <Link href={"/"}>
-      <Image src={Logo} alt="logo" className="block" />
+      <Image 
+        src="/images/logos/logo.svg" 
+        alt="logo" 
+        className="block" 
+        width={150} 
+        height={40} 
+      />
     </Link>
   );
 };
