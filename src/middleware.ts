@@ -5,42 +5,48 @@ export async function middleware(request: NextRequest) {
 
   // 1. Proxy API Request (e.g., from /api/proxy/* to https://localhost:7243/api/*)
   if (pathname.startsWith("/api/proxy")) {
-    const targetPath = pathname.replace("/api/proxy", "/api");
-    // Use 127.0.0.1 instead of localhost to avoid potential DNS/IPv6 issues in Node.js
-    const apiHost = process.env.NEXT_PUBLIC_API_HOST?.replace("localhost", "127.0.0.1") || "https://127.0.0.1:7243";
-    const targetUrl = new URL(targetPath, apiHost);
-
-    // ForwardSearchParams if any
-    request.nextUrl.searchParams.forEach((value, key) => {
-      targetUrl.searchParams.append(key, value);
-    });
+    const targetPath = request.nextUrl.pathname.replace("/api/proxy", "/api");
+    const searchParams = request.nextUrl.searchParams.toString();
+    const targetUrl = `https://127.0.0.1:7243${targetPath}${searchParams ? '?' + searchParams : ''}`;
 
     const headers = new Headers(request.headers);
-    headers.set("host", targetUrl.host);
+    headers.set("host", "127.0.0.1:7243");
 
     // Remove headers that might cause issues with proxying to localhost/C#
     headers.delete("connection");
     headers.delete("content-length");
+    headers.delete("host"); // Let fetch set it from targetUrl
 
     try {
-      // Create a new controller to avoid issues with body streaming if needed, 
-      // but for localhost/Kestrel common issues are SSL and headers.
-      const response = await fetch(targetUrl.toString(), {
+      console.log(`Proxying ${request.method} to: ${targetUrl}`);
+      
+      const body = (request.method !== 'GET' && request.method !== 'HEAD') ? await request.arrayBuffer() : undefined;
+
+      const response = await fetch(targetUrl, {
         method: request.method,
         headers: headers,
-        body: request.method !== 'GET' && request.method !== 'HEAD' ? request.body : undefined,
+        body: body,
         // @ts-ignore
         duplex: 'half',
       });
+
+      // Special handling for 500 from backend to see if it's the backend itself
+      if (response.status === 500) {
+        console.error("Backend returned 500 error");
+      }
 
       return new NextResponse(response.body, {
         status: response.status,
         statusText: response.statusText,
         headers: response.headers,
       });
-    } catch (error) {
-      console.error("Proxy error:", error);
-      return NextResponse.json({ success: false, message: "Proxy Connection Error" }, { status: 502 });
+    } catch (error: any) {
+      console.error("Proxy Fetch Error Detail:", error.message, error.cause);
+      return NextResponse.json({ 
+        success: false, 
+        message: "Proxy Connection Error", 
+        detail: error.message 
+      }, { status: 502 });
     }
   }
 
