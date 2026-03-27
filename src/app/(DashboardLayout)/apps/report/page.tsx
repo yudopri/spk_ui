@@ -69,7 +69,7 @@ const ReportHasil = () => {
     dataLabels: { 
       enabled: true,
       formatter: function (val: number) {
-        return val.toFixed(0);
+        return val.toFixed(2);
       },
       offsetY: -20,
       style: {
