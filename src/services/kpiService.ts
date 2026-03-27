@@ -8,6 +8,7 @@ export interface KPI {
   deskripsi: string;
   tipe: string;
   bobot: number;
+  bobotAhp: number | null;
   periode?: Partial<Periode>;
 }
 

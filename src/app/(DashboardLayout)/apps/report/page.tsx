@@ -1,26 +1,52 @@
 "use client";
-import React, { useState } from "react";
-import { Table, Button, Badge, Select } from "flowbite-react";
+import React, { useState, useEffect, useMemo } from "react";
+import { Table, Button, Badge, Select, Spinner, Alert } from "flowbite-react";
 import CardBox from "@/app/components/shared/CardBox";
 import { Icon } from "@iconify/react";
 import dynamic from "next/dynamic";
+import spkService, { SpkReport } from "@/services/spkService";
+import periodeService, { Periode } from "@/services/periodeService";
 
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
 const ReportHasil = () => {
-  const [selectedDivisi, setSelectedDivisi] = useState("Semua");
+  const [selectedPeriodeId, setSelectedPeriodeId] = useState<number>(0);
+  const [periodes, setPeriodes] = useState<Periode[]>([]);
+  const [reports, setReports] = useState<SpkReport[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const allReports = [
-    { rank: 1, nik: "1001", name: "Budi Santoso", score: "0.245", moora: "8.45", status: "Direkomendasikan", divisi: "IT" },
-    { rank: 2, nik: "1004", name: "Eko Prasetyo", score: "0.210", moora: "8.12", status: "Direkomendasikan", divisi: "IT" },
-    { rank: 1, nik: "1003", name: "Andi Wijaya", score: "0.230", moora: "7.92", status: "Direkomendasikan", divisi: "Marketing" },
-    { rank: 1, nik: "1002", name: "Siti Aminah", score: "0.215", moora: "6.15", status: "Cukup", divisi: "HRD" },
-    { rank: 2, nik: "1005", name: "Dewi Lestari", score: "0.190", moora: "5.80", status: "Cukup", divisi: "HRD" },
-  ];
+  useEffect(() => {
+    const fetchPeriodes = async () => {
+      try {
+        const res = await periodeService.getAll(1, 100);
+        setPeriodes(res.data);
+        if (res.data.length > 0) {
+          setSelectedPeriodeId(res.data[0].id);
+        }
+      } catch (err: any) {
+        setError("Gagal mengambil data periode");
+      }
+    };
+    fetchPeriodes();
+  }, []);
 
-  const filteredReports = selectedDivisi === "Semua" 
-    ? allReports.sort((a, b) => parseFloat(b.moora) - parseFloat(a.moora))
-    : allReports.filter(r => r.divisi === selectedDivisi).sort((a, b) => parseFloat(b.moora) - parseFloat(a.moora));
+  useEffect(() => {
+    const fetchReport = async () => {
+      if (!selectedPeriodeId) return;
+      try {
+        setLoading(true);
+        const res = await spkService.getReport(selectedPeriodeId, 1, 100);
+        setReports(res.data || []);
+        setError(null);
+      } catch (err: any) {
+        setError(err?.response?.data?.message || "Gagal mengambil laporan hasil");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchReport();
+  }, [selectedPeriodeId]);
 
   const chartOptions: any = {
     chart: {
@@ -43,24 +69,24 @@ const ReportHasil = () => {
     dataLabels: { 
       enabled: true,
       formatter: function (val: number) {
-        return val.toFixed(2);
+        return val.toFixed(0);
       },
       offsetY: -20,
       style: {
-        fontSize: '11px',
+        fontSize: '10px',
         fontWeight: 'bold',
         colors: ["#5A6A85"]
       }
     },
     legend: { show: false },
     xaxis: {
-      categories: filteredReports.map(r => r.name),
+      categories: reports.map(r => r.karyawan?.nama || "Unknown"),
       axisBorder: { show: false },
       axisTicks: { show: false },
       labels: {
         style: {
           colors: '#5A6A85',
-          fontSize: '12px'
+          fontSize: '11px'
         }
       }
     },
@@ -80,37 +106,37 @@ const ReportHasil = () => {
       theme: 'light',
       y: {
         title: {
-          formatter: () => "Skor MOORA:"
+          formatter: () => "Nilai Skala:"
         }
       }
     }
   };
 
   const chartSeries = [{
-    name: 'Skor Akhir',
-    data: filteredReports.map(r => parseFloat(r.moora))
+    name: 'Nilai Skala',
+    data: reports.map(r => r.nilaiSkala)
   }];
+
+  const bestEmployee = reports.length > 0 ? reports[0] : null;
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Laporan Hasil Penilaian</h1>
-          <p className="text-sm text-gray-500">Hasil integrasi AHP (Bobot) & MOORA (Ranking)</p>
+          <p className="text-sm text-gray-500">Hasil Ranking Kinerja Karyawan</p>
         </div>
         <div className="flex flex-wrap gap-3">
-             <div className="min-w-32">
-                 <Select value={selectedDivisi} onChange={(e) => setSelectedDivisi(e.target.value)} sizing="sm">
-                     <option value="Semua">Semua Divisi</option>
-                     <option value="IT">IT Department</option>
-                     <option value="HRD">HRD Department</option>
-                     <option value="Marketing">Marketing</option>
-                 </Select>
-             </div>
-             <div className="min-w-40">
-                <Select defaultValue="1" sizing="sm">
-                    <option value="1">Periode: Semester 1 2024</option>
-                    <option value="2">Periode: Semester 2 2023</option>
+             <div className="min-w-48">
+                <Select 
+                  value={selectedPeriodeId} 
+                  onChange={(e) => setSelectedPeriodeId(Number(e.target.value))} 
+                  sizing="sm"
+                >
+                    <option value={0}>Pilih Periode</option>
+                    {periodes.map((p) => (
+                      <option key={p.id} value={p.id}>{p.namaPeriode} - {p.divisi?.namaDivisi}</option>
+                    ))}
                 </Select>
              </div>
              <Button color="dark" size="sm" className="flex items-center">
@@ -120,46 +146,57 @@ const ReportHasil = () => {
         </div>
       </div>
 
+      {error && <Alert color="failure">{error}</Alert>}
+
       <div className="grid grid-cols-12 gap-6">
         <div className="col-span-12 lg:col-span-8">
            <CardBox>
               <div className="flex justify-between items-center mb-6">
                   <h4 className="text-lg font-bold text-gray-800 dark:text-white">Visualisasi Ranking Karyawan</h4>
-                  <Badge color="info">Skala MOORA (0-10)</Badge>
+                  <Badge color="info">Skor Skala MOORA</Badge>
               </div>
-              <Chart
-                options={chartOptions}
-                series={chartSeries}
-                type="bar"
-                height="320px"
-                width="100%"
-              />
+              {loading ? (
+                <div className="flex justify-center p-20"><Spinner size="xl" /></div>
+              ) : reports.length > 0 ? (
+                <Chart
+                  options={chartOptions}
+                  series={chartSeries}
+                  type="bar"
+                  height="320px"
+                  width="100%"
+                />
+              ) : (
+                <div className="text-center py-20 text-gray-500 italic">Tidak ada data untuk periode ini</div>
+              )}
            </CardBox>
         </div>
 
         <div className="col-span-12 lg:col-span-4">
             <CardBox className="h-full">
                 <h4 className="text-lg font-bold mb-4 text-gray-800 dark:text-white text-center">🏆 Best Employee</h4>
-                <div className="flex flex-col items-center justify-center space-y-4 py-6 text-center">
-                    <div className="relative">
-                        <img 
-                            src="/images/profile/user-1.jpg" 
-                            alt="Best Employee" 
-                            className="w-24 h-24 rounded-full border-4 border-yellow-400 p-1"
-                            onError={(e: any) => e.target.src = "https://ui-avatars.com/api/?name=" + filteredReports[0]?.name}
-                        />
-                        <div className="absolute -top-2 -right-2 bg-yellow-400 text-white p-1.5 rounded-full shadow-lg">
-                            <Icon icon="solar:crown-minimalistic-bold" className="h-5 w-5" />
-                        </div>
-                    </div>
-                    <div>
-                        <h2 className="text-xl font-black text-primary uppercase">{filteredReports[0]?.name}</h2>
-                        <p className="text-gray-500 font-medium">Divisi {filteredReports[0]?.divisi}</p>
-                    </div>
-                    <div className="bg-primary/10 px-6 py-2 rounded-full">
-                        <span className="text-primary font-bold text-lg">Skor: {filteredReports[0]?.moora}</span>
-                    </div>
-                </div>
+                {bestEmployee ? (
+                  <div className="flex flex-col items-center justify-center space-y-4 py-6 text-center">
+                      <div className="relative">
+                          <img 
+                              src={`https://ui-avatars.com/api/?name=${bestEmployee.karyawan?.nama}&background=random&size=128`}
+                              alt="Best Employee" 
+                              className="w-24 h-24 rounded-full border-4 border-yellow-400 p-1"
+                          />
+                          <div className="absolute -top-2 -right-2 bg-yellow-400 text-white p-1.5 rounded-full shadow-lg">
+                              <Icon icon="solar:crown-minimalistic-bold" className="h-5 w-5" />
+                          </div>
+                      </div>
+                      <div>
+                          <h2 className="text-xl font-black text-primary uppercase">{bestEmployee.karyawan?.nama}</h2>
+                          <p className="text-gray-500 font-medium">{bestEmployee.karyawan?.jabatan || "Karyawan"}</p>
+                      </div>
+                      <div className="bg-primary/10 px-6 py-2 rounded-full">
+                          <span className="text-primary font-bold text-lg">Skor: {bestEmployee.nilaiSkala}</span>
+                      </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-10 text-gray-400 italic">Belum ada pemenang</div>
+                )}
             </CardBox>
         </div>
         
@@ -171,33 +208,34 @@ const ReportHasil = () => {
                 <Table.Head>
                   <Table.HeadCell className="text-center">Rank</Table.HeadCell>
                   <Table.HeadCell>Karyawan</Table.HeadCell>
-                  <Table.HeadCell className="text-center">Divisi</Table.HeadCell>
-                  <Table.HeadCell className="text-center">Vektor Bobot (AHP)</Table.HeadCell>
-                  <Table.HeadCell className="text-center">Nilai Optimasi (MOORA)</Table.HeadCell>
-                  <Table.HeadCell className="text-center">Keterangan</Table.HeadCell>
+                  <Table.HeadCell className="text-center">NIK</Table.HeadCell>
+                  <Table.HeadCell className="text-center">Jabatan</Table.HeadCell>
+                  <Table.HeadCell className="text-center">Nilai Skala</Table.HeadCell>
+                  <Table.HeadCell className="text-center">Status</Table.HeadCell>
                 </Table.Head>
                 <Table.Body className="divide-y text-center">
-                  {filteredReports.map((report, idx) => (
-                    <Table.Row key={report.nik} className="bg-white dark:border-gray-700 dark:bg-gray-800">
-                      <Table.Cell className="font-bold text-lg text-primary">{idx + 1}</Table.Cell>
-                      <Table.Cell className="text-left">
-                        <div className="flex flex-col">
-                            <span className="font-bold text-gray-900 dark:text-white">{report.name}</span>
-                            <span className="text-xs text-gray-500">NIK: {report.nik}</span>
-                        </div>
+                  {loading ? (
+                    <Table.Row><Table.Cell colSpan={6} className="py-10"><Spinner /></Table.Cell></Table.Row>
+                  ) : reports.length > 0 ? reports.map((report) => (
+                    <Table.Row key={report.id} className="bg-white dark:border-gray-700 dark:bg-gray-800">
+                      <Table.Cell className="font-bold text-lg text-primary">{report.ranking}</Table.Cell>
+                      <Table.Cell className="text-left font-bold text-gray-900 dark:text-white">
+                        {report.karyawan?.nama}
                       </Table.Cell>
+                      <Table.Cell>{report.karyawan?.nik}</Table.Cell>
+                      <Table.Cell>{report.karyawan?.jabatan}</Table.Cell>
+                      <Table.Cell className="font-bold text-secondary text-base">{report.nilaiSkala}</Table.Cell>
                       <Table.Cell>
-                         <Badge color="light">{report.divisi}</Badge>
-                      </Table.Cell>
-                      <Table.Cell className="font-semibold text-gray-700">{report.score}</Table.Cell>
-                      <Table.Cell className="font-bold text-secondary text-base">{report.moora}</Table.Cell>
-                      <Table.Cell>
-                        <Badge color={parseFloat(report.moora) >= 7.5 ? "success" : "warning"} size="sm">
-                          {report.status}
+                        <Badge color={report.ranking <= 3 ? "success" : "info"} size="sm">
+                          {report.ranking <= 3 ? "Prioritas" : "Sesuai"}
                         </Badge>
                       </Table.Cell>
                     </Table.Row>
-                  ))}
+                  )) : (
+                    <Table.Row>
+                      <Table.Cell colSpan={6} className="py-10 text-gray-500 italic">Belum ada data penilaian pada periode ini.</Table.Cell>
+                    </Table.Row>
+                  )}
                 </Table.Body>
               </Table>
             </div>
