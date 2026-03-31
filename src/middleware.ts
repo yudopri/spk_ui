@@ -1,5 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
 
+// Helper function to decode JWT in Edge Runtime (Base64 only, no verification)
+function decodeJwt(token: string) {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    const payload = JSON.parse(atob(parts[1]));
+    return payload;
+  } catch (e) {
+    return null;
+  }
+}
+
+// Map permissions to application paths
+const PERMISSION_MAP: Record<string, string[]> = {
+  "divisi_view": ["/apps/divisi"],
+  "divisi_manage": ["/apps/divisi"],
+  "karyawan_view": ["/apps/karyawan"],
+  "karyawan_manage": ["/apps/karyawan"],
+  "spk_ahp": ["/apps/perbandingan", "/apps/data-kpi"],
+  "spk_moora": ["/apps/penilaian"],
+  "report_view": ["/apps/report"],
+  "user_view": ["/apps/user"],
+  "user_manage": ["/apps/user"],
+  "role_manage": ["/apps/role", "/apps/permission"],
+};
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -64,6 +90,30 @@ export async function middleware(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = "/";
     return NextResponse.redirect(url);
+  }
+
+  // 3. Role-Based Access Control (RBAC) Logic
+  if (token && pathname.startsWith("/apps/")) {
+    const payload = decodeJwt(token);
+    const userRole = payload?.role;
+    const permissions: string[] = Array.isArray(payload?.Permission) ? payload.Permission : [];
+
+    // Admin & Developer bypass everything in /apps/
+    if (userRole === "Admin" || userRole === "Developer") {
+      return NextResponse.next();
+    }
+
+    // Check if user has permission for the current path
+    const requiredPermission = Object.keys(PERMISSION_MAP).find(perm => 
+      PERMISSION_MAP[perm].some(path => pathname.startsWith(path))
+    );
+
+    if (requiredPermission && !permissions.includes(requiredPermission)) {
+      console.warn(`User unauthorized for ${pathname}. Required: ${requiredPermission}`);
+      const url = request.nextUrl.clone();
+      url.pathname = "/dashboards"; // Redirect to safe page
+      return NextResponse.redirect(url);
+    }
   }
 
   return NextResponse.next();

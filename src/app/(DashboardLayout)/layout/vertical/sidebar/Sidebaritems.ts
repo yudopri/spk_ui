@@ -94,6 +94,35 @@ const SidebarContent: MenuItem[] = [
           },
         ],
       },
+      {
+        heading: "System",
+        children: [
+          {
+            name: "User Management",
+            icon: "solar:user-id-linear",
+            id: uniqueId(),
+            url: "/apps/user",
+          },
+          {
+            name: "Role Management",
+            icon: "solar:users-group-two-rounded-linear",
+            id: uniqueId(),
+            url: "/apps/role",
+          },
+          {
+            name: "Permission",
+            icon: "solar:shield-keyhole-linear",
+            id: uniqueId(),
+            url: "/apps/permission",
+          },
+          {
+            name: "Developer Tools",
+            icon: "solar:code-bold-linear",
+            id: uniqueId(),
+            url: "/apps/developer",
+          },
+        ],
+      },
     ],
   },
 ];
