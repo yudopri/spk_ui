@@ -6,6 +6,7 @@ export interface ChildItem {
   item?: any;
   url?: any;
   color?: string;
+  permission?: string;
 }
 
 export interface MenuItem {
@@ -17,6 +18,7 @@ export interface MenuItem {
   items?: MenuItem[];
   children?: ChildItem[];
   url?: any;
+  permission?: string;
 }
 
 import { uniqueId } from "lodash";
@@ -28,6 +30,7 @@ const SidebarContent: MenuItem[] = [
     items: [
       {
         heading: "Dashboard",
+        permission: "menu_dashboard",
         children: [
           {
             name: "Dashboard",
@@ -39,81 +42,95 @@ const SidebarContent: MenuItem[] = [
       },
       {
         heading: "Master Data",
+        permission: "menu_master_data",
         children: [
           {
             name: "Data Divisi",
             icon: "solar:buildings-2-linear",
             id: uniqueId(),
             url: "/apps/divisi",
+            permission: "divisi_view",
           },
           {
             name: "Data Karyawan",
             icon: "solar:users-group-rounded-linear",
             id: uniqueId(),
             url: "/apps/karyawan",
+            permission: "karyawan_view",
           },
           {
             name: "Periode KPI",
             icon: "solar:calendar-line-duotone",
             id: uniqueId(),
             url: "/apps/periode-kpi",
+            permission: "periode_view",
           },
           {
             name: "Data KPI (Kriteria)",
             icon: "solar:document-list-linear",
             id: uniqueId(),
             url: "/apps/data-kpi",
+            permission: "kpi_view",
           },
         ],
       },
       {
         heading: "Proses SPK",
+        permission: "menu_assessment",
         children: [
           {
             name: "Nilai Perbandingan",
             icon: "solar:transfer-horizontal-linear",
             id: uniqueId(),
             url: "/apps/perbandingan",
+            permission: "kpi_manage",
           },
           {
             name: "Penilaian Karyawan",
             icon: "solar:star-line-duotone",
             id: uniqueId(),
             url: "/apps/penilaian",
+            permission: "score_view",
           },
         ],
       },
       {
         heading: "Laporan",
+        permission: "menu_report",
         children: [
           {
             name: "Report Hasil",
             icon: "solar:printer-minimalistic-linear",
             id: uniqueId(),
             url: "/apps/report",
+            permission: "report_view",
           },
         ],
       },
       {
         heading: "System",
+        permission: "menu_settings",
         children: [
           {
             name: "User Management",
             icon: "solar:user-id-linear",
             id: uniqueId(),
             url: "/apps/user",
+            permission: "user_manage",
           },
           {
             name: "Role Management",
             icon: "solar:users-group-two-rounded-linear",
             id: uniqueId(),
             url: "/apps/role",
+            permission: "user_manage",
           },
           {
             name: "Permission",
             icon: "solar:shield-keyhole-linear",
             id: uniqueId(),
             url: "/apps/permission",
+            permission: "user_manage",
           },
           {
             name: "Developer Tools",

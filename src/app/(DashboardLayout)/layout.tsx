@@ -1,17 +1,58 @@
 "use client";
-import React, { useContext } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import Sidebar from "./layout/vertical/sidebar/Sidebar";
 import Header from "./layout/vertical/header/Header";
 import { Customizer } from "./layout/shared/customizer/Customizer";
 import { CustomizerContext } from "@/app/context/CustomizerContext";
+import { useSearchParams, useRouter } from "next/navigation";
+import { Modal, Button } from "flowbite-react";
+import { Icon } from "@iconify/react";
+
 export default function Layout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   const { activeLayout, isLayout } = useContext(CustomizerContext);
+  const searchParams = useSearchParams();
+  const [showAuthAlert, setShowAuthAlert] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get("error") === "unauthorized") {
+      setShowAuthAlert(true);
+      // Clean up URL without triggering re-render
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, "", newUrl);
+    }
+  }, [searchParams]);
+
   return (
     <div className="flex w-full min-h-screen dark:bg-darkgray">
+      {/* Access Denied Alert Modal */}
+      <Modal show={showAuthAlert} size="md" onClose={() => setShowAuthAlert(false)} popup>
+        <Modal.Header />
+        <Modal.Body>
+          <div className="text-center">
+            <div className="flex justify-center mb-4">
+              <div className="rounded-full bg-red-100 p-3 dark:bg-red-900/20">
+                <Icon icon="solar:shield-warning-bold-duotone" className="h-12 w-12 text-red-600" />
+              </div>
+            </div>
+            <h3 className="mb-2 text-xl font-bold text-gray-900 dark:text-white">
+              Akses Ditolak
+            </h3>
+            <p className="mb-6 text-sm font-normal text-gray-500 dark:text-gray-400">
+              Maaf, Anda tidak memiliki izin yang cukup untuk mengakses halaman yang Anda tuju. Silakan hubungi Administrator jika ini adalah kesalahan.
+            </p>
+            <div className="flex justify-center">
+              <Button color="failure" onClick={() => setShowAuthAlert(false)}>
+                Tutup Peringatan
+              </Button>
+            </div>
+          </div>
+        </Modal.Body>
+      </Modal>
+
       <div className="page-wrapper flex w-full  ">
         {/* Header/sidebar */}
 

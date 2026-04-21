@@ -5,8 +5,10 @@ import CardBox from "@/app/components/shared/CardBox";
 import { Icon } from "@iconify/react";
 import karyawanService, { Karyawan } from "@/services/karyawanService";
 import divisiService, { Divisi } from "@/services/divisiService";
+import { usePermission } from "@/hooks/usePermission";
 
 const DataKaryawan = () => {
+  const { hasPermission } = usePermission();
   const [openModal, setOpenModal] = useState(false);
   const [modalMode, setModalMode] = useState<"create" | "edit" | "detail">("create");
   const [employees, setEmployees] = useState<Karyawan[]>([]);
@@ -115,10 +117,12 @@ const DataKaryawan = () => {
           <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Data Karyawan</h1>
           <p className="text-sm text-gray-500">Kelola informasi karyawan per departemen</p>
         </div>
-        <Button color="primary" onClick={() => handleAction("create")}>
-          <Icon icon="solar:user-plus-linear" className="mr-2 h-5 w-5" />
-          Tambah Karyawan
-        </Button>
+        {hasPermission("karyawan_create") && (
+          <Button color="primary" onClick={() => handleAction("create")}>
+            <Icon icon="solar:user-plus-linear" className="mr-2 h-5 w-5" />
+            Tambah Karyawan
+          </Button>
+        )}
       </div>
 
       {error && <Alert color="failure">{error}</Alert>}
@@ -157,15 +161,21 @@ const DataKaryawan = () => {
                     </Table.Cell>
                     <Table.Cell>
                       <div className="flex justify-center gap-2">
-                         <Button color="light" size="xs" onClick={() => handleAction("detail", emp)}>
-                           <Icon icon="solar:eye-linear" className="h-4 w-4" />
-                         </Button>
-                         <Button color="light" size="xs" onClick={() => handleAction("edit", emp)}>
-                           <Icon icon="solar:pen-new-square-linear" className="h-4 w-4 text-primary" />
-                         </Button>
-                         <Button color="light" size="xs" onClick={() => handleDelete(emp.id)}>
-                           <Icon icon="solar:trash-bin-trash-linear" className="h-4 w-4 text-red-500" />
-                         </Button>
+                        {hasPermission("karyawan_view") && (
+                          <Button color="light" size="xs" onClick={() => handleAction("detail", emp)}>
+                            <Icon icon="solar:eye-linear" className="h-4 w-4" />
+                          </Button>
+                        )}
+                        {hasPermission("karyawan_update") && (
+                          <Button color="light" size="xs" onClick={() => handleAction("edit", emp)}>
+                            <Icon icon="solar:pen-new-square-linear" className="h-4 w-4 text-primary" />
+                          </Button>
+                        )}
+                        {hasPermission("karyawan_delete") && (
+                          <Button color="light" size="xs" onClick={() => handleDelete(emp.id)}>
+                            <Icon icon="solar:trash-bin-trash-linear" className="h-4 w-4 text-red-500" />
+                          </Button>
+                        )}
                       </div>
                     </Table.Cell>
                   </Table.Row>

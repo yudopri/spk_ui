@@ -5,8 +5,10 @@ import CardBox from "@/app/components/shared/CardBox";
 import { Icon } from "@iconify/react";
 import roleService, { Role, RolePermission } from "@/services/roleService";
 import permissionService, { Permission } from "@/services/permissionService";
+import { usePermission } from "@/hooks/usePermission";
 
 const RolePage = () => {
+    const { hasPermission } = usePermission();
     const [roles, setRoles] = useState<Role[]>([]);
     const [permissions, setPermissions] = useState<Permission[]>([]);
     const [loading, setLoading] = useState(true);
@@ -99,10 +101,12 @@ const RolePage = () => {
                     </h1>
                     <p className="text-sm text-gray-500">Konfigurasi hak akses per tingkatan jabatan (ACL)</p>
                 </div>
-                <Button color="primary" onClick={() => handleOpenModal()}>
-                    <Icon icon="solar:add-circle-linear" className="mr-2 h-5 w-5" />
-                    Tambah Role
-                </Button>
+                {hasPermission("user_manage") && (
+                    <Button color="primary" onClick={() => handleOpenModal()}>
+                        <Icon icon="solar:add-circle-linear" className="mr-2 h-5 w-5" />
+                        Tambah Role
+                    </Button>
+                )}
             </div>
 
             {error && <Alert color="failure">{error}</Alert>}
@@ -140,6 +144,7 @@ const RolePage = () => {
                                                             id={`role-${role.id}-perm-${perm.id}`}
                                                             checked={isAssigned}
                                                             onChange={() => togglePermission(role, perm.id)}
+                                                            disabled={!hasPermission("user_manage")}
                                                         />
                                                         <div className="flex flex-col">
                                                             <Label htmlFor={`role-${role.id}-perm-${perm.id}`} className="text-xs font-semibold cursor-pointer">
@@ -154,12 +159,16 @@ const RolePage = () => {
                                     </Table.Cell>
                                     <Table.Cell className="align-top pt-4">
                                         <div className="flex justify-center gap-2">
-                                            <Button size="xs" color="light" onClick={() => handleOpenModal(role)}>
-                                                <Icon icon="solar:pen-new-square-linear" className="h-4 w-4 text-primary" />
-                                            </Button>
-                                            <Button size="xs" color="light" onClick={() => handleDelete(role.id)}>
-                                                <Icon icon="solar:trash-bin-trash-linear" className="h-4 w-4 text-red-500" />
-                                            </Button>
+                                            {hasPermission("user_manage") && (
+                                                <>
+                                                    <Button size="xs" color="light" onClick={() => handleOpenModal(role)}>
+                                                        <Icon icon="solar:pen-new-square-linear" className="h-4 w-4 text-primary" />
+                                                    </Button>
+                                                    <Button size="xs" color="light" onClick={() => handleDelete(role.id)}>
+                                                        <Icon icon="solar:trash-bin-trash-linear" className="h-4 w-4 text-red-500" />
+                                                    </Button>
+                                                </>
+                                            )}
                                         </div>
                                     </Table.Cell>
                                 </Table.Row>

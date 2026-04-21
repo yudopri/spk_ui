@@ -15,15 +15,23 @@ function decodeJwt(token: string) {
 // Map permissions to application paths
 const PERMISSION_MAP: Record<string, string[]> = {
   "divisi_view": ["/apps/divisi"],
-  "divisi_manage": ["/apps/divisi"],
+  "divisi_create": ["/apps/divisi"],
+  "divisi_update": ["/apps/divisi"],
+  "divisi_delete": ["/apps/divisi"],
   "karyawan_view": ["/apps/karyawan"],
-  "karyawan_manage": ["/apps/karyawan"],
-  "spk_ahp": ["/apps/perbandingan", "/apps/data-kpi"],
-  "spk_moora": ["/apps/penilaian"],
+  "karyawan_create": ["/apps/karyawan"],
+  "karyawan_update": ["/apps/karyawan"],
+  "karyawan_delete": ["/apps/karyawan"],
+  "kpi_view": ["/apps/data-kpi"],
+  "kpi_manage": ["/apps/perbandingan", "/apps/data-kpi"],
+  "periode_view": ["/apps/periode-kpi"],
+  "periode_create": ["/apps/periode-kpi"],
+  "periode_update": ["/apps/periode-kpi"],
+  "periode_delete": ["/apps/periode-kpi"],
+  "score_view": ["/apps/penilaian"],
+  "score_input": ["/apps/penilaian"],
   "report_view": ["/apps/report"],
-  "user_view": ["/apps/user"],
-  "user_manage": ["/apps/user"],
-  "role_manage": ["/apps/role", "/apps/permission"],
+  "user_manage": ["/apps/user", "/apps/role", "/apps/permission"],
 };
 
 export async function middleware(request: NextRequest) {
@@ -112,6 +120,7 @@ export async function middleware(request: NextRequest) {
       console.warn(`User unauthorized for ${pathname}. Required: ${requiredPermission}`);
       const url = request.nextUrl.clone();
       url.pathname = "/dashboards"; // Redirect to safe page
+      url.searchParams.set("error", "unauthorized");
       return NextResponse.redirect(url);
     }
   }

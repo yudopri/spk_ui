@@ -7,8 +7,10 @@ import periodeService, { Periode } from "@/services/periodeService";
 import kpiService, { KPI } from "@/services/kpiService";
 import karyawanService, { Karyawan } from "@/services/karyawanService";
 import spkService from "@/services/spkService";
+import { usePermission } from "@/hooks/usePermission";
 
 const PenilaianKaryawan = () => {
+  const { hasPermission } = usePermission();
   const [selectedPeriodeId, setSelectedPeriodeId] = useState<number>(0);
   const [periodes, setPeriodes] = useState<Periode[]>([]);
   const [kpis, setKpis] = useState<KPI[]>([]);
@@ -174,15 +176,17 @@ const PenilaianKaryawan = () => {
                   </option>
                 ))}
             </Select>
-            <Button
-              color="primary"
-              size="sm"
-              onClick={handleSaveAll}
-              disabled={submitting || !selectedPeriodeId || kpis.length === 0 || employees.length === 0}
-            >
-               <Icon icon="solar:diskette-bold-duotone" className="mr-2 h-5 w-5" />
-               {submitting ? "Menyimpan..." : "Simpan Semua"}
-            </Button>
+            {hasPermission("score_input") && (
+              <Button
+                color="primary"
+                size="sm"
+                onClick={handleSaveAll}
+                disabled={submitting || !selectedPeriodeId || kpis.length === 0 || employees.length === 0}
+              >
+                 <Icon icon="solar:diskette-bold-duotone" className="mr-2 h-5 w-5" />
+                 {submitting ? "Menyimpan..." : "Simpan Semua"}
+              </Button>
+            )}
         </div>
       </div>
 
@@ -237,6 +241,7 @@ const PenilaianKaryawan = () => {
                            const value = e.target.value;
                            setScores((prev) => ({ ...prev, [key]: value }));
                          }}
+                         disabled={!hasPermission("score_input")}
                        />
                     </Table.Cell>
                   );})}

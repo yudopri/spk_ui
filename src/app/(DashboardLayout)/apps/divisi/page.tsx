@@ -4,8 +4,10 @@ import { Table, Button, Modal, Label, TextInput, Textarea, Badge, Alert } from "
 import CardBox from "@/app/components/shared/CardBox";
 import { Icon } from "@iconify/react";
 import divisiService, { Divisi } from "@/services/divisiService";
+import { usePermission } from "@/hooks/usePermission";
 
 const DataDivisi = () => {
+  const { hasPermission } = usePermission();
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState<"add" | "edit" | "view">("add");
   const [selectedDivisi, setSelectedDivisi] = useState<any>(null);
@@ -102,10 +104,12 @@ const DataDivisi = () => {
           <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Master Data Divisi</h1>
           <p className="text-sm text-gray-500">Kelola struktur organisasi perusahaan</p>
         </div>
-        <Button color="primary" onClick={() => handleOpenModal("add")}>
-          <Icon icon="solar:add-circle-linear" className="mr-2 h-5 w-5" />
-          Tambah Divisi
-        </Button>
+        {hasPermission("divisi_create") && (
+          <Button color="primary" onClick={() => handleOpenModal("add")}>
+            <Icon icon="solar:add-circle-linear" className="mr-2 h-5 w-5" />
+            Tambah Divisi
+          </Button>
+        )}
       </div>
 
       {error && <Alert color="failure">{error}</Alert>}
@@ -146,15 +150,21 @@ const DataDivisi = () => {
                     </Table.Cell>
                     <Table.Cell>
                       <div className="flex justify-center gap-2">
-                         <Button color="light" size="xs" onClick={() => handleOpenModal("view", d)}>
-                           <Icon icon="solar:eye-linear" className="h-4 w-4" />
-                         </Button>
-                         <Button color="light" size="xs" onClick={() => handleOpenModal("edit", d)}>
-                           <Icon icon="solar:pen-new-square-linear" className="h-4 w-4 text-primary" />
-                         </Button>
-                         <Button color="light" size="xs" onClick={() => handleDelete(d.id)}>
-                           <Icon icon="solar:trash-bin-trash-linear" className="h-4 w-4 text-red-500" />
-                         </Button>
+                        {hasPermission("divisi_view") && (
+                          <Button color="light" size="xs" onClick={() => handleOpenModal("view", d)}>
+                            <Icon icon="solar:eye-linear" className="h-4 w-4" />
+                          </Button>
+                        )}
+                        {hasPermission("divisi_update") && (
+                          <Button color="light" size="xs" onClick={() => handleOpenModal("edit", d)}>
+                            <Icon icon="solar:pen-new-square-linear" className="h-4 w-4 text-primary" />
+                          </Button>
+                        )}
+                        {hasPermission("divisi_delete") && (
+                          <Button color="light" size="xs" onClick={() => handleDelete(d.id)}>
+                            <Icon icon="solar:trash-bin-trash-linear" className="h-4 w-4 text-red-500" />
+                          </Button>
+                        )}
                       </div>
                     </Table.Cell>
                   </Table.Row>
