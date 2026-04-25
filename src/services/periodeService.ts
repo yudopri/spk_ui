@@ -87,7 +87,7 @@ const periodeService = {
 
   getById: async (id: number) => {
     const all = await periodeService.getAll(1, 1000);
-    const found = all.data.find((p) => p.Id === id || p.id === id) || null;
+    const found = all.data.find((p: Periode) => p.Id === id || p.id === id) || null;
     return { success: true, data: found };
   },
 

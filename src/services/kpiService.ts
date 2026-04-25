@@ -75,12 +75,28 @@ const kpiService = {
     return response.data;
   },
 
-  update: async (data: Partial<KPI>) => {
-    throw new Error('Endpoint update KPI belum tersedia pada backend SPK terbaru (hanya GET/POST).');
+  update: async (data: Partial<Periode>) => {
+    // Ambil ID dari mana pun formatnya (antisipasi camelCase/PascalCase)
+    const targetId = data.Id || data.id; 
+    
+    if (!targetId) throw new Error("ID Periode tidak ditemukan");
+
+    // Menembak endpoint PUT /api/spk/periode/{id}
+    const response = await axios.put<{ success?: boolean; message?: string }>(`/spk/periode/${targetId}`, {
+      NamaPeriode: data.NamaPeriode || data.namaPeriode,
+      Tahun: data.tahun,
+      DivisiId: data.divisiId,
+      TanggalMulai: data.TanggalMulai || data.tanggalMulai,
+      TanggalSelesai: data.TanggalSelesai || data.tanggalSelesai,
+      Status: data.Status || (data.isAktif ? 'Aktif' : 'Nonaktif')
+    });
+    return response.data;
   },
 
   delete: async (id: number) => {
-    throw new Error('Endpoint delete KPI belum tersedia pada backend SPK terbaru (hanya GET/POST).');
+    // Menembak endpoint DELETE /api/spk/periode/{id}
+    const response = await axios.delete<{ success?: boolean; message?: string }>(`/spk/periode/${id}`);
+    return response.data;
   }
 };
 
