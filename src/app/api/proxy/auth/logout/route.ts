@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
-  const targetUrl = `http://127.0.0.1:5000/api/auth/logout`;
+  const targetUrl = `${process.env.NEXT_PUBLIC_API_HOST}/api/auth/logout`;
 
   const headers = new Headers(request.headers);
   headers.delete("host");
