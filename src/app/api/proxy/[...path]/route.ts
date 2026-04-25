@@ -14,11 +14,13 @@ async function proxyRequest(request: NextRequest, method: string) {
     const pathSegments = getPathSegmentsFromRequest(request);
     const targetUrl = `${BACKEND_BASE_URL}/${pathSegments.join("/")}${request.nextUrl.search}`;
 
+    // 1. CEGAH BACKEND MENGIRIM GZIP
     const headers = new Headers(request.headers);
     headers.delete("host");
     headers.delete("connection");
     headers.delete("content-length");
     headers.delete("transfer-encoding");
+    headers.delete("accept-encoding"); // <-- TAMBAHAN 1: Paksa backend kirim plain text
 
     const hasBody = !["GET", "HEAD"].includes(method);
     const body = hasBody ? await request.arrayBuffer() : undefined;
@@ -31,9 +33,15 @@ async function proxyRequest(request: NextRequest, method: string) {
       duplex: "half",
     });
 
+    // 2. HAPUS CONTENT-ENCODING DARI RESPON
     const responseHeaders = new Headers();
     response.headers.forEach((value, key) => {
-      if (key.toLowerCase() !== "content-length" && key.toLowerCase() !== "transfer-encoding") {
+      const lowerKey = key.toLowerCase();
+      if (
+        lowerKey !== "content-length" && 
+        lowerKey !== "transfer-encoding" &&
+        lowerKey !== "content-encoding" // <-- TAMBAHAN 2: Cegah browser bingung
+      ) {
         responseHeaders.set(key, value);
       }
     });

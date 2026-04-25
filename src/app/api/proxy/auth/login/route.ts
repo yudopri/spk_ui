@@ -6,6 +6,8 @@ export async function POST(request: NextRequest) {
   const headers = new Headers(request.headers);
   headers.delete("host");
   headers.delete("connection");
+  // TAMBAHAN 1: Minta backend jangan melakukan kompresi gzip
+  headers.delete("accept-encoding"); 
 
   try {
     const body = await request.arrayBuffer();
@@ -22,7 +24,12 @@ export async function POST(request: NextRequest) {
     // Remove content-length and other sensitive headers to avoid mismatch
     const responseHeaders = new Headers();
     response.headers.forEach((value, key) => {
-      if (key.toLowerCase() !== 'content-length' && key.toLowerCase() !== 'transfer-encoding') {
+      const lowerKey = key.toLowerCase();
+      if (
+        lowerKey !== 'content-length' && 
+        lowerKey !== 'transfer-encoding' &&
+        lowerKey !== 'content-encoding' // TAMBAHAN 2: Pastikan gzip tidak ikut ke browser
+      ) {
         responseHeaders.set(key, value);
       }
     });
