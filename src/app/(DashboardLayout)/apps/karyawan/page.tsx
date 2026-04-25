@@ -1,182 +1,151 @@
 "use client";
-import React, { useState, useEffect } from "react";
-import { Table, Button, Badge, Modal, Label, TextInput, Select, Alert } from "flowbite-react";
+import React, { useEffect, useMemo, useState } from "react";
+import { Table, Badge, Select, Spinner, Alert, Button } from "flowbite-react";
 import CardBox from "@/app/components/shared/CardBox";
 import { Icon } from "@iconify/react";
 import karyawanService, { Karyawan } from "@/services/karyawanService";
 import divisiService, { Divisi } from "@/services/divisiService";
-import { usePermission } from "@/hooks/usePermission";
+
+const getFriendlyError = (err: any, fallback: string) => {
+  const status = err?.status || err?.response?.status;
+  if (status === 401) return "401 - Sesi login berakhir. Silakan login ulang.";
+  if (status === 403) return "403 - Anda tidak memiliki izin untuk melihat data karyawan.";
+  if (status >= 500) return "500 - Terjadi gangguan server. Coba lagi beberapa saat.";
+  return err?.message || err?.response?.data?.message || fallback;
+};
 
 const DataKaryawan = () => {
-  const { hasPermission } = usePermission();
-  const [openModal, setOpenModal] = useState(false);
-  const [modalMode, setModalMode] = useState<"create" | "edit" | "detail">("create");
   const [employees, setEmployees] = useState<Karyawan[]>([]);
   const [divisiList, setDivisiList] = useState<Divisi[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [selectedDeptId, setSelectedDeptId] = useState<number | "all">("all");
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Form State
-  const [formData, setFormData] = useState({
-    id: 0,
-    nik: "",
-    nama: "",
-    jabatan: "",
-    divisiId: 0
-  });
+  const fetchDepartments = async () => {
+    try {
+      const res = await divisiService.getAll();
+      if (res.success) {
+        setDivisiList(res.data);
+        if (res.data.length > 0 && selectedDeptId === "all") {
+          setSelectedDeptId(res.data[0].id);
+        }
+      }
+    } catch (err: any) {
+      setError(getFriendlyError(err, "Gagal mengambil daftar departemen"));
+    }
+  };
 
-  const fetchData = async () => {
+  const fetchEmployees = async (deptId?: number) => {
     setLoading(true);
     try {
-      const [empRes, divRes] = await Promise.all([
-        karyawanService.getAll({ page: 1, pageSize: 100 }),
-        divisiService.getAll({ page: 1, pageSize: 100 })
-      ]);
-      
-      if (empRes.success) setEmployees(empRes.data);
-      if (divRes.success) setDivisiList(divRes.data);
+      const res = await karyawanService.getAll(deptId ? { dept_id: deptId } : {});
+      if (res.success) {
+        setEmployees(res.data);
+        setError(null);
+      }
     } catch (err: any) {
-      setError(err?.message || "Gagal mengambil data");
+      setError(getFriendlyError(err, "Gagal mengambil data karyawan"));
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchData();
-  }, []);
-
-  const handleAction = async (mode: "create" | "edit" | "detail", data?: Karyawan) => {
-    setModalMode(mode);
-    setError(null);
-    
-    if (mode === "create") {
-      setFormData({ id: 0, nik: "", nama: "", jabatan: "", divisiId: divisiList[0]?.id || 0 });
-    } else if (data) {
+    const init = async () => {
       try {
         setLoading(true);
-        const response = await karyawanService.getById(data.id);
-        if (response.success) {
-          const d = response.data;
-          setFormData({
-            id: d.id,
-            nik: d.nik,
-            nama: d.nama,
-            jabatan: d.jabatan,
-            divisiId: d.divisiId
-          });
-        }
+        await fetchDepartments();
+        await fetchEmployees(undefined);
       } catch (err: any) {
-        setError("Gagal mengambil detail karyawan");
-      } finally {
+        setError(getFriendlyError(err, "Gagal mengambil data awal"));
         setLoading(false);
       }
-    }
-    setOpenModal(true);
-  };
+    };
+    init();
+  }, []);
 
-  const handleSubmit = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      let response;
-      if (modalMode === "create") {
-        response = await karyawanService.create(formData);
-      } else {
-        response = await karyawanService.update(formData);
-      }
-
-      if (response.success) {
-        setOpenModal(false);
-        fetchData();
-      }
-    } catch (err: any) {
-      setError(err?.message || "Gagal menyimpan data");
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    if (selectedDeptId === "all") {
+      fetchEmployees(undefined);
+      return;
     }
-  };
+    fetchEmployees(selectedDeptId);
+  }, [selectedDeptId]);
 
-  const handleDelete = async (id: number) => {
-    if (confirm("Apakah Anda yakin ingin menghapus karyawan ini?")) {
-      try {
-        const response = await karyawanService.delete(id);
-        if (response.success) {
-          fetchData();
-        }
-      } catch (err: any) {
-        alert(err?.message || "Gagal menghapus data");
-      }
-    }
-  };
+  const selectedDeptName = useMemo(() => {
+    if (selectedDeptId === "all") return "Semua Departemen";
+    return divisiList.find((d) => d.id === selectedDeptId)?.namaDivisi || "Departemen";
+  }, [divisiList, selectedDeptId]);
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex justify-between items-center bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Data Karyawan</h1>
-          <p className="text-sm text-gray-500">Kelola informasi karyawan per departemen</p>
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Data Karyawan Mitra</h1>
+          <p className="text-sm text-gray-500">Daftar karyawan dari backend SPK terbaru</p>
         </div>
-        {hasPermission("karyawan_create") && (
-          <Button color="primary" onClick={() => handleAction("create")}>
-            <Icon icon="solar:user-plus-linear" className="mr-2 h-5 w-5" />
-            Tambah Karyawan
+        <div className="flex flex-wrap items-center gap-3">
+          <Select
+            value={selectedDeptId}
+            onChange={(e) => setSelectedDeptId(e.target.value === "all" ? "all" : Number(e.target.value))}
+            className="w-64"
+          >
+            <option value="all">Semua Departemen</option>
+            {divisiList.map((div) => (
+              <option key={div.id} value={div.id}>{div.namaDivisi}</option>
+            ))}
+          </Select>
+          <Button color="primary" onClick={() => fetchEmployees(selectedDeptId === "all" ? undefined : selectedDeptId)} outline>
+            <Icon icon="solar:refresh-linear" className="mr-2 h-5 w-5" />
+            Refresh
           </Button>
-        )}
+        </div>
       </div>
 
       {error && <Alert color="failure">{error}</Alert>}
 
       <CardBox>
+        <div className="mb-4 flex items-center justify-between">
+          <h5 className="font-semibold text-primary">{selectedDeptName}</h5>
+          <Badge color="info">{employees.length} Karyawan</Badge>
+        </div>
         <div className="overflow-x-auto">
           <Table hoverable>
             <Table.Head>
+              <Table.HeadCell>ID</Table.HeadCell>
+              <Table.HeadCell>Name</Table.HeadCell>
               <Table.HeadCell>NIK</Table.HeadCell>
-              <Table.HeadCell>Nama</Table.HeadCell>
-              <Table.HeadCell>Jabatan</Table.HeadCell>
-              <Table.HeadCell>Divisi / Departemen</Table.HeadCell>
-              <Table.HeadCell className="text-center">Aksi</Table.HeadCell>
+              <Table.HeadCell>Email</Table.HeadCell>
+              <Table.HeadCell>Departemen ID</Table.HeadCell>
+              <Table.HeadCell>Department Name</Table.HeadCell>
+              <Table.HeadCell>Lokasi Kerja</Table.HeadCell>
+              <Table.HeadCell>Role</Table.HeadCell>
             </Table.Head>
             <Table.Body className="divide-y">
-              {loading && !openModal ? (
+              {loading ? (
                 <Table.Row>
-                  <Table.Cell colSpan={5} className="text-center py-4">Loading data...</Table.Cell>
+                  <Table.Cell colSpan={8} className="text-center py-10">
+                    <Spinner size="xl" />
+                  </Table.Cell>
                 </Table.Row>
               ) : employees.length === 0 ? (
                 <Table.Row>
-                  <Table.Cell colSpan={5} className="text-center py-4">Tidak ada data karyawan</Table.Cell>
+                  <Table.Cell colSpan={8} className="text-center py-10">
+                    Tidak ada data karyawan
+                  </Table.Cell>
                 </Table.Row>
               ) : (
-                employees.map((emp) => (
-                  <Table.Row key={emp.id} className="bg-white dark:border-gray-700 dark:bg-gray-800">
-                    <Table.Cell className="whitespace-nowrap font-bold text-primary">
-                      {emp.nik}
-                    </Table.Cell>
-                    <Table.Cell className="font-medium text-gray-900 dark:text-white">
-                      {emp.nama}
-                    </Table.Cell>
-                    <Table.Cell>{emp.jabatan}</Table.Cell>
+                employees.map((emp, index) => (
+                  <Table.Row key={`${emp.id}-${emp.nik || 'no-nik'}-${emp.departemen_id ?? 'no-dept'}-${index}`} className="bg-white dark:border-gray-700 dark:bg-gray-800">
+                    <Table.Cell className="whitespace-nowrap font-bold text-primary">#{emp.id}</Table.Cell>
+                    <Table.Cell className="font-medium text-gray-900 dark:text-white">{emp.name || emp.nama || "-"}</Table.Cell>
+                    <Table.Cell>{emp.nik || "-"}</Table.Cell>
+                    <Table.Cell>{emp.email || "-"}</Table.Cell>
+                    <Table.Cell>{emp.departemen_id ?? "-"}</Table.Cell>
+                    <Table.Cell>{emp.department_name || "-"}</Table.Cell>
+                    <Table.Cell>{emp.lokasi_kerja || "-"}</Table.Cell>
                     <Table.Cell>
-                      <Badge color="lightprimary">{emp.divisi?.namaDivisi || "N/A"}</Badge>
-                    </Table.Cell>
-                    <Table.Cell>
-                      <div className="flex justify-center gap-2">
-                        {hasPermission("karyawan_view") && (
-                          <Button color="light" size="xs" onClick={() => handleAction("detail", emp)}>
-                            <Icon icon="solar:eye-linear" className="h-4 w-4" />
-                          </Button>
-                        )}
-                        {hasPermission("karyawan_update") && (
-                          <Button color="light" size="xs" onClick={() => handleAction("edit", emp)}>
-                            <Icon icon="solar:pen-new-square-linear" className="h-4 w-4 text-primary" />
-                          </Button>
-                        )}
-                        {hasPermission("karyawan_delete") && (
-                          <Button color="light" size="xs" onClick={() => handleDelete(emp.id)}>
-                            <Icon icon="solar:trash-bin-trash-linear" className="h-4 w-4 text-red-500" />
-                          </Button>
-                        )}
-                      </div>
+                      <Badge color="info" className="w-fit">{emp.role || "-"}</Badge>
                     </Table.Cell>
                   </Table.Row>
                 ))
@@ -185,76 +154,6 @@ const DataKaryawan = () => {
           </Table>
         </div>
       </CardBox>
-
-      {/* Modal Create/Edit/Detail */}
-      <Modal show={openModal} onClose={() => setOpenModal(false)} size="lg">
-        <Modal.Header>
-          <div className="flex items-center gap-2">
-            <Icon 
-              icon={modalMode === "create" ? "solar:user-plus-linear" : modalMode === "edit" ? "solar:pen-new-square-linear" : "solar:eye-linear"} 
-              className="h-6 w-6 text-primary" 
-            />
-            <span>{modalMode === "create" ? "Tambah Karyawan" : modalMode === "edit" ? "Edit Karyawan" : "Detail Karyawan"}</span>
-          </div>
-        </Modal.Header>
-        <Modal.Body>
-          {error && <Alert color="failure" className="mb-4">{error}</Alert>}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="col-span-1">
-              <Label htmlFor="nik" value="NIK" />
-              <TextInput 
-                id="nik" 
-                placeholder="Contoh: 1001" 
-                value={formData.nik} 
-                onChange={(e) => setFormData({...formData, nik: e.target.value})}
-                disabled={modalMode === "detail"} 
-              />
-            </div>
-            <div className="col-span-1">
-              <Label htmlFor="nama" value="Nama Lengkap" />
-              <TextInput 
-                id="nama" 
-                placeholder="Nama Karyawan" 
-                value={formData.nama} 
-                onChange={(e) => setFormData({...formData, nama: e.target.value})}
-                disabled={modalMode === "detail"} 
-              />
-            </div>
-            <div className="col-span-1">
-              <Label htmlFor="jabatan" value="Jabatan" />
-              <TextInput 
-                id="jabatan" 
-                placeholder="Jabatan" 
-                value={formData.jabatan} 
-                onChange={(e) => setFormData({...formData, jabatan: e.target.value})}
-                disabled={modalMode === "detail"} 
-              />
-            </div>
-            <div className="col-span-1">
-              <Label htmlFor="divisi" value="Divisi / Departemen" />
-              <Select 
-                id="divisi" 
-                value={formData.divisiId} 
-                onChange={(e) => setFormData({...formData, divisiId: parseInt(e.target.value)})}
-                disabled={modalMode === "detail"}
-              >
-                <option value={0} disabled>Pilih Divisi</option>
-                {divisiList.map((div) => (
-                  <option key={div.id} value={div.id}>{div.namaDivisi}</option>
-                ))}
-              </Select>
-            </div>
-          </div>
-        </Modal.Body>
-        <Modal.Footer>
-          {modalMode !== "detail" && (
-            <Button color="primary" onClick={handleSubmit} disabled={loading}>
-              {loading ? "Menyimpan..." : "Simpan Data"}
-            </Button>
-          )}
-          <Button color="gray" onClick={() => setOpenModal(false)}>{modalMode === "detail" ? "Tutup" : "Batal"}</Button>
-        </Modal.Footer>
-      </Modal>
     </div>
   );
 };

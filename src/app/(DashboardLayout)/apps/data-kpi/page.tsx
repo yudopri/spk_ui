@@ -170,7 +170,6 @@ const DataKPI = () => {
             <Table hoverable>
               <Table.Head>
                 <Table.HeadCell>Nama Kriteria</Table.HeadCell>
-                <Table.HeadCell>Bobot</Table.HeadCell>
                 <Table.HeadCell>Tipe</Table.HeadCell>
                 <Table.HeadCell>Deskripsi</Table.HeadCell>
                 <Table.HeadCell className="text-center">Aksi</Table.HeadCell>
@@ -187,11 +186,6 @@ const DataKPI = () => {
                     <Table.Row key={kpi.id} className="bg-white dark:border-gray-700 dark:bg-gray-800">
                       <Table.Cell className="font-medium text-gray-900 dark:text-white">
                         {kpi.namaKpi}
-                      </Table.Cell>
-                      <Table.Cell>
-                        <Badge color="info" size="sm" className="w-fit">
-                          {kpi.bobot * 100}%
-                        </Badge>
                       </Table.Cell>
                       <Table.Cell>
                         <Badge color={kpi.tipe === "Benefit" ? "success" : "warning"} size="sm" className="w-fit">
@@ -251,28 +245,13 @@ const DataKPI = () => {
                 disabled={modalType === "view"}
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="bobot" value="Bobot (0 - 1)" />
-                <TextInput
-                  id="bobot"
-                  type="number"
-                  step="0.01"
-                  placeholder="0.3"
-                  value={selectedKpi?.bobot ?? 0}
-                  onChange={(e) => {
-                    const val = parseFloat(e.target.value);
-                    setSelectedKpi({ ...selectedKpi!, bobot: isNaN(val) ? 0 : val });
-                  }}
-                  disabled={modalType === "view"}
-                />
-              </div>
+            <div className="grid grid-cols-1 gap-4">
               <div>
                 <Label htmlFor="tipe" value="Tipe" />
                 <Select 
                   id="tipe" 
                   value={selectedKpi?.tipe} 
-                  onChange={(e) => setSelectedKpi({...selectedKpi!, tipe: e.target.value})}
+                  onChange={(e) => setSelectedKpi({ ...selectedKpi!, tipe: e.target.value as "Benefit" | "Cost" })}
                   disabled={modalType === "view"}
                 >
                   <option value="Benefit">Benefit</option>

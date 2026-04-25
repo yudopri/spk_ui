@@ -22,7 +22,7 @@ const ReportHasil = () => {
         const res = await periodeService.getAll(1, 100);
         setPeriodes(res.data);
         if (res.data.length > 0) {
-          setSelectedPeriodeId(res.data[0].id);
+          setSelectedPeriodeId(res.data[0].Id);
         }
       } catch (err: any) {
         setError("Gagal mengambil data periode");
@@ -80,7 +80,7 @@ const ReportHasil = () => {
     },
     legend: { show: false },
     xaxis: {
-      categories: reports.map(r => r.karyawan?.nama || "Unknown"),
+      categories: reports.map(r => r.Karyawan?.Nama || "Unknown"),
       axisBorder: { show: false },
       axisTicks: { show: false },
       labels: {
@@ -114,7 +114,7 @@ const ReportHasil = () => {
 
   const chartSeries = [{
     name: 'Nilai Skala',
-    data: reports.map(r => r.nilaiSkala)
+    data: reports.map(r => r.NilaiSkala)
   }];
 
   const bestEmployee = reports.length > 0 ? reports[0] : null;
@@ -135,7 +135,7 @@ const ReportHasil = () => {
                 >
                     <option value={0}>Pilih Periode</option>
                     {periodes.map((p) => (
-                      <option key={p.id} value={p.id}>{p.namaPeriode} - {p.divisi?.namaDivisi}</option>
+                      <option key={p.Id} value={p.Id}>{p.NamaPeriode}</option>
                     ))}
                 </Select>
              </div>
@@ -178,7 +178,7 @@ const ReportHasil = () => {
                   <div className="flex flex-col items-center justify-center space-y-4 py-6 text-center">
                       <div className="relative">
                           <img 
-                              src={`https://ui-avatars.com/api/?name=${bestEmployee.karyawan?.nama}&background=random&size=128`}
+                              src={`https://ui-avatars.com/api/?name=${bestEmployee.Karyawan?.Nama}&background=random&size=128`}
                               alt="Best Employee" 
                               className="w-24 h-24 rounded-full border-4 border-yellow-400 p-1"
                           />
@@ -187,11 +187,11 @@ const ReportHasil = () => {
                           </div>
                       </div>
                       <div>
-                          <h2 className="text-xl font-black text-primary uppercase">{bestEmployee.karyawan?.nama}</h2>
-                          <p className="text-gray-500 font-medium">{bestEmployee.karyawan?.jabatan || "Karyawan"}</p>
+                          <h2 className="text-xl font-black text-primary uppercase">{bestEmployee.Karyawan?.Nama}</h2>
+                          <p className="text-gray-500 font-medium">{bestEmployee.Karyawan?.Jabatan || "Karyawan"}</p>
                       </div>
                       <div className="bg-primary/10 px-6 py-2 rounded-full">
-                          <span className="text-primary font-bold text-lg">Skor: {bestEmployee.nilaiSkala}</span>
+                          <span className="text-primary font-bold text-lg">Skor: {bestEmployee.NilaiSkala}</span>
                       </div>
                   </div>
                 ) : (
@@ -217,17 +217,17 @@ const ReportHasil = () => {
                   {loading ? (
                     <Table.Row><Table.Cell colSpan={6} className="py-10"><Spinner /></Table.Cell></Table.Row>
                   ) : reports.length > 0 ? reports.map((report) => (
-                    <Table.Row key={report.id} className="bg-white dark:border-gray-700 dark:bg-gray-800">
-                      <Table.Cell className="font-bold text-lg text-primary">{report.ranking}</Table.Cell>
+                    <Table.Row key={report.Id} className="bg-white dark:border-gray-700 dark:bg-gray-800">
+                      <Table.Cell className="font-bold text-lg text-primary">{report.Ranking}</Table.Cell>
                       <Table.Cell className="text-left font-bold text-gray-900 dark:text-white">
-                        {report.karyawan?.nama}
+                        {report.Karyawan?.Nama}
                       </Table.Cell>
-                      <Table.Cell>{report.karyawan?.nik}</Table.Cell>
-                      <Table.Cell>{report.karyawan?.jabatan}</Table.Cell>
-                      <Table.Cell className="font-bold text-secondary text-base">{report.nilaiSkala}</Table.Cell>
+                      <Table.Cell>{report.Karyawan?.Nik}</Table.Cell>
+                      <Table.Cell>{report.Karyawan?.Jabatan}</Table.Cell>
+                      <Table.Cell className="font-bold text-secondary text-base">{report.NilaiSkala}</Table.Cell>
                       <Table.Cell>
-                        <Badge color={report.ranking <= 3 ? "success" : "info"} size="sm">
-                          {report.ranking <= 3 ? "Prioritas" : "Sesuai"}
+                        <Badge color={report.Ranking <= 3 ? "success" : "info"} size="sm">
+                          {report.Ranking <= 3 ? "Prioritas" : "Sesuai"}
                         </Badge>
                       </Table.Cell>
                     </Table.Row>

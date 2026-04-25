@@ -9,8 +9,8 @@ import divisiService from "@/services/divisiService";
 const PeriodeKPI = () => {
   const [openModal, setOpenModal] = useState(false);
   const [modalMode, setModalMode] = useState<"create" | "edit" | "detail">("create");
-  const [selectedItem, setSelectedItem] = useState<Partial<Periode> | null>(null);
-  const [periods, setPeriods] = useState<Periode[]>([]);
+  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [periods, setPeriods] = useState<any[]>([]);
   const [divisis, setDivisis] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -33,7 +33,7 @@ const PeriodeKPI = () => {
         divisiService.getAll()
       ]);
       setPeriods(periodRes.data);
-      setTotalItems(periodRes.totalCount);
+      setTotalItems((periodRes as any).totalCount ?? periodRes.data.length ?? 0);
       setDivisis(divisiRes.data);
       setError(null);
     } catch (err: any) {
@@ -48,6 +48,11 @@ const PeriodeKPI = () => {
     if (mode === "create") {
       const now = new Date().toISOString().split('T')[0];
       setSelectedItem({
+        Id: 0,
+        NamaPeriode: "",
+        Status: "Aktif",
+        TanggalMulai: now,
+        TanggalSelesai: now,
         namaPeriode: "",
         tahun: new Date().getFullYear(),
         tanggalMulai: now,
@@ -64,20 +69,31 @@ const PeriodeKPI = () => {
     if (!selectedItem) return;
     try {
       setBtnLoading(true);
-      
+
       // Cleanup data before sending to backend
       const { divisi, kpis, isAktif, ...payload } = selectedItem as any;
-      
+
       // Ensure numeric types
       if (payload.tahun) payload.tahun = Number(payload.tahun);
       if (payload.divisiId) payload.divisiId = Number(payload.divisiId);
       if (payload.id) payload.id = Number(payload.id);
 
       // Add time to date strings if backend expects full DateTime
+      const namaPeriode = payload.namaPeriode || payload.NamaPeriode || "";
+      const tanggalMulaiRaw = payload.tanggalMulai || payload.TanggalMulai || "";
+      const tanggalSelesaiRaw = payload.tanggalSelesai || payload.TanggalSelesai || "";
+      const status = payload.Status || (payload.isAktif ? "Aktif" : "Nonaktif");
+
       const body = {
         ...payload,
-        tanggalMulai: payload.tanggalMulai.includes('T') ? payload.tanggalMulai : `${payload.tanggalMulai}T00:00:00.000Z`,
-        tanggalSelesai: payload.tanggalSelesai.includes('T') ? payload.tanggalSelesai : `${payload.tanggalSelesai}T23:59:59.000Z`
+        NamaPeriode: namaPeriode,
+        Status: status,
+        TanggalMulai: tanggalMulaiRaw
+          ? (tanggalMulaiRaw.includes("T") ? tanggalMulaiRaw : `${tanggalMulaiRaw}T00:00:00.000Z`)
+          : "",
+        TanggalSelesai: tanggalSelesaiRaw
+          ? (tanggalSelesaiRaw.includes("T") ? tanggalSelesaiRaw : `${tanggalSelesaiRaw}T23:59:59.000Z`)
+          : "",
       };
 
       if (modalMode === "create") {
@@ -189,30 +205,36 @@ const PeriodeKPI = () => {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="namaPeriode" value="Nama Periode" />
-                <TextInput 
-                  id="namaPeriode" 
-                  value={selectedItem?.namaPeriode} 
-                  onChange={(e) => setSelectedItem({...selectedItem!, namaPeriode: e.target.value})}
-                  disabled={modalMode === "detail"} 
+                <TextInput
+                  id="namaPeriode"
+                  value={selectedItem?.namaPeriode ?? selectedItem?.NamaPeriode ?? ""}
+                  onChange={(e) => setSelectedItem({ ...selectedItem!, namaPeriode: e.target.value, NamaPeriode: e.target.value })}
+                  disabled={modalMode === "detail"}
                 />
               </div>
               <div>
                 <Label htmlFor="tahun" value="Tahun" />
-                <TextInput 
-                  id="tahun" 
+                <TextInput
+                  id="tahun"
                   type="number"
-                  value={selectedItem?.tahun} 
-                  onChange={(e) => setSelectedItem({...selectedItem!, tahun: parseInt(e.target.value)})}
-                  disabled={modalMode === "detail"} 
+                  value={
+                    selectedItem?.tahun === null ||
+                      selectedItem?.tahun === undefined ||
+                      isNaN(selectedItem?.tahun)
+                      ? ""
+                      : selectedItem.tahun
+                  }
+                  onChange={(e) => setSelectedItem({ ...selectedItem!, tahun: parseInt(e.target.value) })}
+                  disabled={modalMode === "detail"}
                 />
               </div>
             </div>
             <div>
               <Label htmlFor="divisi" value="Target Divisi" />
-              <Select 
-                id="divisi" 
-                value={selectedItem?.divisiId} 
-                onChange={(e) => setSelectedItem({...selectedItem!, divisiId: parseInt(e.target.value)})}
+              <Select
+                id="divisi"
+                value={selectedItem?.divisiId ?? 0}
+                onChange={(e) => setSelectedItem({ ...selectedItem!, divisiId: parseInt(e.target.value) })}
                 disabled={modalMode === "detail"}
               >
                 <option value={0}>Pilih Divisi</option>
@@ -222,24 +244,32 @@ const PeriodeKPI = () => {
               </Select>
             </div>
             <div className="grid grid-cols-2 gap-4">
-               <div>
-                  <Label value="Tanggal Mulai" />
-                  <TextInput 
-                    type="date" 
-                    value={selectedItem?.tanggalMulai?.split('T')[0]} 
-                    onChange={(e) => setSelectedItem({...selectedItem!, tanggalMulai: e.target.value})}
-                    disabled={modalMode === "detail"} 
-                  />
-               </div>
-               <div>
-                  <Label value="Tanggal Selesai" />
-                  <TextInput 
-                    type="date" 
-                    value={selectedItem?.tanggalSelesai?.split('T')[0]} 
-                    onChange={(e) => setSelectedItem({...selectedItem!, tanggalSelesai: e.target.value})}
-                    disabled={modalMode === "detail"} 
-                  />
-               </div>
+              <div>
+                <Label value="Tanggal Mulai" />
+                <TextInput
+                  type="date"
+                  value={selectedItem?.tanggalMulai
+                    ? selectedItem.tanggalMulai.split('T')[0]
+                    : selectedItem?.TanggalMulai
+                      ? selectedItem.TanggalMulai.split('T')[0]
+                      : ""}
+                  onChange={(e) => setSelectedItem({ ...selectedItem!, tanggalMulai: e.target.value, TanggalMulai: e.target.value })}
+                  disabled={modalMode === "detail"}
+                />
+              </div>
+              <div>
+                <Label value="Tanggal Selesai" />
+                <TextInput
+                  type="date"
+                  value={selectedItem?.tanggalSelesai
+                    ? selectedItem.tanggalSelesai.split('T')[0]
+                    : selectedItem?.TanggalSelesai
+                      ? selectedItem.TanggalSelesai.split('T')[0]
+                      : ""}
+                  onChange={(e) => setSelectedItem({ ...selectedItem!, tanggalSelesai: e.target.value, TanggalSelesai: e.target.value })}
+                  disabled={modalMode === "detail"}
+                />
+              </div>
             </div>
           </div>
         </Modal.Body>

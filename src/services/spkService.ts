@@ -45,21 +45,21 @@ export interface MooraPenilaian {
 }
 
 export interface SpkReport {
-  id: number;
-  periodeId: number;
-  periode: {
-    id: number;
-    namaPeriode: string;
-    tahun: number;
+  Id: number;
+  PeriodeId: number;
+  Periode: {
+    Id: number;
+    NamaPeriode: string;
+    Tahun: number;
   } | null;
-  nilaiSkala: number;
-  nilaiOptimasi: number;
-  ranking: number;
-  karyawan: {
-    id: number;
-    nik: string;
-    nama: string;
-    jabatan: string;
+  NilaiSkala: number;
+  NilaiOptimasi: number;
+  Ranking: number;
+  Karyawan: {
+    Id: number;
+    Nik: string;
+    Nama: string;
+    Jabatan: string;
   } | null;
 }
 
@@ -81,55 +81,92 @@ export interface ApiBaseResponse<T = unknown> {
 const spkService = {
   // AHP Endpoints
   getAhpPerbandingan: async (periodeId: number) => {
-    const response = await axiosServices.get<ApiBaseResponse<AhpPerbandingan[]>>(`/Spk/ahp/perbandingan/${periodeId}`);
-    return response.data;
+    const response = await axiosServices.get<any>(`/spk/ahp/perbandingan/${periodeId}`);
+    const rawList = Array.isArray(response.data)
+      ? response.data
+      : Array.isArray(response.data?.data)
+        ? response.data.data
+        : [];
+
+    const data: AhpPerbandingan[] = rawList.map((item: any) => ({
+      ...item,
+      id: Number(item.id ?? 0),
+      periodeId: Number(item.periodeId ?? item.PeriodeId ?? periodeId),
+      kpiAId: Number(item.kpiAId ?? item.KpiAId ?? item.kpi_a_id ?? 0),
+      kpiBId: Number(item.kpiBId ?? item.KpiBId ?? item.kpi_b_id ?? 0),
+      nilai: Number(item.nilai ?? item.Nilai ?? 1),
+    }));
+
+    return {
+      success: Boolean(response.data?.success ?? true),
+      data,
+    };
   },
 
-  saveAhpPerbandingan: async (payload: Partial<AhpPerbandingan>[]) => {
-    const response = await axiosServices.post<ApiBaseResponse<null>>('/Spk/ahp/perbandingan', payload);
-    return response.data;
-  },
-
-  deleteAhpPerbandingan: async (periodeId: number) => {
-    const response = await axiosServices.delete<ApiBaseResponse<null>>(`/Spk/ahp/perbandingan/${periodeId}`);
+  saveAhpPerbandingan: async (payload: { PeriodeId: number; KpiAId: number; KpiBId: number; Nilai: number }[]) => {
+    const response = await axiosServices.post<{ message: string; success: boolean }>('/spk/ahp/perbandingan', payload);
     return response.data;
   },
 
   calculateAhpWeight: async (periodeId: number) => {
-    const response = await axiosServices.post<ApiBaseResponse<null>>(`/Spk/ahp/calculate-weight/${periodeId}`);
+    const response = await axiosServices.post<{ data: number[]; success: boolean }>(`/spk/ahp/calculate-weight/${periodeId}`);
     return response.data;
   },
 
   // MOORA Endpoints
-  getMooraPenilaian: async (periodeId: number, karyawanId?: number) => {
-    const url = karyawanId 
-      ? `/Spk/moora/penilaian/${periodeId}?karyawanId=${karyawanId}`
-      : `/Spk/moora/penilaian/${periodeId}`;
-    const response = await axiosServices.get<ApiBaseResponse<MooraPenilaian[]>>(url);
-    return response.data;
-  },
-
-  saveMooraPenilaian: async (payload: Partial<MooraPenilaian>[]) => {
-    const response = await axiosServices.post<ApiBaseResponse<null>>('/Spk/moora/penilaian', payload);
-    return response.data;
-  },
-
-  deleteMooraPenilaian: async (periodeId: number, karyawanId: number) => {
-    const response = await axiosServices.delete<ApiBaseResponse<null>>(`/Spk/moora/penilaian/${periodeId}/${karyawanId}`);
+  saveMooraPenilaian: async (payload: { KaryawanId: number; KpiId: number; PeriodeId: number; Nilai: number }[]) => {
+    const response = await axiosServices.post<{ message: string; success: boolean }>('/spk/moora/penilaian', payload);
     return response.data;
   },
 
   calculateMoora: async (periodeId: number) => {
-    const response = await axiosServices.post<ApiBaseResponse<null>>(`/Spk/moora/calculate/${periodeId}`);
+    const response = await axiosServices.post<{ message: string; success: boolean }>(`/spk/moora/calculate/${periodeId}`);
     return response.data;
   },
 
   // Report Endpoints
   getReport: async (periodeId: number, page = 1, pageSize = 10) => {
-    const response = await axiosServices.get<ReportResponse>(`/Spk/report/${periodeId}`, {
+    const response = await axiosServices.get<any>(`/spk/moora/hasil/${periodeId}`, {
       params: { page, pageSize }
     });
-    return response.data;
+    const rawList = Array.isArray(response.data)
+      ? response.data
+      : Array.isArray(response.data?.data)
+        ? response.data.data
+        : [];
+
+    const mapped: SpkReport[] = rawList.map((item: any): SpkReport => ({
+        Id: Number(item.Id ?? item.id ?? item.karyawan_id ?? 0),
+        PeriodeId: Number(item.PeriodeId ?? item.periodeId ?? periodeId),
+        Periode: item.Periode ?? null,
+        NilaiSkala: Number(item.NilaiSkala ?? item.nilai_skala ?? item.nilai ?? 0),
+        NilaiOptimasi: Number(item.NilaiOptimasi ?? item.nilai_optimasi ?? 0),
+        Ranking: Number(item.Ranking ?? item.ranking ?? 0),
+        Karyawan: item.Karyawan
+          ? {
+              Id: Number(item.Karyawan.Id ?? item.Karyawan.id ?? 0),
+              Nik: item.Karyawan.Nik ?? item.Karyawan.nik ?? '',
+              Nama: item.Karyawan.Nama ?? item.Karyawan.name ?? '',
+              Jabatan: item.Karyawan.Jabatan ?? item.Karyawan.role ?? '',
+            }
+          : {
+              Id: Number(item.karyawan_id ?? 0),
+              Nik: item.nik ?? '',
+              Nama: item.name ?? item.nama ?? '',
+              Jabatan: item.role ?? '',
+            },
+      }));
+
+    const data = mapped.sort((left, right) => left.Ranking - right.Ranking);
+
+    return {
+      success: Boolean(response.data?.success ?? true),
+      message: response.data?.message || 'OK',
+      data,
+      totalCount: data.length,
+      page,
+      pageSize,
+    };
   }
 };
 

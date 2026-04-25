@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { Table, Button, Badge, Spinner, Alert, Modal, Label, TextInput, Checkbox } from "flowbite-react";
 import CardBox from "@/app/components/shared/CardBox";
 import { Icon } from "@iconify/react";
-import roleService, { Role, RolePermission } from "@/services/roleService";
+import roleService, { Role } from "@/services/roleService";
 import permissionService, { Permission } from "@/services/permissionService";
 import { usePermission } from "@/hooks/usePermission";
 
@@ -81,7 +81,8 @@ const RolePage = () => {
         const existing = role.rolePermissions.find(rp => rp.permissionId === permissionId);
         try {
             if (existing) {
-                await roleService.revokePermission(existing.id);
+                alert("Revoke permission belum didukung backend saat ini.");
+                return;
             } else {
                 await roleService.assignPermission(role.id, permissionId);
             }
@@ -101,12 +102,6 @@ const RolePage = () => {
                     </h1>
                     <p className="text-sm text-gray-500">Konfigurasi hak akses per tingkatan jabatan (ACL)</p>
                 </div>
-                {hasPermission("user_manage") && (
-                    <Button color="primary" onClick={() => handleOpenModal()}>
-                        <Icon icon="solar:add-circle-linear" className="mr-2 h-5 w-5" />
-                        Tambah Role
-                    </Button>
-                )}
             </div>
 
             {error && <Alert color="failure">{error}</Alert>}
@@ -144,7 +139,7 @@ const RolePage = () => {
                                                             id={`role-${role.id}-perm-${perm.id}`}
                                                             checked={isAssigned}
                                                             onChange={() => togglePermission(role, perm.id)}
-                                                            disabled={!hasPermission("user_manage")}
+                                                            disabled={!hasPermission("user_manage") || isAssigned}
                                                         />
                                                         <div className="flex flex-col">
                                                             <Label htmlFor={`role-${role.id}-perm-${perm.id}`} className="text-xs font-semibold cursor-pointer">
@@ -159,16 +154,7 @@ const RolePage = () => {
                                     </Table.Cell>
                                     <Table.Cell className="align-top pt-4">
                                         <div className="flex justify-center gap-2">
-                                            {hasPermission("user_manage") && (
-                                                <>
-                                                    <Button size="xs" color="light" onClick={() => handleOpenModal(role)}>
-                                                        <Icon icon="solar:pen-new-square-linear" className="h-4 w-4 text-primary" />
-                                                    </Button>
-                                                    <Button size="xs" color="light" onClick={() => handleDelete(role.id)}>
-                                                        <Icon icon="solar:trash-bin-trash-linear" className="h-4 w-4 text-red-500" />
-                                                    </Button>
-                                                </>
-                                            )}
+                                            <Badge color="gray" size="sm">Role CRUD belum tersedia</Badge>
                                         </div>
                                     </Table.Cell>
                                 </Table.Row>
@@ -177,31 +163,6 @@ const RolePage = () => {
                     </Table>
                 </div>
             </CardBox>
-
-            <Modal show={showModal} onClose={() => setShowModal(false)}>
-                <Modal.Header>{editData ? 'Edit Role' : 'Tambah Role Baru'}</Modal.Header>
-                <Modal.Body>
-                    <div className="space-y-4">
-                        <div>
-                            <Label htmlFor="roleName" value="Role Name" />
-                            <TextInput
-                                id="roleName"
-                                placeholder="e.g. Supervisor"
-                                value={formData.name}
-                                onChange={(e) => setFormData({ name: e.target.value })}
-                                required
-                            />
-                        </div>
-                    </div>
-                </Modal.Body>
-                <Modal.Footer>
-                    <Button color="primary" onClick={handleSave} disabled={saving}>
-                        {saving ? <Spinner size="sm" className="mr-2" /> : null}
-                        Simpan
-                    </Button>
-                    <Button color="gray" onClick={() => setShowModal(false)}>Batal</Button>
-                </Modal.Footer>
-            </Modal>
         </div>
     );
 };

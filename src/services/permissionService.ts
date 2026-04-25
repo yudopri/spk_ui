@@ -15,26 +15,54 @@ export interface PermissionResponse {
 
 const permissionService = {
   getAll: async () => {
-    const response = await axiosServices.get<PermissionResponse>('/User/permission');
-    return response.data;
+    const response = await axiosServices.get<any>('/auth/permissions');
+    const rawList = Array.isArray(response.data)
+      ? response.data
+      : Array.isArray(response.data?.data)
+        ? response.data.data
+        : Array.isArray(response.data?.permissions)
+          ? response.data.permissions
+          : [];
+
+    const mapped: Permission[] = rawList.map((item: any, index: number) => {
+      if (typeof item === 'string') {
+        return {
+          id: index + 1,
+          name: item,
+          description: '',
+        };
+      }
+
+      return {
+        id: Number(item.id ?? index + 1),
+        name: item.name ?? item.permission ?? item.code ?? '',
+        description: item.description ?? '',
+        rolePermissions: item.rolePermissions ?? null,
+      };
+    });
+
+    return {
+      success: Boolean(response.data?.success ?? true),
+      message: response.data?.message,
+      data: mapped,
+    };
   },
 
   create: async (data: Omit<Permission, 'id'>) => {
-    const response = await axiosServices.post('/User/permission', {
-      ...data,
-      id: 0
+    const response = await axiosServices.post('/auth/permissions', {
+      name: data.name,
+      description: data.description,
     });
     return response.data;
   },
 
   update: async (data: Permission) => {
-    const response = await axiosServices.put('/User/permission', data);
+    const response = await axiosServices.post('/auth/permissions', data);
     return response.data;
   },
 
   delete: async (id: number) => {
-    const response = await axiosServices.delete(`/User/permission/${id}`);
-    return response.data;
+    throw new Error('Endpoint delete permission belum tersedia pada backend SPK terbaru (hanya GET/POST).');
   }
 };
 

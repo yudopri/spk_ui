@@ -30,7 +30,6 @@ const SidebarContent: MenuItem[] = [
     items: [
       {
         heading: "Dashboard",
-        permission: "menu_dashboard",
         children: [
           {
             name: "Dashboard",
@@ -42,21 +41,20 @@ const SidebarContent: MenuItem[] = [
       },
       {
         heading: "Master Data",
-        permission: "menu_master_data",
         children: [
           {
             name: "Data Divisi",
             icon: "solar:buildings-2-linear",
             id: uniqueId(),
             url: "/apps/divisi",
-            permission: "divisi_view",
+            permission: "department_view",
           },
           {
             name: "Data Karyawan",
             icon: "solar:users-group-rounded-linear",
             id: uniqueId(),
             url: "/apps/karyawan",
-            permission: "karyawan_view",
+            permission: "employee_view",
           },
           {
             name: "Periode KPI",
@@ -76,40 +74,37 @@ const SidebarContent: MenuItem[] = [
       },
       {
         heading: "Proses SPK",
-        permission: "menu_assessment",
         children: [
           {
             name: "Nilai Perbandingan",
             icon: "solar:transfer-horizontal-linear",
             id: uniqueId(),
             url: "/apps/perbandingan",
-            permission: "kpi_manage",
+            permission: "spk_view",
           },
           {
             name: "Penilaian Karyawan",
             icon: "solar:star-line-duotone",
             id: uniqueId(),
             url: "/apps/penilaian",
-            permission: "score_view",
+            permission: "spk_view",
           },
         ],
       },
       {
         heading: "Laporan",
-        permission: "menu_report",
         children: [
           {
             name: "Report Hasil",
             icon: "solar:printer-minimalistic-linear",
             id: uniqueId(),
             url: "/apps/report",
-            permission: "report_view",
+            permission: "spk_view",
           },
         ],
       },
       {
         heading: "System",
-        permission: "menu_settings",
         children: [
           {
             name: "User Management",

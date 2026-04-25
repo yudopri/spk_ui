@@ -59,16 +59,6 @@ const PermissionPage = () => {
         }
     };
 
-    const handleDelete = async (id: number) => {
-        if (!confirm("Apakah Anda yakin ingin menghapus permission ini?")) return;
-        try {
-            await permissionService.delete(id);
-            fetchPermissions();
-        } catch (err: any) {
-            alert(err?.response?.data?.message || "Gagal menghapus data");
-        }
-    };
-
     return (
         <div className="flex flex-col gap-6">
             <div className="flex justify-between items-center bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm">
@@ -120,9 +110,6 @@ const PermissionPage = () => {
                                         <div className="flex justify-center gap-2">
                                             <Button size="xs" color="light" onClick={() => handleOpenModal(item)}>
                                                 <Icon icon="solar:pen-new-square-linear" className="h-4 w-4 text-primary" />
-                                            </Button>
-                                            <Button size="xs" color="light" onClick={() => handleDelete(item.id)}>
-                                                <Icon icon="solar:trash-bin-trash-linear" className="h-4 w-4 text-red-500" />
                                             </Button>
                                         </div>
                                     </Table.Cell>

@@ -12,77 +12,51 @@ function decodeJwt(token: string) {
   }
 }
 
-// Map permissions to application paths
-const PERMISSION_MAP: Record<string, string[]> = {
-  "divisi_view": ["/apps/divisi"],
-  "divisi_create": ["/apps/divisi"],
-  "divisi_update": ["/apps/divisi"],
-  "divisi_delete": ["/apps/divisi"],
-  "karyawan_view": ["/apps/karyawan"],
-  "karyawan_create": ["/apps/karyawan"],
-  "karyawan_update": ["/apps/karyawan"],
-  "karyawan_delete": ["/apps/karyawan"],
-  "kpi_view": ["/apps/data-kpi"],
-  "kpi_manage": ["/apps/perbandingan", "/apps/data-kpi"],
-  "periode_view": ["/apps/periode-kpi"],
-  "periode_create": ["/apps/periode-kpi"],
-  "periode_update": ["/apps/periode-kpi"],
-  "periode_delete": ["/apps/periode-kpi"],
-  "score_view": ["/apps/penilaian"],
-  "score_input": ["/apps/penilaian"],
-  "report_view": ["/apps/report"],
-  "user_manage": ["/apps/user", "/apps/role", "/apps/permission"],
+function normalizePermissions(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((item: any) => {
+      if (typeof item === "string") return item;
+      if (item && typeof item === "object") {
+        return item.name || item.permission || item.code || "";
+      }
+      return "";
+    })
+    .filter((item: string) => Boolean(item));
+}
+
+function parseCookiePermissions(value: string | undefined): string[] {
+  if (!value) return [];
+  try {
+    const decoded = decodeURIComponent(value);
+    const parsed = JSON.parse(decoded) as unknown;
+    return normalizePermissions(parsed);
+  } catch {
+    return [];
+  }
+}
+
+const ROUTE_PERMISSION_RULES: Array<{ prefix: string; anyOf: string[] }> = [
+  { prefix: "/apps/karyawan", anyOf: ["employee_view"] },
+  { prefix: "/apps/divisi", anyOf: ["department_view"] },
+  { prefix: "/apps/periode-kpi", anyOf: ["periode_view", "periode_manage"] },
+  { prefix: "/apps/data-kpi", anyOf: ["kpi_view", "kpi_manage", "spk_calculate"] },
+  { prefix: "/apps/perbandingan", anyOf: ["spk_view", "spk_manage", "spk_calculate"] },
+  { prefix: "/apps/penilaian", anyOf: ["spk_view", "spk_manage", "score_input"] },
+  { prefix: "/apps/report", anyOf: ["spk_view", "spk_calculate"] },
+  { prefix: "/apps/user", anyOf: ["user_manage"] },
+  { prefix: "/apps/role", anyOf: ["user_manage"] },
+  { prefix: "/apps/permission", anyOf: ["user_manage"] },
+];
+
+export const config = {
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|images).*)',
+  ],
 };
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-
-  // 1. Proxy API Request (e.g., from /api/proxy/* to https://localhost:7243/api/*)
-  if (pathname.startsWith("/api/proxy")) {
-    const targetPath = request.nextUrl.pathname.replace("/api/proxy", "/api");
-    const searchParams = request.nextUrl.searchParams.toString();
-    const targetUrl = `https://127.0.0.1:7243${targetPath}${searchParams ? '?' + searchParams : ''}`;
-
-    const headers = new Headers(request.headers);
-    headers.set("host", "127.0.0.1:7243");
-
-    // Remove headers that might cause issues with proxying to localhost/C#
-    headers.delete("connection");
-    headers.delete("content-length");
-    headers.delete("host"); // Let fetch set it from targetUrl
-
-    try {
-      console.log(`Proxying ${request.method} to: ${targetUrl}`);
-      
-      const body = (request.method !== 'GET' && request.method !== 'HEAD') ? await request.arrayBuffer() : undefined;
-
-      const response = await fetch(targetUrl, {
-        method: request.method,
-        headers: headers,
-        body: body,
-        // @ts-ignore
-        duplex: 'half',
-      });
-
-      // Special handling for 500 from backend to see if it's the backend itself
-      if (response.status === 500) {
-        console.error("Backend returned 500 error");
-      }
-
-      return new NextResponse(response.body, {
-        status: response.status,
-        statusText: response.statusText,
-        headers: response.headers,
-      });
-    } catch (error: any) {
-      console.error("Proxy Fetch Error Detail:", error.message, error.cause);
-      return NextResponse.json({ 
-        success: false, 
-        message: "Proxy Connection Error", 
-        detail: error.message 
-      }, { status: 502 });
-    }
-  }
 
   // 2. Auth Protection Logic
   const token = request.cookies.get("token")?.value;
@@ -96,15 +70,19 @@ export async function middleware(request: NextRequest) {
 
   if (token && isAuthPage) {
     const url = request.nextUrl.clone();
-    url.pathname = "/";
+    url.pathname = "/dashboards"; // Changed from "/" to "/dashboards"
     return NextResponse.redirect(url);
   }
 
   // 3. Role-Based Access Control (RBAC) Logic
   if (token && pathname.startsWith("/apps/")) {
     const payload = decodeJwt(token);
-    const userRole = payload?.role;
-    const permissions: string[] = Array.isArray(payload?.Permission) ? payload.Permission : [];
+    const userRole = payload?.role || payload?.Role || "";
+    const cookiePermissions = parseCookiePermissions(request.cookies.get("permissions")?.value);
+    const claimPermissions = normalizePermissions(
+      payload?.permissions ?? payload?.Permission ?? payload?.permission ?? payload?.permissions_array ?? []
+    );
+    const permissions = cookiePermissions.length > 0 ? cookiePermissions : claimPermissions;
 
     // Admin & Developer bypass everything in /apps/
     if (userRole === "Admin" || userRole === "Developer") {
@@ -112,31 +90,16 @@ export async function middleware(request: NextRequest) {
     }
 
     // Check if user has permission for the current path
-    const requiredPermission = Object.keys(PERMISSION_MAP).find(perm => 
-      PERMISSION_MAP[perm].some(path => pathname.startsWith(path))
-    );
+    const matchedRule = ROUTE_PERMISSION_RULES.find((rule) => pathname.startsWith(rule.prefix));
+    const isAllowed = !matchedRule || matchedRule.anyOf.some((perm) => permissions.includes(perm));
 
-    if (requiredPermission && !permissions.includes(requiredPermission)) {
-      console.warn(`User unauthorized for ${pathname}. Required: ${requiredPermission}`);
+    if (!isAllowed) {
+      console.warn(`User unauthorized for ${pathname}. Permissions: ${permissions.join(",")}`);
       const url = request.nextUrl.clone();
-      url.pathname = "/dashboards"; // Redirect to safe page
-      url.searchParams.set("error", "unauthorized");
+      url.pathname = "/403"; // Specific 403 page instead of generic dashboard
       return NextResponse.redirect(url);
     }
   }
 
   return NextResponse.next();
 }
-
-export const config = {
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - images (public images)
-     */
-    "/((?!_next/static|_next/image|favicon.ico|images).*)",
-  ],
-};

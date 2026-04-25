@@ -23,10 +23,10 @@ const NilaiPerbandingan = () => {
       try {
         setLoading(true);
         const res = await periodeService.getAll(1, 100);
-        const aktif = res.data.filter((p) => p.isAktif);
+        const aktif = res.data.filter((p: Periode) => p.isAktif);
         setPeriodes(aktif);
         if (aktif.length > 0) {
-          setSelectedPeriodeId(aktif[0].id);
+          setSelectedPeriodeId(aktif[0].Id);
         }
       } catch (err: any) {
         setError(err?.response?.data?.message || "Gagal mengambil data periode aktif");
@@ -43,13 +43,15 @@ const NilaiPerbandingan = () => {
       if (!selectedPeriodeId) return;
       try {
         setLoading(true);
-        const res = await kpiService.getByPeriode(selectedPeriodeId, 1, 100);
+        const res = await kpiService.getByPeriode(selectedPeriodeId);
         setKpis(res.data);
 
         const nextValues: Record<string, number> = {};
         for (let i = 0; i < res.data.length; i++) {
           for (let j = i + 1; j < res.data.length; j++) {
-            nextValues[`${res.data[i].id}-${res.data[j].id}`] = 1;
+            const idA = res.data[i].Id;
+            const idB = res.data[j].Id;
+            nextValues[`${idA}-${idB}`] = 1;
           }
         }
         setComparisonValues(nextValues);
@@ -86,17 +88,19 @@ const NilaiPerbandingan = () => {
     const generated: { kpiA: KPI; kpiB: KPI; key: string }[] = [];
     for (let i = 0; i < kpis.length; i++) {
       for (let j = i + 1; j < kpis.length; j++) {
+        const idA = kpis[i].Id;
+        const idB = kpis[j].Id;
         generated.push({
           kpiA: kpis[i],
           kpiB: kpis[j],
-          key: `${kpis[i].id}-${kpis[j].id}`,
+          key: `${idA}-${idB}`,
         });
       }
     }
     return generated;
   }, [kpis]);
 
-  const selectedPeriode = periodes.find((p) => p.id === selectedPeriodeId);
+  const selectedPeriode = periodes.find((p) => p.Id === selectedPeriodeId);
 
   const handleSavePerbandingan = async () => {
     if (!selectedPeriodeId || pairs.length === 0) return;
@@ -106,16 +110,38 @@ const NilaiPerbandingan = () => {
       setError(null);
       setSuccess(null);
 
-      const payload = pairs.map((pair) => ({
-        id: 0,
-        periodeId: selectedPeriodeId,
-        kpiAId: pair.kpiA.id,
-        kpiBId: pair.kpiB.id,
-        nilai: Number(comparisonValues[pair.key] || 1),
+      // Construct matrix
+      const comparison_matrix: number[][] = Array(kpis.length).fill(0).map(() => Array(kpis.length).fill(1));
+
+      for (let i = 0; i < kpis.length; i++) {
+        for (let j = i + 1; j < kpis.length; j++) {
+          const kpiA = kpis[i];
+          const kpiB = kpis[j];
+          const key = `${kpiA.Id}-${kpiB.Id}`;
+          const val = Number(comparisonValues[key] || 1);
+          comparison_matrix[i][j] = val;
+          comparison_matrix[j][i] = 1 / val;
+        }
+      }
+
+      // Prepare payload for Flask: list of comparisons
+      const payload = pairs.map(pair => ({
+        PeriodeId: selectedPeriodeId,
+        KpiAId: pair.kpiA.Id,
+        KpiBId: pair.kpiB.Id,
+        Nilai: comparisonValues[pair.key] || 1
       }));
 
       const res = await spkService.saveAhpPerbandingan(payload);
+
       setSuccess(res?.message || "Perbandingan berhasil disimpan");
+      
+      // Calculate weights
+      await spkService.calculateAhpWeight(selectedPeriodeId);
+      
+      // Refresh KPI data to get new weights
+      const kpiRes = await kpiService.getByPeriode(selectedPeriodeId);
+      setKpis(kpiRes.data);
     } catch (err: any) {
       setError(err?.response?.data?.message || "Gagal menyimpan perbandingan AHP");
     } finally {
@@ -124,7 +150,7 @@ const NilaiPerbandingan = () => {
   };
 
   const handleCalculate = async () => {
-    if (!selectedPeriodeId) return;
+    if (!selectedPeriodeId || kpis.length === 0) return;
 
     try {
       setCalculating(true);
@@ -132,9 +158,10 @@ const NilaiPerbandingan = () => {
       setSuccess(null);
 
       const res = await spkService.calculateAhpWeight(selectedPeriodeId);
-      setSuccess(res?.message || "Perhitungan bobot berhasil");
+      
+      setSuccess("Perhitungan bobot berhasil");
       // Refresh KPI data to get new weights
-      const kpiRes = await kpiService.getByPeriode(selectedPeriodeId, 1, 100);
+      const kpiRes = await kpiService.getByPeriode(selectedPeriodeId);
       setKpis(kpiRes.data);
     } catch (err: any) {
       setError(err?.response?.data?.message || "Gagal menghitung bobot AHP");
@@ -147,9 +174,9 @@ const NilaiPerbandingan = () => {
     <div className="flex flex-col gap-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Perbandingan Kriteria (AHP)</h1>
+          <h1 className="text-2xl font-bold">Perbandingan Kriteria</h1>
           <p className="text-sm text-gray-500">
-            Tentukan bobot prioritas untuk {selectedPeriode?.namaPeriode || "-"} - {selectedPeriode?.divisi?.namaDivisi || "-"}
+            Tentukan bobot prioritas untuk {selectedPeriode?.NamaPeriode || "-"}
           </p>
         </div>
         <div className="flex gap-4">
@@ -161,8 +188,8 @@ const NilaiPerbandingan = () => {
             >
               <option value={0}>Pilih Periode Aktif</option>
               {periodes.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.namaPeriode} - {p.divisi?.namaDivisi}
+                <option key={p.Id} value={p.Id}>
+                  {p.NamaPeriode}
                 </option>
               ))}
             </Select>
@@ -199,7 +226,7 @@ const NilaiPerbandingan = () => {
                   {pairs.map((pair) => (
                     <Table.Row key={pair.key} className="bg-white dark:border-gray-700 dark:bg-gray-800">
                       <Table.Cell className="font-bold text-gray-900 dark:text-white text-center">
-                        {pair.kpiA.namaKpi}
+                        {pair.kpiA.NamaKpi}
                       </Table.Cell>
                       <Table.Cell>
                         <Select
@@ -222,7 +249,7 @@ const NilaiPerbandingan = () => {
                         </Select>
                       </Table.Cell>
                       <Table.Cell className="font-bold text-gray-900 dark:text-white text-center">
-                        {pair.kpiB.namaKpi}
+                        {pair.kpiB.NamaKpi}
                       </Table.Cell>
                     </Table.Row>
                   ))}
@@ -248,11 +275,11 @@ const NilaiPerbandingan = () => {
             <div className="space-y-4">
               {kpis.length > 0 ? (
                 kpis.map((k, i: number) => {
-                  const percent = k.bobotAhp ? (k.bobotAhp * 100).toFixed(2) : "0";
+                  const percent = (k as any).BobotAhp ? ((k as any).BobotAhp * 100).toFixed(2) : "0";
                   return (
                     <div key={i}>
                       <div className="flex justify-between text-sm mb-1">
-                        <span className="font-medium">{k.namaKpi}</span>
+                        <span className="font-medium">{k.NamaKpi}</span>
                         <span className="font-bold text-primary">{percent}%</span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-700">
@@ -267,7 +294,7 @@ const NilaiPerbandingan = () => {
               ) : (
                 <p className="text-sm text-gray-400 italic text-center py-4">Pilih periode yang valid</p>
               )}
-                {kpis.length > 0 && kpis.some(k => k.bobotAhp !== null) && (
+                {kpis.length > 0 && kpis.some(k => (k as any).BobotAhp !== null) && (
                 <div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-700">
                    <div className="flex justify-between items-center text-xs">
                       <span className="text-gray-500">Status Konsistensi</span>

@@ -5,9 +5,40 @@ import Link from "next/link";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import axiosServices from "@/utils/axios";
+import { AuthUser, setSession } from "@/utils/authSession";
+
+const parseJwt = (token: string) => {
+  try {
+    const base64 = token.split(".")[1];
+    const payload = atob(base64.replace(/-/g, "+").replace(/_/g, "/"));
+    return JSON.parse(payload);
+  } catch {
+    return null;
+  }
+};
+
+const normalizePermissions = (raw: any): string[] => {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((item) => {
+      if (typeof item === "string") return item;
+      if (item && typeof item === "object") return item.name || item.permission || item.code || "";
+      return "";
+    })
+    .filter(Boolean);
+};
+
+interface LoginResponse {
+  status: string;
+  access_token: string;
+  refresh_token: string;
+  user: AuthUser;
+  permissions: string[];
+  message?: string;
+}
 
 const AuthLogin = () => {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -19,28 +50,40 @@ const AuthLogin = () => {
     setError(null);
 
     try {
-      const response = await axiosServices.post("/Auth/login", {
-        username,
+      const response = await axiosServices.post<LoginResponse>("/auth/login", {
+        email,
         password,
       });
 
-      if (response.data.success) {
-        const { token, refreshToken, role, username, permissions } = response.data.data;
-        localStorage.setItem("token", token);
-        localStorage.setItem("refreshToken", refreshToken);
-        localStorage.setItem("userRole", role);
-        localStorage.setItem("userName", username);
-        localStorage.setItem("permissions", JSON.stringify(permissions));
+      if (response && (response.data.status === "success" || response.data.access_token)) {
+        const token = response.data.access_token;
+        const refreshToken = response.data.refresh_token;
+        const claims = token ? parseJwt(token) : null;
+        const rawPermissions = response.data.permissions ?? claims?.permissions ?? claims?.Permission ?? [];
+        const permissions = normalizePermissions(rawPermissions);
+        const userData = response.data.user;
+        const normalizedUser: AuthUser = {
+          id: Number(userData?.id || claims?.id || 0),
+          employee_id: userData?.employee_id ?? claims?.employee_id ?? null,
+          name: userData?.name || claims?.name || "",
+          role: userData?.role || claims?.role || claims?.Role || "",
+          dept_id: userData?.dept_id ?? claims?.dept_id ?? null,
+          lokasi_kerja: userData?.lokasi_kerja ?? claims?.lokasi_kerja ?? null,
+        };
 
-        // Set cookie so middleware knows user is authenticated
-        document.cookie = `token=${token}; path=/; max-age=${3600 * 24}; SameSite=Lax`;
+        setSession({
+          accessToken: token,
+          refreshToken,
+          user: normalizedUser,
+          permissions,
+        });
 
         router.push("/dashboards");
       } else {
         setError(response.data.message || "Login failed");
       }
     } catch (err: any) {
-      setError(err?.message || "An error occurred during login");
+      setError(err?.response?.data?.message || err?.message || "An error occurred during login");
     } finally {
       setLoading(false);
     }
@@ -56,15 +99,15 @@ const AuthLogin = () => {
         )}
         <div className="mb-4">
           <div className="mb-2 block">
-            <Label htmlFor="username" value="Username" />
+            <Label htmlFor="email" value="Email" />
           </div>
           <TextInput
-            id="username"
-            type="text"
+            id="email"
+            type="email"
             sizing="md"
             className="form-control"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             required
           />
         </div>

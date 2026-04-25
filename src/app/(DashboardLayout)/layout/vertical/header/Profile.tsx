@@ -7,6 +7,7 @@ import Image from "next/image";
 import SimpleBar from "simplebar-react";
 import { useRouter } from "next/navigation";
 import axiosServices from "@/utils/axios";
+import { clearSession } from "@/utils/authSession";
 
 const Profile = () => {
   const router = useRouter();
@@ -25,18 +26,11 @@ const Profile = () => {
 
   const handleLogout = async () => {
     try {
-      await axiosServices.post("/Auth/logout");
-    } catch (error) {
-      console.error("Logout error", error);
+      await axiosServices.post("/auth/logout", {}, { _skipAuthRefresh: true } as any);
+    } catch (_error) {
+      // Ignore logout API failure; local session is still cleared below.
     } finally {
-      localStorage.removeItem("token");
-      localStorage.removeItem("refreshToken");
-      localStorage.removeItem("userRole");
-      localStorage.removeItem("userName");
-      localStorage.removeItem("permissions");
-      
-      // Clear cookie for middleware
-      document.cookie = "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
+      clearSession();
       
       router.push("/auth/auth1/login");
     }

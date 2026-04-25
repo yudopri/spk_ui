@@ -14,6 +14,7 @@ const DeveloperPage = () => {
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [auditError, setAuditError] = useState<string | null>(null);
 
   // Audit Log Pagination & Search
   const [logPage, setLogPage] = useState(1);
@@ -41,11 +42,23 @@ const DeveloperPage = () => {
 
   const fetchAuditLogs = async () => {
     try {
+      setAuditError(null);
       const res = await developerService.getAuditLogs(logPage, pageSize, search);
       setAuditLogs(res.data);
       setTotalLogs(res.totalCount);
-    } catch (err) {
-      console.error("Gagal ambil audit logs");
+    } catch (err: any) {
+      const status = err?.status || err?.response?.status;
+      if (status === 404) {
+        setAuditError("Endpoint audit logs belum tersedia di backend saat ini.");
+      } else if (status === 401) {
+        setAuditError("Sesi login berakhir saat mengambil audit logs.");
+      } else if (status === 403) {
+        setAuditError("Anda tidak memiliki izin untuk melihat audit logs.");
+      } else {
+        setAuditError(err?.message || "Gagal mengambil audit logs.");
+      }
+      setAuditLogs([]);
+      setTotalLogs(0);
     }
   };
 
@@ -190,6 +203,7 @@ const DeveloperPage = () => {
 
         <Tabs.Item title="Audit Logs" icon={() => <Icon icon="solar:history-bold-duotone" className="mr-2" />}>
            <CardBox>
+             {auditError && <Alert color="warning" className="mb-4">{auditError}</Alert>}
              <div className="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
                 <div className="w-full md:w-64">
                    <TextInput 
@@ -214,7 +228,7 @@ const DeveloperPage = () => {
                    <Table.HeadCell>IP Address</Table.HeadCell>
                  </Table.Head>
                  <Table.Body>
-                   {auditLogs.map(log => (
+                   {auditLogs.length > 0 ? auditLogs.map(log => (
                      <Table.Row key={log.id}>
                        <Table.Cell className="whitespace-nowrap">{new Date(log.timestamp).toLocaleString()}</Table.Cell>
                        <Table.Cell className="font-bold">{log.username}</Table.Cell>
@@ -233,7 +247,13 @@ const DeveloperPage = () => {
                        </Table.Cell>
                        <Table.Cell className="text-xs font-mono">{log.ipAddress}</Table.Cell>
                      </Table.Row>
-                   ))}
+                   )) : (
+                     <Table.Row>
+                       <Table.Cell colSpan={6} className="text-center py-8 text-gray-500">
+                         {auditError ? "Audit logs tidak tersedia." : "Belum ada data audit logs."}
+                       </Table.Cell>
+                     </Table.Row>
+                   )}
                  </Table.Body>
                </Table>
              </div>

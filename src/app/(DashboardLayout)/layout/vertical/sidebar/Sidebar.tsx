@@ -10,6 +10,17 @@ import SimpleBar from "simplebar-react";
 import FullLogo from "@/app/(DashboardLayout)/layout/shared/logo/FullLogo";
 import { usePathname } from "next/navigation";
 
+const normalizePermissions = (raw: unknown): string[] => {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((item: any) => {
+      if (typeof item === "string") return item;
+      if (item && typeof item === "object") return item.name || item.permission || item.code || "";
+      return "";
+    })
+    .filter((item: string) => Boolean(item));
+};
+
 const SidebarLayout = () => {
   const { selectedIconId, setSelectedIconId } =
     useContext(CustomizerContext) || {};
@@ -20,10 +31,10 @@ const SidebarLayout = () => {
 
   useEffect(() => {
     const perms = localStorage.getItem("permissions");
-    const role = localStorage.getItem("role");
+    const role = localStorage.getItem("userRole"); // Updated from 'role' to 'userRole'
     if (perms) {
       try {
-        setUserPermissions(JSON.parse(perms));
+        setUserPermissions(normalizePermissions(JSON.parse(perms)));
       } catch (e) {
         setUserPermissions([]);
       }

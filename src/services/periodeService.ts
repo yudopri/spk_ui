@@ -10,55 +10,103 @@ export interface KPI {
 }
 
 export interface Periode {
-  id: number;
-  namaPeriode: string;
-  tahun: number;
-  tanggalMulai: string;
-  tanggalSelesai: string;
-  isAktif?: boolean;
-  divisiId: number;
+  Id: number;
+  NamaPeriode: string;
+  Status: string;
+  TanggalMulai: string;
+  TanggalSelesai: string;
+  id?: number;
+  namaPeriode?: string;
+  tahun?: number;
+  tanggalMulai?: string;
+  tanggalSelesai?: string;
   divisi?: {
     id: number;
     namaDivisi: string;
-  };
-  kpis?: KPI[];
+  } | null;
+  // UI legacy fields (optional for compatibility)
+  isAktif?: boolean;
+  divisiId?: number;
 }
 
-export interface PeriodeResponse {
-  success: boolean;
-  message: string;
-  data: Periode[];
-  totalCount: number;
-  page: number;
-  pageSize: number;
-}
+const normalizePeriode = (item: any): Periode => {
+  const mulai = item.TanggalMulai ?? item.tanggalMulai ?? '';
+  const selesai = item.TanggalSelesai ?? item.tanggalSelesai ?? '';
+  const status = item.Status ?? item.status ?? 'Nonaktif';
+  const id = Number(item.Id ?? item.id ?? 0);
+
+  return {
+    ...item,
+    Id: id,
+    id,
+    NamaPeriode: item.NamaPeriode ?? item.namaPeriode ?? '',
+    namaPeriode: item.namaPeriode ?? item.NamaPeriode ?? '',
+    Status: status,
+    TanggalMulai: mulai,
+    tanggalMulai: mulai,
+    TanggalSelesai: selesai,
+    tanggalSelesai: selesai,
+    isAktif: String(status).toLowerCase() === 'aktif',
+    tahun: item.tahun ?? (mulai ? new Date(mulai).getFullYear() : new Date().getFullYear()),
+    divisiId: item.divisiId ?? item.dept_id ?? null,
+    divisi: item.divisi
+      ? {
+          id: Number(item.divisi.id ?? 0),
+          namaDivisi: item.divisi.namaDivisi ?? item.divisi.name ?? '',
+        }
+      : null,
+  };
+};
 
 const periodeService = {
-  getAll: async (page = 1, pageSize = 10, search = '') => {
-    const response = await axios.get<PeriodeResponse>('/Master/periode', {
-      params: { page, pageSize, search }
+  getAll: async (page = 1, pageSize = 100, search = '') => {
+    const response = await axios.get<any>('/spk/periode', {
+      params: {
+        ...(search ? { search } : {}),
+      },
+    });
+
+    const rawList = Array.isArray(response.data)
+      ? response.data
+      : Array.isArray(response.data?.data)
+        ? response.data.data
+        : [];
+
+    const mapped = rawList.map(normalizePeriode);
+    const start = (page - 1) * pageSize;
+    const paged = mapped.slice(start, start + pageSize);
+
+    return {
+      success: true,
+      data: paged,
+      totalCount: mapped.length,
+      page,
+      pageSize,
+    };
+  },
+
+  getById: async (id: number) => {
+    const all = await periodeService.getAll(1, 1000);
+    const found = all.data.find((p) => p.Id === id || p.id === id) || null;
+    return { success: true, data: found };
+  },
+
+  create: async (data: Partial<Periode>) => {
+    const response = await axios.post<{ Id?: number; success?: boolean; message?: string }>('/spk/periode', {
+      NamaPeriode: data.NamaPeriode,
+      TanggalMulai: data.TanggalMulai,
+      TanggalSelesai: data.TanggalSelesai,
+      Status: data.Status || (data.isAktif ? 'Aktif' : 'Nonaktif')
     });
     return response.data;
   },
 
-  getById: async (id: number) => {
-    const response = await axios.get<{ success: boolean; message: string; data: Periode }>(`/Master/periode/${id}`);
-    return response.data;
-  },
-
-  create: async (data: Partial<Periode>) => {
-    const response = await axios.post<{ success: boolean; message: string; data: Periode }>('/Master/periode', data);
-    return response.data;
-  },
-
   update: async (data: Partial<Periode>) => {
-    const response = await axios.put<{ success: boolean; message: string; data: Periode }>('/Master/periode', data);
-    return response.data;
+    throw new Error('Endpoint update periode belum tersedia pada backend SPK terbaru (hanya GET/POST).');
   },
 
   delete: async (id: number) => {
-    const response = await axios.delete<{ success: boolean; message: string }>(`/Master/periode/${id}`);
-    return response.data;
+    throw new Error('Endpoint delete periode belum tersedia pada backend SPK terbaru (hanya GET/POST).');
   }
 };
 

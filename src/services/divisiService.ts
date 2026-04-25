@@ -2,6 +2,7 @@ import axiosServices from '@/utils/axios';
 
 export interface Divisi {
   id: number;
+  name: string;
   namaDivisi: string;
   karyawanCount?: number;
   periodeCount?: number;
@@ -31,29 +32,59 @@ export interface ApiResponse<T> {
 }
 
 const divisiService = {
-  getAll: async (params: { search?: string; page?: number; pageSize?: number; sort?: string } = {}) => {
-    const response = await axiosServices.get<ApiResponse<Divisi[]>>('/Master/divisi', { params });
-    return response.data;
+  getAll: async () => {
+    const response = await axiosServices.get<any>('/departments');
+    const rawList = Array.isArray(response.data)
+      ? response.data
+      : Array.isArray(response.data?.data)
+        ? response.data.data
+        : [];
+
+    const data = rawList.map((item: any) => ({
+      ...item,
+      id: Number(item.id ?? 0),
+      name: item.name ?? item.department_name ?? item.namaDivisi ?? '',
+      namaDivisi: item.namaDivisi ?? item.department_name ?? item.name ?? '',
+    }));
+    return {
+        success: true,
+        message: "Data retrieved",
+        data
+    };
   },
 
   getById: async (id: number) => {
-    const response = await axiosServices.get<ApiResponse<DivisiDetail>>(`/Master/divisi/${id}`);
-    return response.data;
+    const all = await divisiService.getAll();
+    const list = all.data as Divisi[];
+    const data = list.find((item) => item.id === id) || null;
+    return {
+        success: true,
+        data
+    };
   },
 
   create: async (data: any) => {
-    const response = await axiosServices.post<ApiResponse<any>>('/Master/divisi', data);
-    return response.data;
+    return {
+      success: false,
+      message: 'Endpoint create divisi belum tersedia pada API Flask terbaru.',
+      data: null,
+    };
   },
 
   update: async (data: any) => {
-    const response = await axiosServices.put<ApiResponse<any>>('/Master/divisi', data);
-    return response.data;
+    return {
+      success: false,
+      message: 'Endpoint update divisi belum tersedia pada API Flask terbaru.',
+      data: null,
+    };
   },
 
   delete: async (id: number) => {
-    const response = await axiosServices.delete<ApiResponse<any>>(`/Master/divisi/${id}`);
-    return response.data;
+    return {
+      success: false,
+      message: 'Endpoint delete divisi belum tersedia pada API Flask terbaru.',
+      data: null,
+    };
   },
 };
 
