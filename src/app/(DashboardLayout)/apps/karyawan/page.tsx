@@ -17,7 +17,7 @@ const getFriendlyError = (err: any, fallback: string) => {
 };
 
 const DataKaryawan = () => {
-  const { user, normalizedRole, filterEmployeesByScope, isAdminLike, isKaryawan } = usePermission();
+  const { normalizedRole, filterEmployeesByScope, isAdminLike, isKaryawan } = usePermission();
   const [employees, setEmployees] = useState<Karyawan[]>([]);
   const [divisiList, setDivisiList] = useState<Divisi[]>([]);
   const [selectedDeptId, setSelectedDeptId] = useState<string>("");
@@ -42,8 +42,7 @@ const DataKaryawan = () => {
   const fetchEmployees = async () => {
     setLoading(true);
     try {
-      const deptIdFromRole = isAdminLike && user?.dept_id ? Number(user.dept_id) : undefined;
-      const deptParam = deptIdFromRole || (selectedDeptId ? Number(selectedDeptId) : undefined);
+      const deptParam = selectedDeptId ? Number(selectedDeptId) : undefined;
 
       const res = await karyawanService.getAll({
         ...(deptParam ? { dept_id: deptParam } : {}),
@@ -65,12 +64,6 @@ const DataKaryawan = () => {
   useEffect(() => {
     fetchDepartments();
   }, []);
-
-  useEffect(() => {
-    if (isAdminLike && user?.dept_id) {
-      setSelectedDeptId(String(user.dept_id));
-    }
-  }, [isAdminLike, user?.dept_id]);
 
   useEffect(() => {
     fetchEmployees();
@@ -132,7 +125,7 @@ const DataKaryawan = () => {
           includeManagement={includeManagement}
           onIncludeManagementChange={setIncludeManagement}
         />
-        {isAdminLike && <Alert color="info">Role Anda dibatasi hanya melihat data pada divisi sendiri.</Alert>}
+        {isAdminLike && <Alert color="info">Role Anda dapat melihat data karyawan lintas divisi.</Alert>}
         {isKaryawan && <Alert color="info">Role Karyawan hanya dapat melihat data profil sendiri.</Alert>}
       </div>
 

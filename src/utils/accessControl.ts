@@ -161,13 +161,6 @@ export function filterEmployeesByRoleScope<T extends EmployeeScopeItem>(
     });
   }
 
-  if (isAdminLikeRole(role) && user?.dept_id) {
-    return employees.filter((employee) => {
-      const employeeDeptId = Number(employee.departemen_id ?? employee.dept_id ?? 0);
-      return employeeDeptId === Number(user.dept_id);
-    });
-  }
-
   if (isKadivRole(role)) {
     return employees.filter((employee) => {
       const employeeRole = normalizeRole(employee.role || "");
