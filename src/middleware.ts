@@ -1,44 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { canAccessRoute, normalizeRole } from "@/utils/accessControl";
 
-function appendVaryHeader(response: NextResponse, value: string) {
-  const current = response.headers.get("Vary");
-  if (!current) {
-    response.headers.set("Vary", value);
-    return;
-  }
-
-  const values = new Set(
-    current
-      .split(",")
-      .map((item) => item.trim())
-      .filter(Boolean)
-  );
-  value
-    .split(",")
-    .map((item) => item.trim())
-    .filter(Boolean)
-    .forEach((item) => values.add(item));
-
-  response.headers.set("Vary", Array.from(values).join(", "));
-}
-
+/**
+ * Memperbaiki masalah RSC Payload dengan tidak memanipulasi header Vary 
+ * secara manual pada NextResponse.redirect.
+ */
 function applyNoCacheHeaders(response: NextResponse, pathname: string): NextResponse {
-  // Prevent CDN/proxy from caching RSC flight responses as full HTML documents.
-  appendVaryHeader(response, "RSC, Next-Router-State-Tree, Next-Router-Prefetch, Accept");
-
   if (!pathname.startsWith("/api") && !pathname.includes(".")) {
-    response.headers.set("Cache-Control", "private, no-store, no-cache, must-revalidate");
+    response.headers.set("Cache-Control", "no-store, max-age=0, must-revalidate");
   }
-
   return response;
 }
 
-// Helper function to decode JWT in Edge Runtime (Base64 only, no verification)
 function decodeJwt(token: string) {
   try {
     const parts = token.split('.');
     if (parts.length !== 3) return null;
+    // Gunakan Buffer jika di Node, atau atob di Edge Runtime
     const payload = JSON.parse(atob(parts[1]));
     return payload;
   } catch (e) {
@@ -63,8 +41,7 @@ function parseCookiePermissions(value: string | undefined): string[] {
   if (!value) return [];
   try {
     const decoded = decodeURIComponent(value);
-    const parsed = JSON.parse(decoded) as unknown;
-    return normalizePermissions(parsed);
+    return normalizePermissions(JSON.parse(decoded));
   } catch {
     return [];
   }
@@ -72,47 +49,58 @@ function parseCookiePermissions(value: string | undefined): string[] {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|images).*)',
+    /*
+     * Match semua request kecuali:
+     * 1. _next/static (static files)
+     * 2. _next/image (image optimization files)
+     * 3. favicon.ico, images, dsb.
+     */
+    '/((?!_next/static|_next/image|favicon.ico|images|api/auth).*)',
   ],
 };
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-
-  // 2. Auth Protection Logic
   const token = request.cookies.get("token")?.value;
-  const isAuthPage = pathname.startsWith("/auth/auth1/login");
+  const loginPath = "/auth/auth1/login";
+  const isAuthPage = pathname.startsWith(loginPath);
+  const isRoot = pathname === "/";
 
-  if (!token && !isAuthPage && !pathname.startsWith("/api") && !pathname.includes(".")) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/auth/auth1/login";
-    return applyNoCacheHeaders(NextResponse.redirect(url), pathname);
+  // 1. PUBLIC ROUTE PROTECTION (Redirect ke Login)
+  if (!token) {
+    // Jika akses root atau halaman aplikasi tanpa token
+    if (isRoot || (!isAuthPage && !pathname.startsWith("/api") && !pathname.includes("."))) {
+      const url = new URL(loginPath, request.url);
+      // PENTING: Jangan tambahkan custom header aneh pada redirect agar tidak muncul teks JSON
+      return NextResponse.redirect(url);
+    }
+    return NextResponse.next();
   }
 
-  if (token && isAuthPage) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/dashboards"; // Changed from "/" to "/dashboards"
-    return applyNoCacheHeaders(NextResponse.redirect(url), pathname);
+  // 2. AUTHENTICATED REDIRECT (Sudah login tapi buka "/" atau "/login")
+  if (token && (isAuthPage || isRoot)) {
+    return NextResponse.redirect(new URL("/dashboards", request.url));
   }
 
-  // 3. Role-Based Access Control (RBAC) Logic
+  // 3. RBAC LOGIC
   if (token && pathname.startsWith("/apps/")) {
     const payload = decodeJwt(token);
     const userRole = payload?.role || payload?.Role || request.cookies.get("userRole")?.value || "";
+    
     const cookiePermissions = parseCookiePermissions(request.cookies.get("permissions")?.value);
     const claimPermissions = normalizePermissions(
       payload?.permissions ?? payload?.Permission ?? payload?.permission ?? payload?.permissions_array ?? []
     );
+    
     const permissions = cookiePermissions.length > 0 ? cookiePermissions : claimPermissions;
     const isAllowed = canAccessRoute(pathname, normalizeRole(userRole), permissions);
 
     if (!isAllowed) {
-      console.warn(`User unauthorized for ${pathname}. Permissions: ${permissions.join(",")}`);
-      const url = request.nextUrl.clone();
-      url.pathname = "/403"; // Specific 403 page instead of generic dashboard
-      return applyNoCacheHeaders(NextResponse.redirect(url), pathname);
+      console.warn(`Unauthorized: ${pathname}`);
+      return NextResponse.redirect(new URL("/403", request.url));
     }
   }
 
+  // Gunakan no-cache hanya untuk request sukses (NextResponse.next)
   return applyNoCacheHeaders(NextResponse.next(), pathname);
 }
