@@ -5,8 +5,10 @@ import CardBox from "@/app/components/shared/CardBox";
 import { Icon } from "@iconify/react";
 import periodeService, { Periode } from "@/services/periodeService";
 import divisiService from "@/services/divisiService";
+import { usePermission } from "@/hooks/usePermission";
 
 const PeriodeKPI = () => {
+  const { isReadOnly } = usePermission();
   const [openModal, setOpenModal] = useState(false);
   const [modalMode, setModalMode] = useState<"create" | "edit" | "detail">("create");
   const [selectedItem, setSelectedItem] = useState<any>(null);
@@ -130,10 +132,12 @@ const PeriodeKPI = () => {
           <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Periode Penilaian</h1>
           <p className="text-sm text-gray-500">Tentukan rentang waktu penilaian untuk setiap divisi</p>
         </div>
+        {!isReadOnly && (
         <Button color="primary" onClick={() => handleAction("create")}>
           <Icon icon="solar:calendar-add-line-duotone" className="mr-2 h-5 w-5" />
           Tambah Periode
         </Button>
+        )}
       </div>
 
       {error && <Alert color="failure">{error}</Alert>}
@@ -179,12 +183,16 @@ const PeriodeKPI = () => {
                         <Button color="light" size="xs" onClick={() => handleAction("detail", period)}>
                           <Icon icon="solar:eye-linear" className="h-4 w-4" />
                         </Button>
-                        <Button color="light" size="xs" onClick={() => handleAction("edit", period)}>
-                          <Icon icon="solar:pen-new-square-linear" className="h-4 w-4 text-primary" />
-                        </Button>
-                        <Button color="light" size="xs" onClick={() => handleDelete(period.id)}>
-                          <Icon icon="solar:trash-bin-trash-linear" className="h-4 w-4 text-red-500" />
-                        </Button>
+                        {!isReadOnly && (
+                          <>
+                            <Button color="light" size="xs" onClick={() => handleAction("edit", period)}>
+                              <Icon icon="solar:pen-new-square-linear" className="h-4 w-4 text-primary" />
+                            </Button>
+                            <Button color="light" size="xs" onClick={() => handleDelete(period.id)}>
+                              <Icon icon="solar:trash-bin-trash-linear" className="h-4 w-4 text-red-500" />
+                            </Button>
+                          </>
+                        )}
                       </div>
                     </Table.Cell>
                   </Table.Row>
@@ -274,7 +282,7 @@ const PeriodeKPI = () => {
           </div>
         </Modal.Body>
         <Modal.Footer>
-          {modalMode !== "detail" && (
+          {modalMode !== "detail" && !isReadOnly && (
             <Button color="primary" onClick={handleSubmit} disabled={btnLoading}>
               {btnLoading ? <Spinner size="sm" className="mr-2" /> : null}
               Simpan

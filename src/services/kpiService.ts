@@ -1,5 +1,4 @@
 import axios from '../utils/axios';
-import { Periode } from './periodeService';
 
 export interface KPI {
   Id: number;
@@ -75,27 +74,22 @@ const kpiService = {
     return response.data;
   },
 
-  update: async (data: Partial<Periode>) => {
-    // Ambil ID dari mana pun formatnya (antisipasi camelCase/PascalCase)
-    const targetId = data.Id || data.id; 
-    
-    if (!targetId) throw new Error("ID Periode tidak ditemukan");
+  update: async (data: Partial<KPI>) => {
+    const targetId = Number(data.Id ?? data.id ?? 0);
+    if (!targetId) throw new Error('ID KPI tidak ditemukan');
 
-    // Menembak endpoint PUT /api/spk/periode/{id}
-    const response = await axios.put<{ success?: boolean; message?: string }>(`/spk/periode/${targetId}`, {
-      NamaPeriode: data.NamaPeriode || data.namaPeriode,
-      Tahun: data.tahun,
-      DivisiId: data.divisiId,
-      TanggalMulai: data.TanggalMulai || data.tanggalMulai,
-      TanggalSelesai: data.TanggalSelesai || data.tanggalSelesai,
-      Status: data.Status || (data.isAktif ? 'Aktif' : 'Nonaktif')
+    const response = await axios.put<{ success?: boolean; message?: string }>(`/spk/kpi/${targetId}`, {
+      NamaKpi: data.NamaKpi ?? data.namaKpi,
+      Tipe: data.Tipe ?? data.tipe,
+      PeriodeId: data.PeriodeId ?? data.periodeId,
+      Bobot: data.Bobot ?? data.bobot ?? 0,
+      Deskripsi: data.Deskripsi ?? data.deskripsi ?? '',
     });
     return response.data;
   },
 
   delete: async (id: number) => {
-    // Menembak endpoint DELETE /api/spk/periode/{id}
-    const response = await axios.delete<{ success?: boolean; message?: string }>(`/spk/periode/${id}`);
+    const response = await axios.delete<{ success?: boolean; message?: string }>(`/spk/kpi/${id}`);
     return response.data;
   }
 };

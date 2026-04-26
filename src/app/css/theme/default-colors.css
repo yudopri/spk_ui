@@ -1,45 +1,45 @@
 :root {
-    --color-info: #46CAEB;
-    --color-success: #2EA95C;
-    --color-warning: #f8c20a;
-    --color-error: #FF6692;
-    --color-lightsuccess: #2EA95C40;
-    --color-lighterror: #FF669260;
-    --color-lightinfo: #46caeb40;
-    --color-lightwarning: #F8C20A40;
+    --color-info: #2d8fbb;
+    --color-success: #1f8a52;
+    --color-warning: #d89b1a;
+    --color-error: #db4f55;
+    --color-lightsuccess: #1f8a5240;
+    --color-lighterror: #db4f5560;
+    --color-lightinfo: #2d8fbb40;
+    --color-lightwarning: #d89b1a40;
     --color-white: #fff;
-    --color-dark: #1F2A3D;
-    --color-border: #e0e6eb;
+    --color-dark: #12263a;
+    --color-border: #d7e1ea;
     --color-bordergray: #f3f3f4;
-    --color-darkborder: #333F55;
-    --color-link: #2a3547;
-    --color-muted: #EFF4FA;
-    --color-darkmuted: #2A3851;
-    --color-darklink: #29343d;
-    --color-lightgray: #F4F7FB;
-    --color-lighthover: #f6f7f9;
-    --color-darkgray: #1A2537;
-    --color-sky: #0A2540;
-    --color-error-emphasis: #d9577c;
-    --color-warning-emphasis: #d3a509;
-    --color-success-emphasis: #2ea95c;
-    --color-info-emphasis: #3cacc8;
+    --color-darkborder: #29435f;
+    --color-link: #1b3a57;
+    --color-muted: #edf3f8;
+    --color-darkmuted: #1f3348;
+    --color-darklink: #24384d;
+    --color-lightgray: #f2f6fa;
+    --color-lighthover: #e9f1f8;
+    --color-darkgray: #142435;
+    --color-sky: #163149;
+    --color-error-emphasis: #c4444a;
+    --color-warning-emphasis: #bd8916;
+    --color-success-emphasis: #197344;
+    --color-info-emphasis: #257da4;
     --color-surface-ld: #ffffff;
-    --color-bodytext: #98A4AE;
-    --color-warning-rgb: 248, 194, 10;
-    --color-error-rgb: 255, 102, 146;
-    --color-success-rgb: 46, 169, 92;
+    --color-bodytext: #5d7388;
+    --color-warning-rgb: 216, 155, 26;
+    --color-error-rgb: 219, 79, 85;
+    --color-success-rgb: 31, 138, 82;
 }
 
 [data-color-theme="BLUE_THEME"] {
-    --color-primary: #635BFF;
-    --color-secondary: #16CDC7;
-    --color-primary-emphasis: #5249fe;
-    --color-secondary-emphasis: #1cc3bd;
-    --color-lightprimary: #635BFF40;
-    --color-lightsecondary: #16CDC740;
-    --color-primary-rgb: 99, 91, 255;
-    --color-secondary-rgb: 20, 233, 226;
+    --color-primary: #1f4f78;
+    --color-secondary: #2f9d8f;
+    --color-primary-emphasis: #193f60;
+    --color-secondary-emphasis: #278277;
+    --color-lightprimary: #1f4f7830;
+    --color-lightsecondary: #2f9d8f30;
+    --color-primary-rgb: 31, 79, 120;
+    --color-secondary-rgb: 47, 157, 143;
 }
 
 [data-color-theme="AQUA_THEME"] {

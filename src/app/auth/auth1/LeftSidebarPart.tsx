@@ -2,7 +2,6 @@
 import Image from "next/image";
 import React from "react";
 import Bgimg from "@/../public/images/logos/logo-icon.svg";
-import { Button } from "flowbite-react";
 
 const LeftSidebarPart = () => {
   return (
@@ -11,18 +10,22 @@ const LeftSidebarPart = () => {
       <div>
         <Image src={Bgimg} alt="materilm" className="circle-bottom" />
       </div>
-      <div className="flex xl:justify-start justify-center xl:ps-80 h-screen items-center z-10 relative">
+      <div className="flex xl:justify-start justify-center xl:ps-56 h-screen items-center z-10 relative px-10">
         <div className="max-w-md">
-          <h2 className="text-white text-[40px] font-bold leading-[normal]">
-            Welcome to
+          <h2 className="text-white text-[38px] font-bold leading-[1.2]">
+            SPK Penilaian
             <br></br>
-            MatDash
+            Kinerja Karyawan
           </h2>
-          <p className="opacity-75 text-white my-4 text-base font-medium">
-            MatDash helps developers to build organized and well coded
-            dashboards full of beautiful and rich modules.
+          <p className="opacity-80 text-white my-4 text-base font-medium">
+            Kelola data karyawan, periode KPI, penilaian, dan ranking berbasis AHP-MOORA
+            dalam satu dashboard yang terintegrasi.
           </p>
-          <Button className="mt-6" color={"primary"}>Learn More</Button>
+          <div className="mt-8 border border-white/30 rounded-xl p-4 bg-white/10 backdrop-blur-sm">
+            <p className="text-white text-sm leading-6">
+              Fokus sistem: objektif, terukur, dan transparan untuk mendukung keputusan SDM.
+            </p>
+          </div>
         </div>
       </div>
     </>

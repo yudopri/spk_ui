@@ -132,6 +132,7 @@ const SidebarContent: MenuItem[] = [
             icon: "solar:code-bold-linear",
             id: uniqueId(),
             url: "/apps/developer",
+            permission: "audit_view",
           },
         ],
       },

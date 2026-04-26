@@ -86,7 +86,7 @@ const developerService = {
   },
 
   getAuditLogs: async (page = 1, pageSize = 10, search = '') => {
-    const response = await axiosServices.get<AuditLogResponse>('/Developer/audit-logs', {
+    const response = await axiosServices.get<AuditLogResponse>('/auth/audit-logs', {
       params: { page, pageSize, search }
     });
     return response.data;

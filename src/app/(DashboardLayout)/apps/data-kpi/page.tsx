@@ -5,8 +5,10 @@ import CardBox from "@/app/components/shared/CardBox";
 import { Icon } from "@iconify/react";
 import kpiService, { KPI } from "@/services/kpiService";
 import periodeService, { Periode } from "@/services/periodeService";
+import { usePermission } from "@/hooks/usePermission";
 
 const DataKPI = () => {
+  const { isReadOnly } = usePermission();
   const [selectedPeriodeId, setSelectedPeriodeId] = useState<number>(0);
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState<"add" | "edit" | "view">("add");
@@ -150,7 +152,11 @@ const DataKPI = () => {
             color="primary" 
             size="sm" 
             onClick={() => handleOpenModal("add")} 
-            disabled={selectedPeriodeId === 0 || !periodes.find(p => p.id === selectedPeriodeId)?.isAktif}
+            disabled={
+              isReadOnly ||
+              selectedPeriodeId === 0 ||
+              !periodes.find(p => p.id === selectedPeriodeId)?.isAktif
+            }
           >
             <Icon icon="solar:add-circle-linear" className="mr-2 h-5 w-5" />
             Tambah Kriteria
@@ -200,22 +206,26 @@ const DataKPI = () => {
                           <Button color="light" size="xs" onClick={() => handleOpenModal("view", kpi)}>
                             <Icon icon="solar:eye-linear" className="h-4 w-4" />
                           </Button>
-                          <Button 
-                            color="light" 
-                            size="xs" 
-                            onClick={() => handleOpenModal("edit", kpi)}
-                            disabled={!periodes.find(p => p.id === selectedPeriodeId)?.isAktif}
-                          >
-                            <Icon icon="solar:pen-new-square-linear" className="h-4 w-4 text-primary" />
-                          </Button>
-                          <Button 
-                            color="light" 
-                            size="xs" 
-                            onClick={() => handleDelete(kpi.id)}
-                            disabled={!periodes.find(p => p.id === selectedPeriodeId)?.isAktif}
-                          >
-                            <Icon icon="solar:trash-bin-trash-linear" className="h-4 w-4 text-red-500" />
-                          </Button>
+                          {!isReadOnly && (
+                            <>
+                              <Button 
+                                color="light" 
+                                size="xs" 
+                                onClick={() => handleOpenModal("edit", kpi)}
+                                disabled={!periodes.find(p => p.id === selectedPeriodeId)?.isAktif}
+                              >
+                                <Icon icon="solar:pen-new-square-linear" className="h-4 w-4 text-primary" />
+                              </Button>
+                              <Button 
+                                color="light" 
+                                size="xs" 
+                                onClick={() => handleDelete(kpi.id)}
+                                disabled={!periodes.find(p => p.id === selectedPeriodeId)?.isAktif}
+                              >
+                                <Icon icon="solar:trash-bin-trash-linear" className="h-4 w-4 text-red-500" />
+                              </Button>
+                            </>
+                          )}
                         </div>
                       </Table.Cell>
                     </Table.Row>
@@ -273,7 +283,7 @@ const DataKPI = () => {
           </div>
         </Modal.Body>
         <Modal.Footer>
-          {modalType !== "view" && (
+          {modalType !== "view" && !isReadOnly && (
             <Button color="primary" onClick={handleSubmit} disabled={btnLoading}>
               {btnLoading ? <Spinner size="sm" className="mr-2" /> : null}
               Simpan

@@ -20,10 +20,23 @@ export interface Karyawan {
 }
 
 const karyawanService = {
-  getAll: async (params: { dept_id?: number; jabatan_id?: number } = {}) => {
+  getAll: async (
+    params: {
+      dept_id?: number;
+      jabatan_id?: number;
+      lokasi_kerja?: string;
+      include_management_roles?: boolean;
+      role_group?: string;
+    } = {}
+  ) => {
     const response = await axiosServices.get<any>('/employees', {
       params: {
         ...(params.dept_id ? { dept_id: params.dept_id } : {}),
+        ...(params.lokasi_kerja ? { lokasi_kerja: params.lokasi_kerja } : {}),
+        ...(typeof params.include_management_roles === 'boolean'
+          ? { include_management_roles: params.include_management_roles }
+          : {}),
+        ...(params.role_group ? { role_group: params.role_group } : {}),
       },
     });
     const rawList = Array.isArray(response.data)

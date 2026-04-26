@@ -3,6 +3,7 @@ import type { AuthUser } from "@/utils/authSession";
 export type UserRole =
   | "manager"
   | "dev"
+  | "hrd"
   | "kadiv"
   | "admin"
   | "adm"
@@ -12,6 +13,9 @@ export type UserRole =
 export interface EmployeeScopeItem {
   id: number;
   departemen_id?: number | null;
+  dept_id?: number | null;
+  employee_id?: number | null;
+  lokasi_kerja?: string | null;
   role?: string | null;
 }
 
@@ -23,6 +27,7 @@ export function normalizeRole(role: string | null | undefined): UserRole {
   const normalized = normalizeText(role);
   if (normalized === "manager") return "manager";
   if (normalized === "dev" || normalized === "developer") return "dev";
+  if (normalized === "hrd") return "hrd";
   if (normalized === "kadiv") return "kadiv";
   if (normalized === "karyawan" || normalized === "employee" || normalized === "staff") return "karyawan";
   if (normalized === "admin") return "admin";
@@ -42,9 +47,13 @@ export function isKadivRole(role: string | null | undefined): boolean {
   return normalizeRole(role) === "kadiv";
 }
 
+export function isHrdRole(role: string | null | undefined): boolean {
+  return normalizeRole(role) === "hrd";
+}
+
 export function isAdminLikeRole(role: string | null | undefined): boolean {
   const normalized = normalizeRole(role);
-  return normalized === "admin" || normalized === "adm";
+  return normalized === "admin" || normalized === "adm" || normalized === "hrd";
 }
 
 export function isKaryawanRole(role: string | null | undefined): boolean {
@@ -53,7 +62,7 @@ export function isKaryawanRole(role: string | null | undefined): boolean {
 
 export function canAccessAuditLogs(role: string | null | undefined): boolean {
   const normalized = normalizeRole(role);
-  return normalized === "manager" || normalized === "dev";
+  return normalized === "manager" || normalized === "dev" || normalized === "hrd";
 }
 
 export function isReadOnlyBusinessRole(role: string | null | undefined): boolean {
@@ -81,6 +90,8 @@ export function canSeeMenuItem(role: string | null | undefined, permissions: str
       "/dashboards",
       "/apps/divisi",
       "/apps/karyawan",
+      "/apps/periode-kpi",
+      "/apps/data-kpi",
       "/apps/report",
     ];
     return Boolean(path && allowed.some((item) => path.startsWith(item)));
@@ -141,11 +152,18 @@ export function filterEmployeesByRoleScope<T extends EmployeeScopeItem>(
   user: AuthUser | null
 ): T[] {
   if (isKaryawanRole(role) && user?.employee_id) {
-    return employees.filter((employee) => employee.id === user.employee_id);
+    return employees.filter((employee) => {
+      const currentEmployeeId = Number(user.employee_id ?? 0);
+      const employeeId = Number(employee.employee_id ?? employee.id ?? 0);
+      return employeeId === currentEmployeeId;
+    });
   }
 
   if (isAdminLikeRole(role) && user?.dept_id) {
-    return employees.filter((employee) => Number(employee.departemen_id ?? 0) === Number(user.dept_id));
+    return employees.filter((employee) => {
+      const employeeDeptId = Number(employee.departemen_id ?? employee.dept_id ?? 0);
+      return employeeDeptId === Number(user.dept_id);
+    });
   }
 
   if (isKadivRole(role)) {

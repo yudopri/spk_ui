@@ -6,11 +6,14 @@ import { Icon } from "@iconify/react";
 import dynamic from "next/dynamic";
 import spkService, { SpkReport } from "@/services/spkService";
 import periodeService, { Periode } from "@/services/periodeService";
+import { usePermission } from "@/hooks/usePermission";
 
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
 const ReportHasil = () => {
+  const { user, isKaryawan, isAdminLike } = usePermission();
   const [selectedPeriodeId, setSelectedPeriodeId] = useState<number>(0);
+  const [selectedLokasi, setSelectedLokasi] = useState<string>("");
   const [periodes, setPeriodes] = useState<Periode[]>([]);
   const [reports, setReports] = useState<SpkReport[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,8 +39,23 @@ const ReportHasil = () => {
       if (!selectedPeriodeId) return;
       try {
         setLoading(true);
-        const res = await spkService.getReport(selectedPeriodeId, 1, 100);
-        setReports(res.data || []);
+        const res = await spkService.getReport(selectedPeriodeId, 1, 100, selectedLokasi || undefined);
+        const rawReports = res.data || [];
+        const scoped = rawReports.filter((item) => {
+          if (isKaryawan) {
+            const employeeId = Number(item.Karyawan?.Id ?? 0);
+            return employeeId === Number(user?.employee_id ?? 0);
+          }
+
+          if (isAdminLike && user?.dept_id) {
+            const periodeDeptId = Number((item as any)?.Periode?.DivisiId ?? (item as any)?.Periode?.departemen_id ?? 0);
+            return periodeDeptId === Number(user.dept_id);
+          }
+
+          return true;
+        });
+
+        setReports(scoped);
         setError(null);
       } catch (err: any) {
         setError(err?.response?.data?.message || "Gagal mengambil laporan hasil");
@@ -46,7 +64,12 @@ const ReportHasil = () => {
       }
     };
     fetchReport();
-  }, [selectedPeriodeId]);
+  }, [selectedPeriodeId, selectedLokasi, isKaryawan, isAdminLike, user?.employee_id, user?.dept_id]);
+
+  const lokasiOptions = useMemo(() => {
+    const unique = Array.from(new Set(reports.map((r: any) => r?.Karyawan?.LokasiKerja || r?.lokasi_kerja).filter(Boolean))) as string[];
+    return unique;
+  }, [reports]);
 
   const chartOptions: any = {
     chart: {
@@ -127,6 +150,18 @@ const ReportHasil = () => {
           <p className="text-sm text-gray-500">Hasil Ranking Kinerja Karyawan</p>
         </div>
         <div className="flex flex-wrap gap-3">
+             <div className="min-w-48">
+                <Select
+                  value={selectedLokasi}
+                  onChange={(e) => setSelectedLokasi(e.target.value)}
+                  sizing="sm"
+                >
+                    <option value="">Semua Lokasi</option>
+                    {lokasiOptions.map((lokasi) => (
+                      <option key={lokasi} value={lokasi}>{lokasi}</option>
+                    ))}
+                </Select>
+             </div>
              <div className="min-w-48">
                 <Select 
                   value={selectedPeriodeId} 

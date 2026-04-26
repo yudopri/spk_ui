@@ -128,18 +128,12 @@ const AuthLogin = () => {
         <div className="flex justify-between my-5">
           <div className="flex items-center gap-2">
             <Checkbox id="accept" title="accept" className="checkbox" />
-            <Label
-              htmlFor="accept"
-              className="opacity-90 font-normal cursor-pointer"
-            >
-              Remember this Device
+            <Label htmlFor="accept" className="opacity-90 font-normal cursor-pointer">
+              Ingat perangkat ini
             </Label>
           </div>
-          <Link
-            href={"/auth/auth1/forgot-password"}
-            className="text-primary text-sm font-medium"
-          >
-            Forgot Password ?
+          <Link href={"/auth/auth1/forgot-password"} className="text-primary text-sm font-medium">
+            Lupa password?
           </Link>
         </div>
         <Button
@@ -148,7 +142,7 @@ const AuthLogin = () => {
           className="rounded-md w-full"
           disabled={loading}
         >
-          {loading ? "Signing in..." : "Sign in"}
+          {loading ? "Memproses..." : "Masuk"}
         </Button>
       </form>
     </>

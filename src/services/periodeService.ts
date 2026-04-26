@@ -102,11 +102,22 @@ const periodeService = {
   },
 
   update: async (data: Partial<Periode>) => {
-    throw new Error('Endpoint update periode belum tersedia pada backend SPK terbaru (hanya GET/POST).');
+    const targetId = Number(data.Id ?? data.id ?? 0);
+    if (!targetId) throw new Error('ID periode tidak ditemukan.');
+
+    const response = await axios.put<{ success?: boolean; message?: string }>(`/spk/periode/${targetId}`, {
+      NamaPeriode: data.NamaPeriode ?? data.namaPeriode,
+      TanggalMulai: data.TanggalMulai ?? data.tanggalMulai,
+      TanggalSelesai: data.TanggalSelesai ?? data.tanggalSelesai,
+      Status: data.Status || (data.isAktif ? 'Aktif' : 'Nonaktif')
+    });
+
+    return response.data;
   },
 
   delete: async (id: number) => {
-    throw new Error('Endpoint delete periode belum tersedia pada backend SPK terbaru (hanya GET/POST).');
+    const response = await axios.delete<{ success?: boolean; message?: string }>(`/spk/periode/${id}`);
+    return response.data;
   }
 };
 

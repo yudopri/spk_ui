@@ -1,6 +1,6 @@
 import React from "react";
 import type { Metadata } from "next";
-import { Manrope } from "next/font/google";
+import { Outfit } from "next/font/google";
 import "./css/globals.css";
 import { Flowbite, ThemeModeScript } from "flowbite-react";
 import customTheme from "@/utils/theme/custom-theme";
@@ -8,10 +8,11 @@ import { CustomizerContextProvider } from "@/app/context/CustomizerContext";
 import "@/utils/i18n";
 import "@/app/api/index";
 
-const manrope = Manrope({ subsets: ["latin"] });
+const outfit = Outfit({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"] });
 
 export const metadata: Metadata = {
-  title: "Matdash - Nextjs",
+  title: "SPK Kinerja Karyawan",
+  description: "Sistem pendukung keputusan penilaian kinerja karyawan berbasis AHP-MOORA.",
 };
 
 export default function RootLayout({
@@ -20,12 +21,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="id">
       <head>
         <link rel="icon" href="/favicon.png" type="image/svg+xml" />
         <ThemeModeScript />
       </head>
-      <body className={`${manrope.className}`}>
+      <body className={`${outfit.className}`}>
         <Flowbite theme={{ theme: customTheme }}>
           <CustomizerContextProvider>{children}</CustomizerContextProvider>
         </Flowbite>

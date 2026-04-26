@@ -9,9 +9,10 @@ import karyawanService, { Karyawan } from "@/services/karyawanService";
 import divisiService, { Divisi } from "@/services/divisiService";
 import spkService from "@/services/spkService";
 import { usePermission } from "@/hooks/usePermission";
+import { normalizeRole } from "@/utils/accessControl";
 
 const PenilaianKaryawan = () => {
-  const { hasPermission } = usePermission();
+  const { hasPermission, filterEmployeesByScope, normalizedRole } = usePermission();
   const [selectedPeriodeId, setSelectedPeriodeId] = useState<number>(0);
   const [periodes, setPeriodes] = useState<Periode[]>([]);
   const [kpis, setKpis] = useState<KPI[]>([]);
@@ -56,7 +57,13 @@ const PenilaianKaryawan = () => {
         const res = await karyawanService.getAll(
           selectedDeptId === "all" ? {} : { dept_id: Number(selectedDeptId) }
         );
-        setAllEmployees(res.data);
+        const scopedEmployees = (filterEmployeesByScope(res.data || []) as Karyawan[]).filter((employee) => {
+          if (normalizedRole === "kadiv") {
+            return normalizeRole(employee.role) !== "manager";
+          }
+          return true;
+        });
+        setAllEmployees(scopedEmployees);
       } catch (err: any) {
         setError(err?.response?.data?.message || "Gagal mengambil data karyawan");
       }

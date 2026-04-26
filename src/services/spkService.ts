@@ -125,9 +125,13 @@ const spkService = {
   },
 
   // Report Endpoints
-  getReport: async (periodeId: number, page = 1, pageSize = 10) => {
+  getReport: async (periodeId: number, page = 1, pageSize = 10, lokasiKerja?: string) => {
     const response = await axiosServices.get<any>(`/spk/moora/hasil/${periodeId}`, {
-      params: { page, pageSize }
+      params: {
+        page,
+        pageSize,
+        ...(lokasiKerja ? { lokasi_kerja: lokasiKerja } : {}),
+      }
     });
     const rawList = Array.isArray(response.data)
       ? response.data

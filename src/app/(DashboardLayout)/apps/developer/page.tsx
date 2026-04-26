@@ -5,6 +5,7 @@ import CardBox from "@/app/components/shared/CardBox";
 import { Icon } from "@iconify/react";
 import developerService, { AhpDebugData, MooraDebugData, AuditLog } from "@/services/developerService";
 import periodeService, { Periode } from "@/services/periodeService";
+import RoleGuard from "@/app/components/shared/RoleGuard";
 
 const DeveloperPage = () => {
   const [selectedPeriodeId, setSelectedPeriodeId] = useState<number>(0);
@@ -81,6 +82,7 @@ const DeveloperPage = () => {
   };
 
   return (
+    <RoleGuard allow={["manager", "dev", "hrd"]}>
     <div className="flex flex-col gap-6">
       <div className="flex justify-between items-center bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm">
         <div>
@@ -269,6 +271,7 @@ const DeveloperPage = () => {
         </Tabs.Item>
       </Tabs>
     </div>
+    </RoleGuard>
   );
 };
 

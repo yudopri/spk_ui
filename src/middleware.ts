@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { canAccessRoute, normalizeRole } from "@/utils/accessControl";
 
 // Helper function to decode JWT in Edge Runtime (Base64 only, no verification)
 function decodeJwt(token: string) {
@@ -36,19 +37,6 @@ function parseCookiePermissions(value: string | undefined): string[] {
   }
 }
 
-const ROUTE_PERMISSION_RULES: Array<{ prefix: string; anyOf: string[] }> = [
-  { prefix: "/apps/karyawan", anyOf: ["employee_view"] },
-  { prefix: "/apps/divisi", anyOf: ["department_view"] },
-  { prefix: "/apps/periode-kpi", anyOf: ["periode_view", "periode_manage"] },
-  { prefix: "/apps/data-kpi", anyOf: ["kpi_view", "kpi_manage", "spk_calculate"] },
-  { prefix: "/apps/perbandingan", anyOf: ["spk_view", "spk_manage", "spk_calculate"] },
-  { prefix: "/apps/penilaian", anyOf: ["spk_view", "spk_manage", "score_input"] },
-  { prefix: "/apps/report", anyOf: ["spk_view", "spk_calculate"] },
-  { prefix: "/apps/user", anyOf: ["user_manage"] },
-  { prefix: "/apps/role", anyOf: ["user_manage"] },
-  { prefix: "/apps/permission", anyOf: ["user_manage"] },
-];
-
 export const config = {
   matcher: [
     '/((?!_next/static|_next/image|favicon.ico|images).*)',
@@ -77,21 +65,13 @@ export async function middleware(request: NextRequest) {
   // 3. Role-Based Access Control (RBAC) Logic
   if (token && pathname.startsWith("/apps/")) {
     const payload = decodeJwt(token);
-    const userRole = payload?.role || payload?.Role || "";
+    const userRole = payload?.role || payload?.Role || request.cookies.get("userRole")?.value || "";
     const cookiePermissions = parseCookiePermissions(request.cookies.get("permissions")?.value);
     const claimPermissions = normalizePermissions(
       payload?.permissions ?? payload?.Permission ?? payload?.permission ?? payload?.permissions_array ?? []
     );
     const permissions = cookiePermissions.length > 0 ? cookiePermissions : claimPermissions;
-
-    // Admin & Developer bypass everything in /apps/
-    if (userRole === "Admin" || userRole === "Developer") {
-      return NextResponse.next();
-    }
-
-    // Check if user has permission for the current path
-    const matchedRule = ROUTE_PERMISSION_RULES.find((rule) => pathname.startsWith(rule.prefix));
-    const isAllowed = !matchedRule || matchedRule.anyOf.some((perm) => permissions.includes(perm));
+    const isAllowed = canAccessRoute(pathname, normalizeRole(userRole), permissions);
 
     if (!isAllowed) {
       console.warn(`User unauthorized for ${pathname}. Permissions: ${permissions.join(",")}`);
