@@ -79,6 +79,8 @@ export function hasPermission(permissions: string[], permission: string): boolea
 }
 
 export function canSeeMenuItem(role: string | null | undefined, permissions: string[], permission?: string, path?: string): boolean {
+  if (!permission && !path) return true;
+
   if (isManagerRole(role)) return true;
 
   if (path?.startsWith("/apps/developer")) {

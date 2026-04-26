@@ -93,24 +93,32 @@ const SidebarLayout = () => {
             <Sidebar.Items className="pe-4 rtl:pe-0 rtl:ps-4 px-5 mt-2">
               <Sidebar.ItemGroup className="sidebar-nav hide-menu">
                 {selectedContent &&
-                  selectedContent.items?.filter((item) => hasAccess(item.permission)).map((item, index) => (
-                    <div className="caption" key={item.heading}>
-                      <React.Fragment key={index}>
-                        <h5 className="text-link dark:text-white/70 font-semibold caption font-semibold leading-6 tracking-widest text-xs text-sm  pb-2 uppercase">
-                          {item.heading}
-                        </h5>
-                        {item.children?.filter((child) => hasAccess(child.permission, child.url)).map((child, index) => (
-                          <React.Fragment key={String(child.id ?? index)}>
-                            {child.children ? (
-                              <NavCollapse item={child} />
-                            ) : (
-                              <NavItems item={child} />
-                            )}
-                          </React.Fragment>
-                        ))}
-                      </React.Fragment>
-                    </div>
-                  ))}
+                  selectedContent.items?.map((item, index) => {
+                    const visibleChildren = (item.children || []).filter((child) =>
+                      hasAccess(child.permission, child.url)
+                    );
+
+                    if (visibleChildren.length === 0) return null;
+
+                    return (
+                      <div className="caption" key={item.heading}>
+                        <React.Fragment key={index}>
+                          <h5 className="text-link dark:text-white/70 font-semibold caption font-semibold leading-6 tracking-widest text-xs text-sm  pb-2 uppercase">
+                            {item.heading}
+                          </h5>
+                          {visibleChildren.map((child, childIndex) => (
+                            <React.Fragment key={String(child.id ?? childIndex)}>
+                              {child.children ? (
+                                <NavCollapse item={child} />
+                              ) : (
+                                <NavItems item={child} />
+                              )}
+                            </React.Fragment>
+                          ))}
+                        </React.Fragment>
+                      </div>
+                    );
+                  })}
               </Sidebar.ItemGroup>
             </Sidebar.Items>
           </SimpleBar>
