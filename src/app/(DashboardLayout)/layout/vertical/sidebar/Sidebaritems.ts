@@ -65,7 +65,7 @@ const SidebarContent: MenuItem[] = [
           },
           {
             name: "Data KPI (Kriteria)",
-            icon: "solar:document-list-linear",
+            icon: "solar:target-outline-linear",
             id: uniqueId(),
             url: "/apps/data-kpi",
             permission: "kpi_view",
