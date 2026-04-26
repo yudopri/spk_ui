@@ -1,6 +1,39 @@
 import { NextRequest, NextResponse } from "next/server";
 import { canAccessRoute, normalizeRole } from "@/utils/accessControl";
 
+function appendVaryHeader(response: NextResponse, value: string) {
+  const current = response.headers.get("Vary");
+  if (!current) {
+    response.headers.set("Vary", value);
+    return;
+  }
+
+  const values = new Set(
+    current
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean)
+  );
+  value
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .forEach((item) => values.add(item));
+
+  response.headers.set("Vary", Array.from(values).join(", "));
+}
+
+function applyNoCacheHeaders(response: NextResponse, pathname: string): NextResponse {
+  // Prevent CDN/proxy from caching RSC flight responses as full HTML documents.
+  appendVaryHeader(response, "RSC, Next-Router-State-Tree, Next-Router-Prefetch, Accept");
+
+  if (!pathname.startsWith("/api") && !pathname.includes(".")) {
+    response.headers.set("Cache-Control", "private, no-store, no-cache, must-revalidate");
+  }
+
+  return response;
+}
+
 // Helper function to decode JWT in Edge Runtime (Base64 only, no verification)
 function decodeJwt(token: string) {
   try {
@@ -53,13 +86,13 @@ export async function middleware(request: NextRequest) {
   if (!token && !isAuthPage && !pathname.startsWith("/api") && !pathname.includes(".")) {
     const url = request.nextUrl.clone();
     url.pathname = "/auth/auth1/login";
-    return NextResponse.redirect(url);
+    return applyNoCacheHeaders(NextResponse.redirect(url), pathname);
   }
 
   if (token && isAuthPage) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboards"; // Changed from "/" to "/dashboards"
-    return NextResponse.redirect(url);
+    return applyNoCacheHeaders(NextResponse.redirect(url), pathname);
   }
 
   // 3. Role-Based Access Control (RBAC) Logic
@@ -77,9 +110,9 @@ export async function middleware(request: NextRequest) {
       console.warn(`User unauthorized for ${pathname}. Permissions: ${permissions.join(",")}`);
       const url = request.nextUrl.clone();
       url.pathname = "/403"; // Specific 403 page instead of generic dashboard
-      return NextResponse.redirect(url);
+      return applyNoCacheHeaders(NextResponse.redirect(url), pathname);
     }
   }
 
-  return NextResponse.next();
+  return applyNoCacheHeaders(NextResponse.next(), pathname);
 }
