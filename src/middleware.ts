@@ -5,12 +5,7 @@ import { canAccessRoute, normalizeRole } from "@/utils/accessControl";
  * Memperbaiki masalah RSC Payload dengan tidak memanipulasi header Vary 
  * secara manual pada NextResponse.redirect.
  */
-function applyNoCacheHeaders(response: NextResponse, pathname: string): NextResponse {
-  if (!pathname.startsWith("/api") && !pathname.includes(".")) {
-    response.headers.set("Cache-Control", "no-store, max-age=0, must-revalidate");
-  }
-  return response;
-}
+
 
 function decodeJwt(token: string) {
   try {
@@ -101,6 +96,4 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Gunakan no-cache hanya untuk request sukses (NextResponse.next)
-  return applyNoCacheHeaders(NextResponse.next(), pathname);
 }
