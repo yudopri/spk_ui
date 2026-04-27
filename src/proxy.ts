@@ -54,8 +54,31 @@ export const config = {
   ],
 };
 
-export async function middleware(request: NextRequest) {
+function isAssetRequest(pathname: string): boolean {
+  if (pathname.startsWith("/_next/")) return true;
+  if (pathname.startsWith("/images/")) return true;
+  if (pathname === "/favicon.ico") return true;
+  return /\.[a-zA-Z0-9]+$/.test(pathname);
+}
+
+function noStore(response: NextResponse): NextResponse {
+  response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, private, max-age=0");
+  response.headers.set("Pragma", "no-cache");
+  response.headers.set("Expires", "0");
+  response.headers.set(
+    "Vary",
+    "RSC, Next-Router-State-Tree, Next-Router-Prefetch, Accept, Accept-Encoding"
+  );
+  return response;
+}
+
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  if (isAssetRequest(pathname)) {
+    return NextResponse.next();
+  }
+
   const token = request.cookies.get("token")?.value;
   const loginPath = "/auth/auth1/login";
   const isAuthPage = pathname.startsWith(loginPath);
@@ -64,14 +87,14 @@ export async function middleware(request: NextRequest) {
   // 1. PUBLIC ROUTE PROTECTION (Redirect ke Login)
   if (!token) {
     if (isRoot || (!isAuthPage && !pathname.startsWith("/api") && !pathname.includes("."))) {
-      return NextResponse.redirect(new URL(loginPath, request.url));
+      return noStore(NextResponse.redirect(new URL(loginPath, request.url)));
     }
-    return NextResponse.next();
+    return noStore(NextResponse.next());
   }
 
   // 2. AUTHENTICATED REDIRECT (Sudah login tapi buka "/" atau "/login")
   if (token && (isAuthPage || isRoot)) {
-    return NextResponse.redirect(new URL("/dashboards", request.url));
+    return noStore(NextResponse.redirect(new URL("/dashboards", request.url)));
   }
 
   // 3. RBAC LOGIC
@@ -89,8 +112,9 @@ export async function middleware(request: NextRequest) {
 
     if (!isAllowed) {
       console.warn(`Unauthorized: ${pathname}`);
-      return NextResponse.redirect(new URL("/403", request.url));
+      return noStore(NextResponse.redirect(new URL("/403", request.url)));
     }
   }
 
+  return noStore(NextResponse.next());
 }
