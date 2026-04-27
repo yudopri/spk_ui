@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Checkbox, Label, TextInput, Alert } from "flowbite-react";
+import { Button, Checkbox, Label, TextInput, Alert, Spinner } from "flowbite-react";
 import Link from "next/link";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -32,9 +32,14 @@ interface LoginResponse {
   status: string;
   access_token: string;
   refresh_token: string;
+  token?: string;
+  refreshToken?: string;
   user: AuthUser;
   permissions: string[];
+  Permission?: string[];
   message?: string;
+  success?: boolean;
+  data?: any;
 }
 
 const AuthLogin = () => {
@@ -46,6 +51,7 @@ const AuthLogin = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
     setLoading(true);
     setError(null);
 
@@ -55,13 +61,27 @@ const AuthLogin = () => {
         password,
       });
 
-      if (response && (response.data.status === "success" || response.data.access_token)) {
-        const token = response.data.access_token;
-        const refreshToken = response.data.refresh_token;
+      const payload = response?.data || {};
+      const body = payload?.data && typeof payload.data === "object" ? payload.data : payload;
+      const token = body?.access_token || body?.token || payload?.access_token || payload?.token || "";
+      const refreshToken =
+        body?.refresh_token || body?.refreshToken || payload?.refresh_token || payload?.refreshToken || "";
+      const isSuccess = Boolean(
+        payload?.success === true || payload?.status === "success" || body?.status === "success" || token
+      );
+
+      if (isSuccess && token) {
         const claims = token ? parseJwt(token) : null;
-        const rawPermissions = response.data.permissions ?? claims?.permissions ?? claims?.Permission ?? [];
+        const rawPermissions =
+          body?.permissions ??
+          body?.Permission ??
+          payload?.permissions ??
+          payload?.Permission ??
+          claims?.permissions ??
+          claims?.Permission ??
+          [];
         const permissions = normalizePermissions(rawPermissions);
-        const userData = response.data.user;
+        const userData = body?.user || payload?.user || {};
         const normalizedUser: AuthUser = {
           id: Number(userData?.id || claims?.id || 0),
           employee_id: userData?.employee_id ?? claims?.employee_id ?? null,
@@ -78,9 +98,10 @@ const AuthLogin = () => {
           permissions,
         });
 
-        router.push("/dashboards");
+        router.replace("/dashboards");
+        router.refresh();
       } else {
-        setError(response.data.message || "Login failed");
+        setError(payload?.message || body?.message || "Login failed");
       }
     } catch (err: any) {
       setError(err?.response?.data?.message || err?.message || "An error occurred during login");
@@ -142,7 +163,14 @@ const AuthLogin = () => {
           className="rounded-md w-full"
           disabled={loading}
         >
-          {loading ? "Memproses..." : "Masuk"}
+          {loading ? (
+            <span className="flex items-center gap-2">
+              <Spinner size="sm" />
+              Memproses...
+            </span>
+          ) : (
+            "Masuk"
+          )}
         </Button>
       </form>
     </>

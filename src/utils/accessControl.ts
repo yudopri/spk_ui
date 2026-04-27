@@ -129,13 +129,13 @@ export function canAccessRoute(pathname: string, role: string | null | undefined
   }
 
   const permissionRules: Array<{ prefix: string; anyOf: string[] }> = [
-    { prefix: "/apps/karyawan", anyOf: ["employee_view"] },
-    { prefix: "/apps/divisi", anyOf: ["department_view"] },
+    { prefix: "/apps/karyawan", anyOf: ["karyawan_view", "employee_view"] },
+    { prefix: "/apps/divisi", anyOf: ["divisi_view", "department_view"] },
     { prefix: "/apps/periode-kpi", anyOf: ["periode_view", "periode_manage"] },
     { prefix: "/apps/data-kpi", anyOf: ["kpi_view", "kpi_manage", "spk_calculate"] },
-    { prefix: "/apps/perbandingan", anyOf: ["spk_view", "spk_manage", "spk_calculate"] },
-    { prefix: "/apps/penilaian", anyOf: ["spk_view", "spk_manage", "score_input"] },
-    { prefix: "/apps/report", anyOf: ["spk_view", "spk_calculate"] },
+    { prefix: "/apps/perbandingan", anyOf: ["kpi_manage", "spk_view", "spk_manage", "spk_calculate"] },
+    { prefix: "/apps/penilaian", anyOf: ["score_view", "score_input", "spk_view", "spk_manage"] },
+    { prefix: "/apps/report", anyOf: ["report_view", "report_personal", "spk_view", "spk_calculate"] },
     { prefix: "/apps/user", anyOf: ["user_manage"] },
     { prefix: "/apps/role", anyOf: ["user_manage"] },
     { prefix: "/apps/permission", anyOf: ["user_manage"] },
