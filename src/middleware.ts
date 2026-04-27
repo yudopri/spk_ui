@@ -63,29 +63,15 @@ export async function middleware(request: NextRequest) {
 
   // 1. PUBLIC ROUTE PROTECTION (Redirect ke Login)
   if (!token) {
-    // Jika akses root atau halaman aplikasi tanpa token
     if (isRoot || (!isAuthPage && !pathname.startsWith("/api") && !pathname.includes("."))) {
-      const url = new URL(loginPath, request.url);
-      
-      const response = NextResponse.redirect(url);
-      
-      // Bersihkan header yang mungkin menyebabkan masalah RSC
-      response.headers.set("x-middleware-rewrite", "");
-      response.headers.delete("x-nextjs-redirect");
-      // Tambahkan no-cache agar browser tidak menahan halaman kosong di domain
-      response.headers.set("Cache-Control", "no-store, max-age=0");
-      
-      return response;
+      return NextResponse.redirect(new URL(loginPath, request.url));
     }
     return NextResponse.next();
   }
 
   // 2. AUTHENTICATED REDIRECT (Sudah login tapi buka "/" atau "/login")
   if (token && (isAuthPage || isRoot)) {
-    const url = new URL("/dashboards", request.url);
-    const response = NextResponse.redirect(url);
-    response.headers.set("Cache-Control", "no-store, max-age=0");
-    return response;
+    return NextResponse.redirect(new URL("/dashboards", request.url));
   }
 
   // 3. RBAC LOGIC
