@@ -66,8 +66,19 @@ export async function middleware(request: NextRequest) {
     // Jika akses root atau halaman aplikasi tanpa token
     if (isRoot || (!isAuthPage && !pathname.startsWith("/api") && !pathname.includes("."))) {
       const url = new URL(loginPath, request.url);
-      // PENTING: Jangan tambahkan custom header aneh pada redirect agar tidak muncul teks JSON
-      return NextResponse.redirect(url);
+      
+      // Jika request berasal dari Next.js Client-side transition (RSC)
+      // Kita harus mengembalikan 401 atau header khusus agar client melakukan redirect manual.
+      // Namun cara termudah yang kompatibel adalah membiarkan redirect tapi pastikan
+      // tidak ada header 'x-middleware-next' yang tertinggal jika kita memanipulasi response.
+      
+      const response = NextResponse.redirect(url);
+      
+      // Bersihkan header yang mungkin menyebabkan masalah RSC
+      response.headers.set("x-middleware-rewrite", "");
+      response.headers.delete("x-nextjs-redirect");
+      
+      return response;
     }
     return NextResponse.next();
   }

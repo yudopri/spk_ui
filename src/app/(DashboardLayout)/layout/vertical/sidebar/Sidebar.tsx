@@ -32,7 +32,10 @@ const SidebarLayout = () => {
 
   useEffect(() => {
     const perms = localStorage.getItem("permissions");
-    const role = localStorage.getItem("userRole"); // Updated from 'role' to 'userRole'
+    const role = localStorage.getItem("userRole"); 
+    
+    console.log("Sidebar Debug:", { role, perms }); // Cek apakah role dan perms terbaca
+
     if (perms) {
       try {
         setUserPermissions(normalizePermissions(JSON.parse(perms)));
