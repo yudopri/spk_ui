@@ -7,6 +7,12 @@ import kpiService, { KPI } from "@/services/kpiService";
 import periodeService, { Periode } from "@/services/periodeService";
 import { usePermission } from "@/hooks/usePermission";
 
+interface Attribute {
+  id: number;
+  nama: string;
+  simbol: string;
+}
+
 const DataKPI = () => {
   const { isReadOnly } = usePermission();
   const [selectedPeriodeId, setSelectedPeriodeId] = useState<number>(0);
@@ -15,6 +21,7 @@ const DataKPI = () => {
   const [selectedKpi, setSelectedKpi] = useState<Partial<KPI> | null>(null);
   const [periodes, setPeriodes] = useState<Periode[]>([]);
   const [kpis, setKpis] = useState<KPI[]>([]);
+  const [attributes, setAttributes] = useState<Attribute[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [btnLoading, setBtnLoading] = useState(false);
@@ -26,6 +33,7 @@ const DataKPI = () => {
 
   useEffect(() => {
     fetchPeriodes();
+    fetchAttributes();
   }, []);
 
   useEffect(() => {
@@ -54,6 +62,20 @@ const DataKPI = () => {
     }
   };
 
+  const fetchAttributes = async () => {
+    try {
+      const res = await kpiService.getAttributes();
+      const list = (Array.isArray(res) ? res : res?.data || []).map((item: any) => ({
+        id: Number(item.id ?? item.Id ?? 0),
+        nama: String(item.nama ?? item.Nama ?? ""),
+        simbol: String(item.simbol ?? item.Simbol ?? ""),
+      }));
+      setAttributes(list.filter((item: Attribute) => item.id > 0 && item.nama));
+    } catch (err) {
+      console.error("Gagal mengambil attribute", err);
+    }
+  };
+
   const fetchKpis = async () => {
     try {
       setLoading(true);
@@ -76,6 +98,7 @@ const DataKPI = () => {
         namaKpi: "",
         deskripsi: "",
         tipe: "Benefit",
+        attribute_id: attributes[0]?.id,
         bobot: 0
       });
     } else {
@@ -266,6 +289,27 @@ const DataKPI = () => {
                 >
                   <option value="Benefit">Benefit</option>
                   <option value="Cost">Cost</option>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="attribute" value="Satuan / Attribute" />
+                <Select
+                  id="attribute"
+                  value={String((selectedKpi as any)?.attribute_id ?? "")}
+                  onChange={(e) =>
+                    setSelectedKpi({
+                      ...selectedKpi!,
+                      attribute_id: Number(e.target.value),
+                    })
+                  }
+                  disabled={modalType === "view"}
+                >
+                  <option value="">Pilih Satuan</option>
+                  {attributes.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.nama} ({item.simbol})
+                    </option>
+                  ))}
                 </Select>
               </div>
             </div>

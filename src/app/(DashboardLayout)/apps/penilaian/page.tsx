@@ -16,9 +16,11 @@ const PenilaianKaryawan = () => {
   const [selectedPeriodeId, setSelectedPeriodeId] = useState<number>(0);
   const [periodes, setPeriodes] = useState<Periode[]>([]);
   const [kpis, setKpis] = useState<KPI[]>([]);
+  const [workLocations, setWorkLocations] = useState<Array<{ id: string | number; name: string }>>([]);
   const [allEmployees, setAllEmployees] = useState<Karyawan[]>([]);
   const [departments, setDepartments] = useState<Divisi[]>([]);
   const [selectedDeptId, setSelectedDeptId] = useState<number | string>("all");
+  const [selectedLocation, setSelectedLocation] = useState<string>("all");
   const [scores, setScores] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -32,10 +34,12 @@ const PenilaianKaryawan = () => {
         periodeService.getAll(),
         divisiService.getAll(),
       ]);
+      const locationRes = await karyawanService.getWorkLocations();
 
       const activeList = (periodeRes.data as any[]).filter((p) => p.isAktif);
       setPeriodes(activeList);
       setDepartments(karyawanRes.data);
+      setWorkLocations(locationRes.data || []);
 
       if (activeList.length > 0) {
         setSelectedPeriodeId(activeList[0].Id || activeList[0].id);
@@ -55,7 +59,10 @@ const PenilaianKaryawan = () => {
     const fetchEmployees = async () => {
       try {
         const res = await karyawanService.getAll(
-          selectedDeptId === "all" ? {} : { dept_id: Number(selectedDeptId) }
+          {
+            ...(selectedDeptId === "all" ? {} : { dept_id: Number(selectedDeptId) }),
+            ...(selectedLocation === "all" ? {} : { lokasi_kerja: selectedLocation }),
+          }
         );
         const scopedEmployees = (filterEmployeesByScope(res.data || []) as Karyawan[]).filter((employee) => {
           if (normalizedRole === "Kadiv") {
@@ -70,7 +77,7 @@ const PenilaianKaryawan = () => {
     };
 
     fetchEmployees();
-  }, [selectedDeptId]);
+  }, [selectedDeptId, selectedLocation]);
 
   useEffect(() => {
     if (selectedPeriodeId !== 0) {
@@ -156,6 +163,17 @@ const PenilaianKaryawan = () => {
               ))}
             </Select>
             <Select
+              value={selectedLocation}
+              onChange={(e) => setSelectedLocation(e.target.value)}
+              sizing="sm"
+              className="w-48"
+            >
+              <option value="all">Semua Lokasi</option>
+              {workLocations.map((loc) => (
+                <option key={loc.id} value={String(loc.name)}>{loc.name}</option>
+              ))}
+            </Select>
+            <Select
               value={selectedPeriodeId}
               onChange={(e) => setSelectedPeriodeId(Number(e.target.value))}
               sizing="sm"
@@ -164,7 +182,7 @@ const PenilaianKaryawan = () => {
                 <option value={0}>Pilih Periode</option>
                 {periodes.map((p: any) => (
                   <option key={p.Id || p.id} value={p.Id || p.id}>
-                    {p.NamaPeriode || p.namaPeriode}
+                    {(p.NamaPeriode || p.namaPeriode) + " - " + (p.NamaDivisi || p.divisi?.namaDivisi || "Divisi")}
                   </option>
                 ))}
             </Select>
@@ -207,7 +225,7 @@ const PenilaianKaryawan = () => {
               <Table.HeadCell>NIK</Table.HeadCell>
               <Table.HeadCell>Nama Karyawan</Table.HeadCell>
               {kpis.map((kpi) => (
-                <Table.HeadCell key={kpi.id} className="text-center">{kpi.namaKpi}</Table.HeadCell>
+                <Table.HeadCell key={kpi.Id || kpi.id} className="text-center">{kpi.NamaKpi || kpi.namaKpi}</Table.HeadCell>
               ))}
             </Table.Head>
             <Table.Body className="divide-y">
@@ -219,18 +237,22 @@ const PenilaianKaryawan = () => {
                     const key = `${emp.id}-${kpi.Id || kpi.id}`;
                     return (
                     <Table.Cell key={kpi.Id || kpi.id} className="text-center">
-                       <TextInput
-                         type="number"
-                         sizing="sm"
-                         placeholder="0-100"
-                         className="w-20 mx-auto"
-                         value={scores[key] ?? ""}
-                         onChange={(e) => {
-                           const value = e.target.value;
-                           setScores((prev) => ({ ...prev, [key]: value }));
-                         }}
-                         disabled={!hasPermission("score_input")}
-                       />
+                       <div className="mx-auto flex w-28 rounded-md shadow-sm">
+                         <input
+                           type="number"
+                           placeholder="0-100"
+                           className="block w-full rounded-l-md border border-gray-300 px-2 py-1 text-sm focus:border-primary focus:ring-primary"
+                           value={scores[key] ?? ""}
+                           onChange={(e) => {
+                             const value = e.target.value;
+                             setScores((prev) => ({ ...prev, [key]: value }));
+                           }}
+                           disabled={!hasPermission("score_input")}
+                         />
+                         <span className="inline-flex min-w-[40px] items-center justify-center rounded-r-md border border-l-0 border-gray-300 bg-gray-100 px-2 text-xs font-semibold text-gray-600">
+                           {kpi.simbol || "-"}
+                         </span>
+                       </div>
                     </Table.Cell>
                   );})}
                 </Table.Row>

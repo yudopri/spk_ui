@@ -12,6 +12,8 @@ export interface KPI {
 export interface Periode {
   Id: number;
   NamaPeriode: string;
+  DivisiId: number;
+  NamaDivisi: string;
   Status: string;
   TanggalMulai: string;
   TanggalSelesai: string;
@@ -41,6 +43,8 @@ const normalizePeriode = (item: any): Periode => {
     id,
     NamaPeriode: item.NamaPeriode ?? item.namaPeriode ?? '',
     namaPeriode: item.namaPeriode ?? item.NamaPeriode ?? '',
+    NamaDivisi: item.NamaDivisi ?? (item.divisi?.namaDivisi || item.divisi?.name || ''),
+    DivisiId: Number(item.DivisiId ?? item.divisiId ?? item.divisi?.id ?? 0),
     Status: status,
     TanggalMulai: mulai,
     tanggalMulai: mulai,

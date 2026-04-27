@@ -74,6 +74,30 @@ const karyawanService = {
     };
   },
 
+  getWorkLocations: async () => {
+    const response = await axiosServices.get<any>('/spk/mitra/work-locations');
+    const rawList = Array.isArray(response.data)
+      ? response.data
+      : Array.isArray(response.data?.data)
+        ? response.data.data
+        : [];
+
+    const data = rawList.map((item: any) => {
+      if (typeof item === 'string') {
+        return { id: item, name: item };
+      }
+
+      const name = String(item.name ?? item.nama ?? item.lokasi_kerja ?? item.work_location ?? '');
+      const id = item.id ?? item.value ?? name;
+      return { id, name };
+    }).filter((item: { id: string | number; name: string }) => item.name);
+
+    return {
+      success: true,
+      data,
+    };
+  },
+
   create: async (data: Omit<Karyawan, 'id' | 'divisi'>) => {
     return {
       success: false,
