@@ -75,9 +75,9 @@ const PeriodeKPI = () => {
       // Cleanup data before sending to backend
       const { divisi, kpis, isAktif, ...payload } = selectedItem as any;
 
-      // Ensure numeric types
-      if (payload.tahun) payload.tahun = Number(payload.tahun);
-      if (payload.divisiId) payload.divisiId = Number(payload.divisiId);
+      // Ensure numeric types with backend contract: Tahun nullable, DivisiId numeric/null
+      const tahunRaw = payload.tahun ?? payload.Tahun;
+      const divisiRaw = payload.divisiId ?? payload.DivisiId;
       if (payload.id) payload.id = Number(payload.id);
 
       // Add time to date strings if backend expects full DateTime
@@ -89,6 +89,8 @@ const PeriodeKPI = () => {
       const body = {
         ...payload,
         NamaPeriode: namaPeriode,
+        Tahun: tahunRaw === "" || tahunRaw === undefined || tahunRaw === null ? null : Number(tahunRaw),
+        DivisiId: divisiRaw === "" || divisiRaw === undefined || divisiRaw === null ? null : Number(divisiRaw),
         Status: status,
         TanggalMulai: tanggalMulaiRaw
           ? (tanggalMulaiRaw.includes("T") ? tanggalMulaiRaw : `${tanggalMulaiRaw}T00:00:00.000Z`)
@@ -107,7 +109,7 @@ const PeriodeKPI = () => {
       fetchData();
     } catch (err: any) {
       console.error("Submit Error:", err.response?.data || err.message);
-      alert(err.response?.data?.message || "Gagal menyimpan data. Periksa konsol untuk detail.");
+      alert(err?.response?.data?.message || err?.data?.message || err?.message || "Gagal menyimpan data. Periksa konsol untuk detail.");
     } finally {
       setBtnLoading(false);
     }
@@ -119,7 +121,11 @@ const PeriodeKPI = () => {
         await periodeService.delete(id);
         fetchData();
       } catch (err: any) {
-        alert(err.response?.data?.message || "Gagal menghapus data");
+        if (err?.response?.status === 409 || err?.status === 409) {
+          alert(err?.response?.data?.message || err?.data?.message || "Periode tidak dapat dihapus karena masih dipakai data lain.");
+          return;
+        }
+        alert(err?.response?.data?.message || err?.data?.message || err?.message || "Gagal menghapus data");
       }
     }
   };
@@ -168,7 +174,7 @@ const PeriodeKPI = () => {
                     <Table.Cell>{period.tahun}</Table.Cell>
                     <Table.Cell>
                       <Badge color="info">
-                        {period.divisi?.namaDivisi || "N/A"}
+                        {period.NamaDivisi || period.divisi?.namaDivisi || "N/A"}
                       </Badge>
                     </Table.Cell>
                     <Table.Cell className="text-sm">{new Date(period.tanggalMulai).toLocaleDateString("id-ID")}</Table.Cell>
@@ -232,7 +238,7 @@ const PeriodeKPI = () => {
                       ? ""
                       : selectedItem.tahun
                   }
-                  onChange={(e) => setSelectedItem({ ...selectedItem!, tahun: parseInt(e.target.value) })}
+                  onChange={(e) => setSelectedItem({ ...selectedItem!, tahun: e.target.value === "" ? null : Number(e.target.value) })}
                   disabled={modalMode === "detail"}
                 />
               </div>
@@ -242,7 +248,7 @@ const PeriodeKPI = () => {
               <Select
                 id="divisi"
                 value={selectedItem?.divisiId ?? 0}
-                onChange={(e) => setSelectedItem({ ...selectedItem!, divisiId: parseInt(e.target.value) })}
+                onChange={(e) => setSelectedItem({ ...selectedItem!, divisiId: e.target.value === "" ? null : Number(e.target.value) })}
                 disabled={modalMode === "detail"}
               >
                 <option value={0}>Pilih Divisi</option>

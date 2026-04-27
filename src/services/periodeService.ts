@@ -14,6 +14,7 @@ export interface Periode {
   NamaPeriode: string;
   DivisiId: number;
   NamaDivisi: string;
+  Tahun?: number | null;
   Status: string;
   TanggalMulai: string;
   TanggalSelesai: string;
@@ -45,14 +46,15 @@ const normalizePeriode = (item: any): Periode => {
     namaPeriode: item.namaPeriode ?? item.NamaPeriode ?? '',
     NamaDivisi: item.NamaDivisi ?? (item.divisi?.namaDivisi || item.divisi?.name || ''),
     DivisiId: Number(item.DivisiId ?? item.divisiId ?? item.divisi?.id ?? 0),
+    Tahun: item.Tahun ?? item.tahun ?? (mulai ? new Date(mulai).getFullYear() : null),
     Status: status,
     TanggalMulai: mulai,
     tanggalMulai: mulai,
     TanggalSelesai: selesai,
     tanggalSelesai: selesai,
     isAktif: String(status).toLowerCase() === 'aktif',
-    tahun: item.tahun ?? (mulai ? new Date(mulai).getFullYear() : new Date().getFullYear()),
-    divisiId: item.divisiId ?? item.dept_id ?? null,
+    tahun: item.tahun ?? item.Tahun ?? (mulai ? new Date(mulai).getFullYear() : new Date().getFullYear()),
+    divisiId: Number(item.divisiId ?? item.DivisiId ?? item.dept_id ?? 0),
     divisi: item.divisi
       ? {
           id: Number(item.divisi.id ?? 0),
@@ -60,6 +62,13 @@ const normalizePeriode = (item: any): Periode => {
         }
       : null,
   };
+};
+
+const toNullableInt = (value: unknown): number | null => {
+  if (value === undefined || value === null) return null;
+  if (typeof value === 'string' && value.trim() === '') return null;
+  const parsed = Number(value);
+  return Number.isNaN(parsed) ? null : parsed;
 };
 
 const periodeService = {
@@ -96,11 +105,15 @@ const periodeService = {
   },
 
   create: async (data: Partial<Periode>) => {
+    const tahunRaw = data.Tahun ?? data.tahun;
+    const divisiRaw = data.DivisiId ?? data.divisiId;
     const response = await axios.post<{ Id?: number; success?: boolean; message?: string }>('/spk/periode', {
-      NamaPeriode: data.NamaPeriode,
-      TanggalMulai: data.TanggalMulai,
-      TanggalSelesai: data.TanggalSelesai,
-      Status: data.Status || (data.isAktif ? 'Aktif' : 'Nonaktif')
+      NamaPeriode: data.NamaPeriode ?? data.namaPeriode,
+      Tahun: toNullableInt(tahunRaw),
+      DivisiId: toNullableInt(divisiRaw),
+      TanggalMulai: data.TanggalMulai ?? data.tanggalMulai,
+      TanggalSelesai: data.TanggalSelesai ?? data.tanggalSelesai,
+      Status: data.Status || (data.isAktif ? 'Aktif' : 'Nonaktif'),
     });
     return response.data;
   },
@@ -109,11 +122,16 @@ const periodeService = {
     const targetId = Number(data.Id ?? data.id ?? 0);
     if (!targetId) throw new Error('ID periode tidak ditemukan.');
 
+    const tahunRaw = data.Tahun ?? data.tahun;
+    const divisiRaw = data.DivisiId ?? data.divisiId;
+
     const response = await axios.put<{ success?: boolean; message?: string }>(`/spk/periode/${targetId}`, {
       NamaPeriode: data.NamaPeriode ?? data.namaPeriode,
+      Tahun: toNullableInt(tahunRaw),
+      DivisiId: toNullableInt(divisiRaw),
       TanggalMulai: data.TanggalMulai ?? data.tanggalMulai,
       TanggalSelesai: data.TanggalSelesai ?? data.tanggalSelesai,
-      Status: data.Status || (data.isAktif ? 'Aktif' : 'Nonaktif')
+      Status: data.Status || (data.isAktif ? 'Aktif' : 'Nonaktif'),
     });
 
     return response.data;

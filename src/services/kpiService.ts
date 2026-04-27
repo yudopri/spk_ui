@@ -20,6 +20,12 @@ export interface KPI {
   simbol?: string;
 }
 
+export interface Attribute {
+  id: number;
+  nama: string;
+  simbol: string;
+}
+
 const normalizeKpi = (item: any): KPI => {
   const id = Number(item.Id ?? item.id ?? 0);
   const tipe = (item.Tipe ?? item.tipe ?? 'Benefit') as 'Benefit' | 'Cost';
@@ -47,6 +53,27 @@ const normalizeKpi = (item: any): KPI => {
 const kpiService = {
   getAttributes: async () => {
     const response = await axios.get('/attribute');
+    return response.data;
+  },
+
+  createAttribute: async (data: { nama: string; simbol: string }) => {
+    const response = await axios.post<{ success?: boolean; message?: string; data?: Attribute }>('/attribute', {
+      nama: data.nama,
+      simbol: data.simbol,
+    });
+    return response.data;
+  },
+
+  updateAttribute: async (id: number, data: { nama: string; simbol: string }) => {
+    const response = await axios.put<{ success?: boolean; message?: string; data?: Attribute }>(`/attribute/${id}`, {
+      nama: data.nama,
+      simbol: data.simbol,
+    });
+    return response.data;
+  },
+
+  deleteAttribute: async (id: number) => {
+    const response = await axios.delete<{ success?: boolean; message?: string }>(`/attribute/${id}`);
     return response.data;
   },
 

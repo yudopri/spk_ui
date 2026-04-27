@@ -64,6 +64,13 @@ const SidebarContent: MenuItem[] = [
             permission: "periode_view",
           },
           {
+            name: "Attribute KPI",
+            icon: "solar:tag-horizontal-line-duotone",
+            id: uniqueId(),
+            url: "/apps/attribute",
+            permission: "kpi_view",
+          },
+          {
             name: "Data KPI (Kriteria)",
             icon: "solar:documents-line-duotone",
             id: uniqueId(),
