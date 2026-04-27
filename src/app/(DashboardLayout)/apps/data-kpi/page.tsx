@@ -98,7 +98,7 @@ const DataKPI = () => {
         namaKpi: "",
         deskripsi: "",
         tipe: "Benefit",
-        attribute_id: attributes[0]?.id,
+        attributeId: attributes[0]?.id,
         bobot: 0
       });
     } else {
@@ -200,6 +200,7 @@ const DataKPI = () => {
               <Table.Head>
                 <Table.HeadCell>Nama Kriteria</Table.HeadCell>
                 <Table.HeadCell>Tipe</Table.HeadCell>
+                  <Table.HeadCell>Satuan</Table.HeadCell>
                 <Table.HeadCell>Deskripsi</Table.HeadCell>
                 <Table.HeadCell className="text-center">Aksi</Table.HeadCell>
               </Table.Head>
@@ -220,6 +221,9 @@ const DataKPI = () => {
                         <Badge color={kpi.tipe === "Benefit" ? "success" : "warning"} size="sm" className="w-fit">
                           {kpi.tipe}
                         </Badge>
+                      </Table.Cell>
+                      <Table.Cell className="text-sm">
+                        {kpi.nama_satuan ? `${kpi.nama_satuan} (${kpi.simbol || '-'})` : (kpi.simbol || '-')}
                       </Table.Cell>
                       <Table.Cell className="text-sm">
                         {kpi.deskripsi}
@@ -295,11 +299,11 @@ const DataKPI = () => {
                 <Label htmlFor="attribute" value="Satuan / Attribute" />
                 <Select
                   id="attribute"
-                  value={String((selectedKpi as any)?.attribute_id ?? "")}
+                  value={String((selectedKpi as any)?.id_satuan ?? (selectedKpi as any)?.attributeId ?? "")}
                   onChange={(e) =>
                     setSelectedKpi({
                       ...selectedKpi!,
-                      attribute_id: Number(e.target.value),
+                      attributeId: Number(e.target.value),
                     })
                   }
                   disabled={modalType === "view"}

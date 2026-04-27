@@ -79,6 +79,11 @@ const PenilaianKaryawan = () => {
     fetchEmployees();
   }, [selectedDeptId, selectedLocation]);
 
+  const filteredPeriodes = periodes.filter((periode: any) => {
+    if (selectedDeptId === "all") return true;
+    return Number(periode.DivisiId ?? periode.divisiId ?? periode.divisi?.id ?? 0) === Number(selectedDeptId);
+  });
+
   useEffect(() => {
     if (selectedPeriodeId !== 0) {
       const fetchKpis = async () => {
@@ -90,6 +95,8 @@ const PenilaianKaryawan = () => {
         }
       };
       fetchKpis();
+    } else {
+      setKpis([]);
     }
   }, [selectedPeriodeId]);
 
@@ -153,7 +160,10 @@ const PenilaianKaryawan = () => {
         <div className="flex flex-wrap gap-4">
             <Select 
               value={selectedDeptId} 
-              onChange={(e) => setSelectedDeptId(e.target.value)}
+              onChange={(e) => {
+                setSelectedDeptId(e.target.value);
+                setSelectedPeriodeId(0);
+              }}
               sizing="sm"
               className="w-48"
             >
@@ -180,7 +190,7 @@ const PenilaianKaryawan = () => {
               className="w-48"
             >
                 <option value={0}>Pilih Periode</option>
-                {periodes.map((p: any) => (
+                {filteredPeriodes.map((p: any) => (
                   <option key={p.Id || p.id} value={p.Id || p.id}>
                     {(p.NamaPeriode || p.namaPeriode) + " - " + (p.NamaDivisi || p.divisi?.namaDivisi || "Divisi")}
                   </option>

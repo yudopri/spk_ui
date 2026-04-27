@@ -6,7 +6,9 @@ export interface KPI {
   Tipe: 'Benefit' | 'Cost';
   PeriodeId: number;
   AttributeId?: number;
-  attribute_id?: number;
+  attributeId?: number;
+  id_satuan?: number;
+  nama_satuan?: string;
   BobotAhp?: number | null;
   Bobot?: number;
   Deskripsi?: string;
@@ -39,8 +41,10 @@ const normalizeKpi = (item: any): KPI => {
     tipe,
     PeriodeId: Number(item.PeriodeId ?? item.periodeId ?? 0),
     periodeId: Number(item.periodeId ?? item.PeriodeId ?? 0),
-    AttributeId: Number(item.AttributeId ?? item.attribute_id ?? 0),
-    attribute_id: Number(item.attribute_id ?? item.AttributeId ?? 0),
+    AttributeId: Number(item.AttributeId ?? item.attributeId ?? item.id_satuan ?? 0),
+    attributeId: Number(item.attributeId ?? item.AttributeId ?? item.id_satuan ?? 0),
+    id_satuan: Number(item.id_satuan ?? item.attributeId ?? item.AttributeId ?? 0),
+    nama_satuan: item.nama_satuan ?? item.namaSatuan ?? '',
     BobotAhp: item.BobotAhp ?? item.bobotAhp ?? null,
     Bobot: item.Bobot ?? item.bobot ?? 0,
     bobot: item.bobot ?? item.Bobot ?? item.BobotAhp ?? 0,
@@ -78,7 +82,7 @@ const kpiService = {
   },
 
   getByPeriode: async (periodeId: number, page = 1, pageSize = 10) => {
-    const response = await axios.get<any>('/spk/kpi', {
+    const response = await axios.get<any>('/kriteria', {
       params: { periode_id: periodeId }
     });
 
@@ -101,12 +105,12 @@ const kpiService = {
     };
   },
 
-  create: async (data: { NamaKpi?: string; Tipe?: string; PeriodeId?: number; namaKpi?: string; tipe?: string; periodeId?: number; bobot?: number; deskripsi?: string; attribute_id?: number }) => {
-    const response = await axios.post<{ Id?: number; success?: boolean; message?: string }>('/spk/kpi', {
+  create: async (data: { NamaKpi?: string; Tipe?: string; PeriodeId?: number; namaKpi?: string; tipe?: string; periodeId?: number; bobot?: number; deskripsi?: string; id_satuan?: number; attributeId?: number }) => {
+    const response = await axios.post<{ Id?: number; success?: boolean; message?: string }>('/kriteria', {
       NamaKpi: data.NamaKpi ?? data.namaKpi,
       Tipe: data.Tipe ?? data.tipe ?? 'Benefit',
       PeriodeId: data.PeriodeId ?? data.periodeId,
-      AttributeId: data.attribute_id,
+      id_satuan: data.id_satuan ?? data.attributeId,
       Bobot: data.bobot ?? 0,
       Deskripsi: data.deskripsi ?? '',
     });
@@ -117,11 +121,11 @@ const kpiService = {
     const targetId = Number(data.Id ?? data.id ?? 0);
     if (!targetId) throw new Error('ID KPI tidak ditemukan');
 
-    const response = await axios.put<{ success?: boolean; message?: string }>(`/spk/kpi/${targetId}`, {
+    const response = await axios.put<{ success?: boolean; message?: string }>(`/kriteria/${targetId}`, {
       NamaKpi: data.NamaKpi ?? data.namaKpi,
       Tipe: data.Tipe ?? data.tipe,
       PeriodeId: data.PeriodeId ?? data.periodeId,
-      AttributeId: data.attribute_id ?? data.AttributeId,
+      id_satuan: data.id_satuan ?? data.attributeId ?? data.AttributeId,
       Bobot: data.Bobot ?? data.bobot ?? 0,
       Deskripsi: data.Deskripsi ?? data.deskripsi ?? '',
     });
@@ -129,7 +133,7 @@ const kpiService = {
   },
 
   delete: async (id: number) => {
-    const response = await axios.delete<{ success?: boolean; message?: string }>(`/spk/kpi/${id}`);
+    const response = await axios.delete<{ success?: boolean; message?: string }>(`/kriteria/${id}`);
     return response.data;
   }
 };
