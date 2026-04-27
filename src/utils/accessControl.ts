@@ -1,13 +1,13 @@
 import type { AuthUser } from "@/utils/authSession";
 
 export type UserRole =
-  | "manager"
-  | "dev"
-  | "hrd"
-  | "kadiv"
-  | "admin"
-  | "adm"
-  | "karyawan"
+  | "Manager"
+  | "Dev"
+  | "Hrd"
+  | "Kadiv"
+  | "Admin"
+  | "Adm"
+  | "Karyawan"
   | "unknown";
 
 export interface EmployeeScopeItem {
@@ -25,44 +25,44 @@ function normalizeText(value: string | null | undefined): string {
 
 export function normalizeRole(role: string | null | undefined): UserRole {
   const normalized = normalizeText(role);
-  if (normalized === "manager") return "manager";
-  if (normalized === "dev" || normalized === "developer") return "dev";
-  if (normalized === "hrd") return "hrd";
-  if (normalized === "kadiv") return "kadiv";
-  if (normalized === "karyawan" || normalized === "employee" || normalized === "staff") return "karyawan";
-  if (normalized === "admin") return "admin";
-  if (normalized.startsWith("adm")) return "adm";
+  if (normalized === "Manager") return "Manager";
+  if (normalized === "Dev" || normalized === "Developer") return "Dev";
+  if (normalized === "Hrd") return "Hrd";
+  if (normalized === "Kadiv") return "Kadiv";
+  if (normalized === "Karyawan" || normalized === "Employee" || normalized === "Staff") return "Karyawan";
+  if (normalized === "Admin") return "Admin";
+  if (normalized.startsWith("adm")) return "Adm";
   return "unknown";
 }
 
 export function isManagerRole(role: string | null | undefined): boolean {
-  return normalizeRole(role) === "manager";
+  return normalizeRole(role) === "Manager";
 }
 
 export function isDevRole(role: string | null | undefined): boolean {
-  return normalizeRole(role) === "dev";
+  return normalizeRole(role) === "Dev";
 }
 
 export function isKadivRole(role: string | null | undefined): boolean {
-  return normalizeRole(role) === "kadiv";
+  return normalizeRole(role) === "Kadiv";
 }
 
 export function isHrdRole(role: string | null | undefined): boolean {
-  return normalizeRole(role) === "hrd";
+  return normalizeRole(role) === "Hrd";
 }
 
 export function isAdminLikeRole(role: string | null | undefined): boolean {
   const normalized = normalizeRole(role);
-  return normalized === "admin" || normalized === "adm" || normalized === "hrd";
+  return normalized === "Admin" || normalized === "Adm" || normalized === "Hrd";
 }
 
 export function isKaryawanRole(role: string | null | undefined): boolean {
-  return normalizeRole(role) === "karyawan";
+  return normalizeRole(role) === "Karyawan";
 }
 
 export function canAccessAuditLogs(role: string | null | undefined): boolean {
   const normalized = normalizeRole(role);
-  return normalized === "manager" || normalized === "dev" || normalized === "hrd";
+  return normalized === "Manager" || normalized === "Dev" || normalized === "Hrd";
 }
 
 export function isReadOnlyBusinessRole(role: string | null | undefined): boolean {
@@ -71,7 +71,7 @@ export function isReadOnlyBusinessRole(role: string | null | undefined): boolean
 
 export function canUseManagementActions(role: string | null | undefined): boolean {
   const normalized = normalizeRole(role);
-  return normalized === "manager" || normalized === "kadiv";
+  return normalized === "Manager" || normalized === "Kadiv";
 }
 
 export function hasPermission(permissions: string[], permission: string): boolean {
@@ -168,7 +168,7 @@ export function filterEmployeesByRoleScope<T extends EmployeeScopeItem>(
   if (isKadivRole(role)) {
     return employees.filter((employee) => {
       const employeeRole = normalizeRole(employee.role || "");
-      return employeeRole !== "manager";
+      return employeeRole !== "Manager";
     });
   }
 

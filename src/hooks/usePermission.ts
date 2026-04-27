@@ -43,7 +43,7 @@ export const usePermission = () => {
 
     const hasPermission = (permission: string) => {
         const normalized = normalizeRole(role);
-        if (normalized === "manager" || normalized === "dev") return true;
+        if (normalized === "Manager" || normalized === "Dev") return true;
         return permissions.includes(permission);
     };
 

@@ -58,8 +58,8 @@ const PenilaianKaryawan = () => {
           selectedDeptId === "all" ? {} : { dept_id: Number(selectedDeptId) }
         );
         const scopedEmployees = (filterEmployeesByScope(res.data || []) as Karyawan[]).filter((employee) => {
-          if (normalizedRole === "kadiv") {
-            return normalizeRole(employee.role) !== "manager";
+          if (normalizedRole === "Kadiv") {
+            return normalizeRole(employee.role) !== "Manager";
           }
           return true;
         });
