@@ -9,7 +9,7 @@ const DashboardPage = () => {
   const stats = [
     { title: "Data Karyawan", value: "Kelola data master", icon: "solar:users-group-rounded-bold-duotone", color: "text-primary", href: "/apps/karyawan" },
     { title: "Periode KPI", value: "Atur periode aktif", icon: "solar:calendar-bold-duotone", color: "text-secondary", href: "/apps/periode-kpi" },
-    { title: "Data KPI", value: "Kriteria penilaian", icon: "solar:document-list-bold-duotone", color: "text-warning", href: "/apps/data-kpi" },
+    { title: "Data KPI", value: "Kriteria penilaian", icon: "solar:documents-line-duotone", color: "text-warning", href: "/apps/data-kpi" },
     { title: "Report Hasil", value: "Lihat ranking akhir", icon: "solar:chart-square-bold-duotone", color: "text-success", href: "/apps/report" },
   ];
 

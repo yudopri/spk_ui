@@ -54,7 +54,7 @@ const SidebarContent: MenuItem[] = [
             icon: "solar:users-group-rounded-linear",
             id: uniqueId(),
             url: "/apps/karyawan",
-            permission: "karyawan_view",
+            permission: "employee_view",
           },
           {
             name: "Periode KPI",
@@ -65,7 +65,7 @@ const SidebarContent: MenuItem[] = [
           },
           {
             name: "Data KPI (Kriteria)",
-            icon: "solar:target-outline-linear",
+            icon: "solar:documents-line-duotone",
             id: uniqueId(),
             url: "/apps/data-kpi",
             permission: "kpi_view",
@@ -87,7 +87,7 @@ const SidebarContent: MenuItem[] = [
             icon: "solar:star-line-duotone",
             id: uniqueId(),
             url: "/apps/penilaian",
-            permission: "score_view",
+            permission: "score_input",
           },
         ],
       },
