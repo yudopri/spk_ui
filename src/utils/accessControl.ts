@@ -86,6 +86,9 @@ export function canSeeMenuItem(role: string | null | undefined, permissions: str
   }
 
   if (isAdminLikeRole(role)) {
+    if (!path) {
+      return !permission || permissions.includes(permission);
+    }
     const allowed = [
       "/dashboards",
       "/apps/divisi",
@@ -98,6 +101,9 @@ export function canSeeMenuItem(role: string | null | undefined, permissions: str
   }
 
   if (isKaryawanRole(role)) {
+    if (!path) {
+      return !permission || permissions.includes(permission);
+    }
     const allowed = ["/dashboards", "/apps/karyawan", "/apps/report"];
     return Boolean(path && allowed.some((item) => path.startsWith(item)));
   }

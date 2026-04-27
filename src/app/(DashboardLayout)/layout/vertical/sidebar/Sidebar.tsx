@@ -50,7 +50,7 @@ const SidebarLayout = () => {
     canSeeMenuItem(userRole, userPermissions, perm, path);
 
   const selectedContent = SidebarContent.find(
-    (data) => data.id === selectedIconId
+    (data) => Number(data.id) === Number(selectedIconId)
   );
 
   const pathname = usePathname();
