@@ -67,16 +67,13 @@ export async function middleware(request: NextRequest) {
     if (isRoot || (!isAuthPage && !pathname.startsWith("/api") && !pathname.includes("."))) {
       const url = new URL(loginPath, request.url);
       
-      // Jika request berasal dari Next.js Client-side transition (RSC)
-      // Kita harus mengembalikan 401 atau header khusus agar client melakukan redirect manual.
-      // Namun cara termudah yang kompatibel adalah membiarkan redirect tapi pastikan
-      // tidak ada header 'x-middleware-next' yang tertinggal jika kita memanipulasi response.
-      
       const response = NextResponse.redirect(url);
       
       // Bersihkan header yang mungkin menyebabkan masalah RSC
       response.headers.set("x-middleware-rewrite", "");
       response.headers.delete("x-nextjs-redirect");
+      // Tambahkan no-cache agar browser tidak menahan halaman kosong di domain
+      response.headers.set("Cache-Control", "no-store, max-age=0");
       
       return response;
     }
@@ -85,7 +82,10 @@ export async function middleware(request: NextRequest) {
 
   // 2. AUTHENTICATED REDIRECT (Sudah login tapi buka "/" atau "/login")
   if (token && (isAuthPage || isRoot)) {
-    return NextResponse.redirect(new URL("/dashboards", request.url));
+    const url = new URL("/dashboards", request.url);
+    const response = NextResponse.redirect(url);
+    response.headers.set("Cache-Control", "no-store, max-age=0");
+    return response;
   }
 
   // 3. RBAC LOGIC
