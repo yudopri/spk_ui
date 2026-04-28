@@ -112,21 +112,20 @@ const DataKPI = () => {
     try {
       setBtnLoading(true);
 
-      // Cleanup payload for backend
-      const { periode, ...payload } = selectedKpi as any;
-      
-      // Force numeric types for backend compatibility
-      const body = {
-        ...payload,
-        id: Number(payload.id || 0),
-        periodeId: Number(payload.periodeId),
-        bobot: Number(payload.bobot || 0)
+      // Map everything to the new backend structure
+      const payload: any = {
+        NamaKpi: selectedKpi.namaKpi || selectedKpi.NamaKpi,
+        Tipe: selectedKpi.tipe || selectedKpi.Tipe,
+        PeriodeId: Number(selectedKpi.periodeId || selectedKpi.PeriodeId),
+        attributeId: selectedKpi.attributeId || selectedKpi.id_satuan || selectedKpi.AttributeId || undefined,
+        BobotAhp: Number(selectedKpi.bobot || selectedKpi.BobotAhp || selectedKpi.Bobot || 0),
       };
 
       if (modalType === "add") {
-        await kpiService.create(body);
+        await kpiService.create(payload);
       } else {
-        await kpiService.update(body);
+        const id = Number(selectedKpi.id || selectedKpi.Id);
+        await kpiService.update({ ...payload, Id: id });
       }
       setShowModal(false);
       fetchKpis();
@@ -144,7 +143,11 @@ const DataKPI = () => {
         await kpiService.delete(id);
         fetchKpis();
       } catch (err: any) {
-        alert(err.response?.data?.message || "Gagal menghapus kriteria");
+        if (err.status === 409 || err.response?.status === 409) {
+          alert("KPI tidak dapat dihapus karena sudah memiliki data penilaian terkait.");
+        } else {
+          alert(err.response?.data?.message || "Gagal menghapus kriteria");
+        }
       }
     }
   };
@@ -200,8 +203,8 @@ const DataKPI = () => {
               <Table.Head>
                 <Table.HeadCell>Nama Kriteria</Table.HeadCell>
                 <Table.HeadCell>Tipe</Table.HeadCell>
-                  <Table.HeadCell>Satuan</Table.HeadCell>
-                <Table.HeadCell>Deskripsi</Table.HeadCell>
+                <Table.HeadCell>Satuan</Table.HeadCell>
+                <Table.HeadCell>Bobot (AHP)</Table.HeadCell>
                 <Table.HeadCell className="text-center">Aksi</Table.HeadCell>
               </Table.Head>
               <Table.Body className="divide-y">
@@ -226,7 +229,7 @@ const DataKPI = () => {
                         {kpi.nama_satuan ? `${kpi.nama_satuan} (${kpi.simbol || '-'})` : (kpi.simbol || '-')}
                       </Table.Cell>
                       <Table.Cell className="text-sm">
-                        {kpi.deskripsi}
+                        {kpi.BobotAhp ?? kpi.bobot ?? 0}
                       </Table.Cell>
                       <Table.Cell>
                         <div className="flex justify-center gap-2">
@@ -277,7 +280,7 @@ const DataKPI = () => {
                 id="nama"
                 placeholder="Contoh: Kualitas Kerja"
                 required
-                value={selectedKpi?.namaKpi}
+                value={selectedKpi?.namaKpi || selectedKpi?.NamaKpi || ""}
                 onChange={(e) => setSelectedKpi({...selectedKpi!, namaKpi: e.target.value})}
                 disabled={modalType === "view"}
               />
@@ -287,7 +290,7 @@ const DataKPI = () => {
                 <Label htmlFor="tipe" value="Tipe" />
                 <Select 
                   id="tipe" 
-                  value={selectedKpi?.tipe} 
+                  value={selectedKpi?.tipe || selectedKpi?.Tipe} 
                   onChange={(e) => setSelectedKpi({ ...selectedKpi!, tipe: e.target.value as "Benefit" | "Cost" })}
                   disabled={modalType === "view"}
                 >
@@ -299,34 +302,30 @@ const DataKPI = () => {
                 <Label htmlFor="attribute" value="Satuan / Attribute" />
                 <Select
                   id="attribute"
-                  value={String((selectedKpi as any)?.id_satuan ?? (selectedKpi as any)?.attributeId ?? "")}
-                  onChange={(e) =>
-                    setSelectedKpi({
-                      ...selectedKpi!,
-                      attributeId: Number(e.target.value),
-                    })
-                  }
+                  value={selectedKpi?.attributeId || selectedKpi?.id_satuan || selectedKpi?.AttributeId || ""}
+                  onChange={(e) => setSelectedKpi({ ...selectedKpi!, attributeId: e.target.value ? Number(e.target.value) : undefined })}
                   disabled={modalType === "view"}
                 >
-                  <option value="">Pilih Satuan</option>
-                  {attributes.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.nama} ({item.simbol})
+                  <option value="">Pilih Satuan (Optional)</option>
+                  {attributes.map((attr) => (
+                    <option key={attr.id} value={attr.id}>
+                      {attr.nama} {attr.simbol ? `(${attr.simbol})` : ""}
                     </option>
                   ))}
                 </Select>
               </div>
-            </div>
-            <div>
-              <Label htmlFor="deskripsi" value="Deskripsi" />
-              <Textarea
-                id="deskripsi"
-                placeholder="Jelaskan mengenai kriteria ini..."
-                rows={4}
-                value={selectedKpi?.deskripsi}
-                onChange={(e) => setSelectedKpi({...selectedKpi!, deskripsi: e.target.value})}
-                disabled={modalType === "view"}
-              />
+              <div>
+                <Label htmlFor="bobot" value="Bobot AHP" />
+                <TextInput
+                  id="bobot"
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={selectedKpi?.bobot ?? selectedKpi?.BobotAhp ?? 0}
+                  onChange={(e) => setSelectedKpi({...selectedKpi!, bobot: parseFloat(e.target.value)})}
+                  disabled={modalType === "view"}
+                />
+              </div>
             </div>
           </div>
         </Modal.Body>

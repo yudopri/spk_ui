@@ -7,7 +7,7 @@ import Image from "next/image";
 import SimpleBar from "simplebar-react";
 import { useRouter } from "next/navigation";
 import axiosServices from "@/utils/axios";
-import { clearSession } from "@/utils/authSession";
+import { clearSession, getStoredUser } from "@/utils/authSession";
 
 const Profile = () => {
   const router = useRouter();
@@ -17,10 +17,12 @@ const Profile = () => {
   });
 
   useEffect(() => {
-    const name = localStorage.getItem("userName");
-    const role = localStorage.getItem("userRole");
-    if (name && role) {
-      setUserData({ name, role });
+    const user = getStoredUser();
+    if (user) {
+      setUserData({
+        name: user.name || "User",
+        role: user.role || "User"
+      });
     }
   }, []);
 

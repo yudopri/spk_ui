@@ -82,7 +82,7 @@ const kpiService = {
   },
 
   getByPeriode: async (periodeId: number, page = 1, pageSize = 10) => {
-    const response = await axios.get<any>('/kriteria', {
+    const response = await axios.get<any>('/spk/kpi', {
       params: { periode_id: periodeId }
     });
 
@@ -105,14 +105,14 @@ const kpiService = {
     };
   },
 
-  create: async (data: { NamaKpi?: string; Tipe?: string; PeriodeId?: number; namaKpi?: string; tipe?: string; periodeId?: number; bobot?: number; deskripsi?: string; id_satuan?: number; attributeId?: number }) => {
-    const response = await axios.post<{ Id?: number; success?: boolean; message?: string }>('/kriteria', {
+  create: async (data: { NamaKpi?: string; Tipe?: string; PeriodeId?: string; Deskripsi?: string; namaKpi?: string; tipe?: string; periodeId?: number; bobot?: number; id_satuan?: number; attributeId?: number; BobotAhp?: number }) => {
+    const response = await axios.post<{ Id?: number; success?: boolean; message?: string }>('/spk/kpi', {
       NamaKpi: data.NamaKpi ?? data.namaKpi,
       Tipe: data.Tipe ?? data.tipe ?? 'Benefit',
-      PeriodeId: data.PeriodeId ?? data.periodeId,
-      id_satuan: data.id_satuan ?? data.attributeId,
-      Bobot: data.bobot ?? 0,
-      Deskripsi: data.deskripsi ?? '',
+      PeriodeId: Number(data.PeriodeId ?? data.periodeId),
+      Deskripsi: data.Deskripsi ?? '',
+      attributeId: data.attributeId ?? data.id_satuan ?? null, // Backend uses attributeId (lowercase a)
+      BobotAhp: Number(data.BobotAhp ?? data.bobot ?? 0),
     });
     return response.data;
   },
@@ -121,19 +121,19 @@ const kpiService = {
     const targetId = Number(data.Id ?? data.id ?? 0);
     if (!targetId) throw new Error('ID KPI tidak ditemukan');
 
-    const response = await axios.put<{ success?: boolean; message?: string }>(`/kriteria/${targetId}`, {
+    const response = await axios.put<{ success?: boolean; message?: string }>(`/spk/kpi/${targetId}`, {
       NamaKpi: data.NamaKpi ?? data.namaKpi,
       Tipe: data.Tipe ?? data.tipe,
-      PeriodeId: data.PeriodeId ?? data.periodeId,
-      id_satuan: data.id_satuan ?? data.attributeId ?? data.AttributeId,
-      Bobot: data.Bobot ?? data.bobot ?? 0,
-      Deskripsi: data.Deskripsi ?? data.deskripsi ?? '',
+      PeriodeId: Number(data.PeriodeId ?? data.periodeId),
+      Deskripsi: data.Deskripsi  ?? '',
+      attributeId: data.attributeId ?? data.id_satuan ?? data.AttributeId ?? null,
+      BobotAhp: Number(data.BobotAhp ?? data.bobot ?? data.Bobot ?? 0),
     });
     return response.data;
   },
 
   delete: async (id: number) => {
-    const response = await axios.delete<{ success?: boolean; message?: string }>(`/kriteria/${id}`);
+    const response = await axios.delete<{ success?: boolean; message?: string }>(`/spk/kpi/${id}`);
     return response.data;
   }
 };

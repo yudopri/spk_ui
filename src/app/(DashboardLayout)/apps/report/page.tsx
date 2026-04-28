@@ -188,7 +188,7 @@ const ReportHasil = () => {
            <CardBox>
               <div className="flex justify-between items-center mb-6">
                   <h4 className="text-lg font-bold text-gray-800 dark:text-white">Visualisasi Ranking Karyawan</h4>
-                  <Badge color="info">Skor Skala MOORA</Badge>
+                  <Badge color="info">Skor Skala</Badge>
               </div>
               {loading ? (
                 <div className="flex justify-center p-20"><Spinner size="xl" /></div>
@@ -223,7 +223,6 @@ const ReportHasil = () => {
                       </div>
                       <div>
                           <h2 className="text-xl font-black text-primary uppercase">{bestEmployee.Karyawan?.Nama}</h2>
-                          <p className="text-gray-500 font-medium">{bestEmployee.Karyawan?.Jabatan || "Karyawan"}</p>
                       </div>
                       <div className="bg-primary/10 px-6 py-2 rounded-full">
                           <span className="text-primary font-bold text-lg">Skor: {bestEmployee.NilaiSkala}</span>
@@ -237,14 +236,13 @@ const ReportHasil = () => {
         
         <div className="col-span-12">
           <CardBox>
-            <h4 className="text-lg font-bold mb-4 text-gray-800 dark:text-white">Detail Perhitungan AHP-MOORA</h4>
+            <h4 className="text-lg font-bold mb-4 text-gray-800 dark:text-white">Detail Nilai</h4>
             <div className="overflow-x-auto">
               <Table hoverable striped>
                 <Table.Head>
                   <Table.HeadCell className="text-center">Rank</Table.HeadCell>
-                  <Table.HeadCell>Karyawan</Table.HeadCell>
+                  <Table.HeadCell>Nama</Table.HeadCell>
                   <Table.HeadCell className="text-center">NIK</Table.HeadCell>
-                  <Table.HeadCell className="text-center">Jabatan</Table.HeadCell>
                   <Table.HeadCell className="text-center">Nilai Skala</Table.HeadCell>
                   <Table.HeadCell className="text-center">Status</Table.HeadCell>
                 </Table.Head>
@@ -258,7 +256,6 @@ const ReportHasil = () => {
                         {report.Karyawan?.Nama}
                       </Table.Cell>
                       <Table.Cell>{report.Karyawan?.Nik}</Table.Cell>
-                      <Table.Cell>{report.Karyawan?.Jabatan}</Table.Cell>
                       <Table.Cell className="font-bold text-secondary text-base">{report.NilaiSkala}</Table.Cell>
                       <Table.Cell>
                         <Badge color={report.Ranking <= 3 ? "success" : "info"} size="sm">
