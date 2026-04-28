@@ -15,7 +15,7 @@ export interface RolePermission {
 
 export interface Role {
   id: number;
-  name: string;
+  role_name: string;
   users?: any[] | null;
   rolePermissions: RolePermission[];
 }
@@ -37,7 +37,7 @@ const roleService = {
       ? rolesRes.data
       : Array.isArray(rolesRes.data?.data)
         ? rolesRes.data.data
-        : []) as Array<string | { id?: number; name?: string; role?: string }>;
+        : []) as Array<string | { id?: number; role_name?: string; role?: string }>;
 
     const permissionList = (Array.isArray(permissionsRes.data)
       ? permissionsRes.data
@@ -45,12 +45,12 @@ const roleService = {
         ? permissionsRes.data.data
         : Array.isArray(permissionsRes.data?.permissions)
           ? permissionsRes.data.permissions
-          : []) as Array<string | { id?: number; name?: string; permission?: string }>;
+          : []) as Array<string | { id?: number; permission_name?: string; permission?: string }>;
 
     permissionIdToName.clear();
     permissionList.forEach((perm: any, index) => {
       const id = Number(perm?.id ?? index + 1);
-      const name = typeof perm === 'string' ? perm : (perm?.name ?? perm?.permission ?? '');
+      const name = typeof perm === 'string' ? perm : (perm?.permission_name ?? perm?.permission ?? '');
       if (name) {
         permissionIdToName.set(id, name);
       }
@@ -58,7 +58,7 @@ const roleService = {
 
     const roles: Role[] = await Promise.all(
       roleNames.map(async (rawRole: any, index: number) => {
-        const roleName = typeof rawRole === 'string' ? rawRole : (rawRole?.name ?? rawRole?.role ?? '');
+        const roleName = typeof rawRole === 'string' ? rawRole : (rawRole?.role_name ?? rawRole?.role ?? '');
         const roleId = Number(rawRole?.id ?? index + 1);
         roleIdToName.set(roleId, roleName);
 
@@ -89,15 +89,15 @@ const roleService = {
             permissionId: matchedPermissionId,
             permission: {
               id: matchedPermissionId,
-              name: permName,
-              description: '',
+              permission_name: permName,
+              path: '',
             },
           };
         });
 
         return {
           id: roleId,
-          name: roleName,
+          role_name: roleName,
           users: null,
           rolePermissions,
         };
@@ -122,23 +122,19 @@ const roleService = {
     throw new Error('Endpoint delete role belum tersedia pada backend SPK terbaru.');
   },
 
-  assignPermission: async (roleId: number, permissionId: number) => {
-    const roleName = roleIdToName.get(roleId);
-    const permissionName = permissionIdToName.get(permissionId);
-
-    if (!roleName || !permissionName) {
-      throw new Error('Role atau permission tidak dikenali untuk assign permission.');
-    }
-
+  assignPermission: async (roleName: string, permissionId: number) => {
     const response = await axiosServices.post(`/auth/mitra-roles/${encodeURIComponent(roleName)}/permissions`, {
-      permission: permissionName,
+      permissions: [permissionId], // Backend expects array of IDs
     });
     return response.data;
   },
 
-  revokePermission: async (id: number) => {
-    throw new Error('Endpoint revoke permission belum tersedia pada backend SPK terbaru (hanya GET/POST).');
-  }
+  updatePermissions: async (roleName: string, permissionIds: number[]) => {
+    const response = await axiosServices.post(`/auth/mitra-roles/${encodeURIComponent(roleName)}/permissions`, {
+      permissions: permissionIds,
+    });
+    return response.data;
+  },
 };
 
 export default roleService;

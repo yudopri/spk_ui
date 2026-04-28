@@ -130,10 +130,10 @@ const Header = ({ layoutType }: HeaderPropsType) => {
               )}
 
               {/* Notification Dropdown */}
-              <Notifications />
+              {/* <Notifications /> */}
 
               {/* Language Dropdown*/}
-              <Language />
+              {/* <Language /> */}
 
               {/* Profile Dropdown */}
               <Profile />
@@ -150,7 +150,7 @@ const Header = ({ layoutType }: HeaderPropsType) => {
         <div
           className={`w-full  xl:hidden block mobile-header-menu ${mobileMenu}`}
         >
-          <MobileHeaderItems />
+          {/* <MobileHeaderItems /> */}
         </div>
 
         {/* Horizontal Menu  */}

@@ -15,7 +15,7 @@ const RolePage = () => {
     const [error, setError] = useState<string | null>(null);
     const [showModal, setShowModal] = useState(false);
     const [editData, setEditData] = useState<Role | null>(null);
-    const [formData, setFormData] = useState({ name: '' });
+    const [formData, setFormData] = useState({ role_name: '' });
     const [saving, setSaving] = useState(false);
 
     useEffect(() => {
@@ -42,10 +42,10 @@ const RolePage = () => {
     const handleOpenModal = (item?: Role) => {
         if (item) {
             setEditData(item);
-            setFormData({ name: item.name });
+            setFormData({ role_name: item.role_name });
         } else {
             setEditData(null);
-            setFormData({ name: '' });
+            setFormData({ role_name: '' });
         }
         setShowModal(true);
     };
@@ -78,17 +78,23 @@ const RolePage = () => {
     };
 
     const togglePermission = async (role: Role, permissionId: number) => {
-        const existing = role.rolePermissions.find(rp => rp.permissionId === permissionId);
+        setSaving(true);
         try {
-            if (existing) {
-                alert("Revoke permission belum didukung backend saat ini.");
-                return;
+            const currentIds = role.rolePermissions.map(rp => rp.permissionId);
+            let nextIds: number[];
+            
+            if (currentIds.includes(permissionId)) {
+                nextIds = currentIds.filter(id => id !== permissionId);
             } else {
-                await roleService.assignPermission(role.id, permissionId);
+                nextIds = [...currentIds, permissionId];
             }
-            fetchData(); // Refresh list to reflect changes
+
+            await roleService.updatePermissions(role.role_name, nextIds);
+            fetchData();
         } catch (err: any) {
-            alert("Gagal mengubah permission");
+            alert(err?.response?.data?.message || "Gagal mengubah permission (Role Mapping)");
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -125,7 +131,7 @@ const RolePage = () => {
                                 <Table.Row key={role.id}>
                                     <Table.Cell className="font-bold whitespace-nowrap align-top pt-4">
                                         <div className="flex flex-col gap-1">
-                                            <span>{role.name}</span>
+                                            <span>{role.role_name}</span>
                                             <span className="text-[10px] text-gray-400 font-mono italic">Role ID: {role.id}</span>
                                         </div>
                                     </Table.Cell>
@@ -139,13 +145,13 @@ const RolePage = () => {
                                                             id={`role-${role.id}-perm-${perm.id}`}
                                                             checked={isAssigned}
                                                             onChange={() => togglePermission(role, perm.id)}
-                                                            disabled={!hasPermission("user_manage") || isAssigned}
+                                                            disabled={!hasPermission("user_manage") || saving}
                                                         />
                                                         <div className="flex flex-col">
                                                             <Label htmlFor={`role-${role.id}-perm-${perm.id}`} className="text-xs font-semibold cursor-pointer">
-                                                                {perm.name}
+                                                                {perm.permission_name}
                                                             </Label>
-                                                            <span className="text-[10px] text-gray-500">{perm.description}</span>
+                                                            <span className="text-[10px] text-gray-500">{perm.path}</span>
                                                         </div>
                                                     </div>
                                                 );

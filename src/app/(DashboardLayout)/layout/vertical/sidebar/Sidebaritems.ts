@@ -41,6 +41,7 @@ const SidebarContent: MenuItem[] = [
       },
       {
         heading: "Master Data",
+        permission: "divisi_view",
         children: [
           {
             name: "Data Divisi",
@@ -81,6 +82,7 @@ const SidebarContent: MenuItem[] = [
       },
       {
         heading: "Proses SPK",
+        permission: "kpi_manage",
         children: [
           {
             name: "Nilai Perbandingan",
@@ -112,6 +114,7 @@ const SidebarContent: MenuItem[] = [
       },
       {
         heading: "System",
+        permission: "user_manage",
         children: [
           {
             name: "User Management",

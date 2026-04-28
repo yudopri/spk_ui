@@ -221,18 +221,6 @@ const profileDD: ProfileType[] = [
     url: "/apps/user-profile/profile",
   },
   {
-    title: "My Subscription",
-    url: "/theme-pages/pricing",
-  },
-  {
-    title: "My Invoice",
-    url: "/apps/invoice",
-  },
-  {
-    title: "Account Settings",
-    url: "/theme-pages/account-settings",
-  },
-  {
     title: "Sign Out",
     url: "/auth/auth2/login",
   },

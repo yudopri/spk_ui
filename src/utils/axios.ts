@@ -36,6 +36,16 @@ axiosServices.interceptors.response.use(
         const originalRequest = (error.config || {}) as CustomAxiosRequestConfig & { headers?: Record<string, string> };
         const responseStatus = error?.response?.status;
         const responseData = error?.response?.data;
+
+        // Global Handling for 409 Conflict - Relation Errors
+        if (responseStatus === 409) {
+            return Promise.reject({
+                status: 409,
+                message: responseData?.message || "Data ini tidak dapat dihapus atau diubah karena masih digunakan oleh modul lain (Konflik Relasi).",
+                data: responseData
+            });
+        }
+
         const errorData: ApiError = {
             status: responseStatus || 0,
             message:

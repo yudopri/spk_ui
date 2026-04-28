@@ -12,15 +12,15 @@ import { clearSession } from "@/utils/authSession";
 const Profile = () => {
   const router = useRouter();
   const [userData, setUserData] = useState({
-    username: "User",
+    name: "User",
     role: "User"
   });
 
   useEffect(() => {
-    const username = localStorage.getItem("userName");
+    const name = localStorage.getItem("userName");
     const role = localStorage.getItem("userRole");
-    if (username && role) {
-      setUserData({ username, role });
+    if (name && role) {
+      setUserData({ name, role });
     }
   }, []);
 
@@ -72,9 +72,9 @@ const Profile = () => {
             />
             <div>
               <h5 className="text-15 font-semibold">
-                {userData.username} <span className="text-success">{userData.role}</span>
+                {userData.name} <span className="text-success">{userData.role}</span>
               </h5>
-              <p className="text-sm text-ld opacity-80">{userData.username}@admin.com</p>
+              <p className="text-sm text-ld opacity-80">{userData.name}</p>
             </div>
           </div>
         </div>

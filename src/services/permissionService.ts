@@ -2,8 +2,8 @@ import axiosServices from '@/utils/axios';
 
 export interface Permission {
   id: number;
-  name: string;
-  description: string;
+  permission_name: string;
+  path: string;
   rolePermissions?: string[] | null;
 }
 
@@ -28,15 +28,15 @@ const permissionService = {
       if (typeof item === 'string') {
         return {
           id: index + 1,
-          name: item,
-          description: '',
+          permission_name: item,
+          path: '',
         };
       }
 
       return {
         id: Number(item.id ?? index + 1),
-        name: item.name ?? item.permission ?? item.code ?? '',
-        description: item.description ?? '',
+        permission_name: item.permission_name ?? item.name ?? item.permission ?? item.code ?? '',
+        path: item.path ?? '',
         rolePermissions: item.rolePermissions ?? null,
       };
     });
@@ -50,8 +50,8 @@ const permissionService = {
 
   create: async (data: Omit<Permission, 'id'>) => {
     const response = await axiosServices.post('/auth/permissions', {
-      name: data.name,
-      description: data.description,
+      permission_name: data.permission_name,
+      path: data.path,
     });
     return response.data;
   },

@@ -11,7 +11,7 @@ const PermissionPage = () => {
     const [error, setError] = useState<string | null>(null);
     const [showModal, setShowModal] = useState(false);
     const [editData, setEditData] = useState<Permission | null>(null);
-    const [formData, setFormData] = useState({ name: '', description: '' });
+    const [formData, setFormData] = useState({ permission_name: '', path: '' });
     const [saving, setSaving] = useState(false);
 
     useEffect(() => {
@@ -34,10 +34,10 @@ const PermissionPage = () => {
     const handleOpenModal = (item?: Permission) => {
         if (item) {
             setEditData(item);
-            setFormData({ name: item.name, description: item.description });
+            setFormData({ permission_name: item.permission_name, path: item.path });
         } else {
             setEditData(null);
-            setFormData({ name: '', description: '' });
+            setFormData({ permission_name: '', path: '' });
         }
         setShowModal(true);
     };
@@ -83,7 +83,7 @@ const PermissionPage = () => {
                         <Table.Head>
                             <Table.HeadCell>ID</Table.HeadCell>
                             <Table.HeadCell>Key Name</Table.HeadCell>
-                            <Table.HeadCell>Description</Table.HeadCell>
+                            <Table.HeadCell>Path</Table.HeadCell>
                             <Table.HeadCell className="text-center">Aksi</Table.HeadCell>
                         </Table.Head>
                         <Table.Body>
@@ -103,9 +103,9 @@ const PermissionPage = () => {
                                 <Table.Row key={item.id}>
                                     <Table.Cell className="font-mono text-xs">{item.id}</Table.Cell>
                                     <Table.Cell>
-                                        <Badge color="info" className="font-mono">{item.name}</Badge>
+                                        <Badge color="info" className="font-mono">{item.permission_name}</Badge>
                                     </Table.Cell>
-                                    <Table.Cell>{item.description}</Table.Cell>
+                                    <Table.Cell>{item.path}</Table.Cell>
                                     <Table.Cell>
                                         <div className="flex justify-center gap-2">
                                             <Button size="xs" color="light" onClick={() => handleOpenModal(item)}>
@@ -129,19 +129,19 @@ const PermissionPage = () => {
                             <TextInput
                                 id="name"
                                 placeholder="e.g. data_view"
-                                value={formData.name}
-                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                value={formData.permission_name}
+                                onChange={(e) => setFormData({ ...formData, permission_name: e.target.value })}
                                 required
                             />
                         </div>
                         <div>
-                            <Label htmlFor="desc" value="Deskripsi" />
-                            <Textarea
-                                id="desc"
-                                placeholder="Jelaskan fungsi permission ini..."
-                                value={formData.description}
-                                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                rows={3}
+                            <Label htmlFor="path" value="Path" />
+                            <TextInput
+                                id="path"
+                                placeholder="e.g. /data/view"
+                                value={formData.path}
+                                onChange={(e) => setFormData({ ...formData, path: e.target.value })}
+                                required
                             />
                         </div>
                     </div>

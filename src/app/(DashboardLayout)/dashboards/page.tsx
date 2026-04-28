@@ -15,7 +15,9 @@ const DashboardPage = () => {
 
   const steps = [
     { label: "Siapkan Periode KPI", desc: "Buat periode dan tetapkan status aktif.", href: "/apps/periode-kpi" },
+    { label: "Sediakan Attribute KPI", desc: "Definisikan attribute KPI.", href: "/apps/attribute" },
     { label: "Lengkapi Kriteria KPI", desc: "Masukkan daftar kriteria untuk periode terpilih.", href: "/apps/data-kpi" },
+    { label: "Input Perbandingan", desc: "Masukkan perbandingan antar Kriteria.", href: "/apps/perbandingan" },
     { label: "Input Penilaian", desc: "Masukkan nilai per karyawan berdasarkan KPI.", href: "/apps/penilaian" },
     { label: "Analisis Hasil", desc: "Tinjau ranking dan hasil rekomendasi.", href: "/apps/report" },
   ];

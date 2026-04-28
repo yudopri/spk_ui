@@ -3,53 +3,40 @@ import { Role } from './roleService';
 
 export interface User {
   id: number;
-  username: string;
-  password?: string; // For POST/PUT
-  passwordHash?: string; // From API
-  roleId: number;
-  role?: Role | null;
-  refreshToken?: string;
-  refreshTokenExpiry?: string;
+  name: string;
+  email: string;
+  role: string;
 }
 
 export interface UserResponse {
   success: boolean;
   message?: string;
   data: User[];
-  totalCount: number;
-  page: number;
-  pageSize: number;
 }
 
 const userService = {
-  getAll: async (page = 1, pageSize = 10, search = '') => {
-    const response = await axiosServices.get<UserResponse>('/User', {
-      params: { page, pageSize, search }
-    });
+  getAll: async () => {
+    const response = await axiosServices.get<UserResponse>('/auth/users');
     return response.data;
   },
 
   getById: async (id: number) => {
-    const response = await axiosServices.get<{success: boolean, data: User}>(`/User/${id}`);
-    return response.data;
+    // Note: Endpoint for specific user by ID in /auth/users listing might be different or not needed for basic sync
+    const res = await axiosServices.get<UserResponse>('/auth/users');
+    const user = res.data?.data?.find(u => u.id === id);
+    return { success: true, data: user };
   },
 
   create: async (data: Partial<User>) => {
-    const response = await axiosServices.post('/User', {
-      ...data,
-      id: 0
-    });
-    return response.data;
+    throw new Error('Penambahan user dilakukan melalui sistem SIP (Mitra).');
   },
 
   update: async (data: User) => {
-    const response = await axiosServices.put('/User', data);
-    return response.data;
+    throw new Error('Perubahan user dilakukan melalui sistem SIP (Mitra).');
   },
 
   delete: async (id: number) => {
-    const response = await axiosServices.delete(`/User/${id}`);
-    return response.data;
+    throw new Error('Penghapusan user dilakukan melalui sistem SIP (Mitra).');
   }
 };
 
