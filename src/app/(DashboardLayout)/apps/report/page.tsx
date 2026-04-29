@@ -6,6 +6,7 @@ import { Icon } from "@iconify/react";
 import dynamic from "next/dynamic";
 import spkService, { SpkReport } from "@/services/spkService";
 import periodeService, { Periode } from "@/services/periodeService";
+import karyawanService from "@/services/karyawanService";
 import { usePermission } from "@/hooks/usePermission";
 
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
@@ -15,23 +16,28 @@ const ReportHasil = () => {
   const [selectedPeriodeId, setSelectedPeriodeId] = useState<number>(0);
   const [selectedLokasi, setSelectedLokasi] = useState<string>("");
   const [periodes, setPeriodes] = useState<Periode[]>([]);
+  const [lokasiOptions, setLokasiOptions] = useState<{id: any, name: string}[]>([]);
   const [reports, setReports] = useState<SpkReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchPeriodes = async () => {
+    const fetchData = async () => {
       try {
-        const res = await periodeService.getAll(1, 100);
-        setPeriodes(res.data);
-        if (res.data.length > 0) {
-          setSelectedPeriodeId(res.data[0].Id);
+        const [resP, resL] = await Promise.all([
+          periodeService.getAll(1, 100),
+          karyawanService.getWorkLocations()
+        ]);
+        setPeriodes(resP.data);
+        setLokasiOptions(resL.data);
+        if (resP.data.length > 0) {
+          setSelectedPeriodeId(resP.data[0].id || resP.data[0].Id);
         }
       } catch (err: any) {
-        setError("Gagal mengambil data periode");
+        setError("Gagal mengambil data filter");
       }
     };
-    fetchPeriodes();
+    fetchData();
   }, []);
 
   useEffect(() => {
@@ -65,11 +71,6 @@ const ReportHasil = () => {
     };
     fetchReport();
   }, [selectedPeriodeId, selectedLokasi, isKaryawan, isAdminLike, user?.employee_id, user?.dept_id]);
-
-  const lokasiOptions = useMemo(() => {
-    const unique = Array.from(new Set(reports.map((r: any) => r?.Karyawan?.LokasiKerja || r?.lokasi_kerja).filter(Boolean))) as string[];
-    return unique;
-  }, [reports]);
 
   const chartOptions: any = {
     chart: {
@@ -158,7 +159,7 @@ const ReportHasil = () => {
                 >
                     <option value="">Semua Lokasi</option>
                     {lokasiOptions.map((lokasi) => (
-                      <option key={lokasi} value={lokasi}>{lokasi}</option>
+                      <option key={lokasi.id} value={lokasi.id}>{lokasi.name}</option>
                     ))}
                 </Select>
              </div>
@@ -170,7 +171,9 @@ const ReportHasil = () => {
                 >
                     <option value={0}>Pilih Periode</option>
                     {periodes.map((p) => (
-                      <option key={p.Id} value={p.Id}>{p.NamaPeriode}</option>
+                      <option key={p.id || p.Id} value={p.id || p.Id}>
+                        {p.namaPeriode} - {p.divisi?.namaDivisi}
+                      </option>
                     ))}
                 </Select>
              </div>

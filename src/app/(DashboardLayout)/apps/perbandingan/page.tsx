@@ -176,7 +176,7 @@ const NilaiPerbandingan = () => {
         <div>
           <h1 className="text-2xl font-bold">Perbandingan Kriteria</h1>
           <p className="text-sm text-gray-500">
-            Tentukan bobot prioritas untuk {selectedPeriode?.NamaPeriode || "-"}
+            Tentukan bobot prioritas untuk {selectedPeriode?.namaPeriode || ""} - {selectedPeriode?.divisi?.namaDivisi || ""}
           </p>
         </div>
         <div className="flex gap-4">
@@ -189,7 +189,7 @@ const NilaiPerbandingan = () => {
               <option value={0}>Pilih Periode Aktif</option>
               {periodes.map((p) => (
                 <option key={p.Id} value={p.Id}>
-                  {p.NamaPeriode}
+                  {p.namaPeriode} - {p.divisi?.namaDivisi}
                 </option>
               ))}
             </Select>

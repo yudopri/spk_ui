@@ -113,11 +113,11 @@ const DataKPI = () => {
       setBtnLoading(true);
 
       // Map everything to the new backend structure
-      const payload: any = {
+      const payload: any = {  
         NamaKpi: selectedKpi.namaKpi || selectedKpi.NamaKpi,
         Tipe: selectedKpi.tipe || selectedKpi.Tipe,
         PeriodeId: Number(selectedKpi.periodeId || selectedKpi.PeriodeId),
-        attributeId: selectedKpi.attributeId || selectedKpi.id_satuan || selectedKpi.AttributeId || undefined,
+        attributeId: selectedKpi.attributeId || null,
         BobotAhp: Number(selectedKpi.bobot || selectedKpi.BobotAhp || selectedKpi.Bobot || 0),
       };
 
@@ -302,7 +302,7 @@ const DataKPI = () => {
                 <Label htmlFor="attribute" value="Satuan / Attribute" />
                 <Select
                   id="attribute"
-                  value={selectedKpi?.attributeId || selectedKpi?.id_satuan || selectedKpi?.AttributeId || ""}
+                  value={selectedKpi?.attributeId || ""}
                   onChange={(e) => setSelectedKpi({ ...selectedKpi!, attributeId: e.target.value ? Number(e.target.value) : undefined })}
                   disabled={modalType === "view"}
                 >
