@@ -172,7 +172,7 @@ const ReportHasil = () => {
                     <option value={0}>Pilih Periode</option>
                     {periodes.map((p) => (
                       <option key={p.id || p.Id} value={p.id || p.Id}>
-                        {p.namaPeriode} - {p.divisi?.namaDivisi}
+                        {(p.NamaPeriode || p.namaPeriode) + " - " + (p.NamaDivisi || p.divisi?.namaDivisi || "")}
                       </option>
                     ))}
                 </Select>

@@ -169,7 +169,7 @@ const DataKPI = () => {
               <option value={0}>Pilih Periode</option>
               {periodes.map((p) => (
                 <option key={p.id} value={p.id}>
-                  {p.namaPeriode} - {p.divisi?.namaDivisi} {p.isAktif ? '(Aktif)' : '(Tidak Aktif)'}
+                  {(p.NamaPeriode || p.namaPeriode) + " - " + (p.NamaDivisi || p.divisi?.namaDivisi || "") +  (p.isAktif ? '(Aktif)' : '(Tidak Aktif)')}
                 </option>
               ))}
             </Select>

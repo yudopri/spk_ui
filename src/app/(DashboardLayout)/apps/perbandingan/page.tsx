@@ -189,7 +189,7 @@ const NilaiPerbandingan = () => {
               <option value={0}>Pilih Periode Aktif</option>
               {periodes.map((p) => (
                 <option key={p.Id} value={p.Id}>
-                  {p.namaPeriode} - {p.divisi?.namaDivisi}
+                  {(p.NamaPeriode || p.namaPeriode) + " - " + (p.NamaDivisi || p.divisi?.namaDivisi || "")}
                 </option>
               ))}
             </Select>
