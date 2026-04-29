@@ -38,6 +38,25 @@ const normalizePeriode = (item: any): Periode => {
   const status = item.Status ?? item.status ?? 'Nonaktif';
   const id = Number(item.Id ?? item.id ?? 0);
 
+  // Logic to determine active status based on dates
+  const now = new Date();
+  now.setHours(0, 0, 0, 0); // Reset time for date-only comparison
+
+  const startDate = mulai ? new Date(mulai) : null;
+  const endDate = selesai ? new Date(selesai) : null;
+
+  if (startDate) startDate.setHours(0, 0, 0, 0);
+  if (endDate) endDate.setHours(0, 0, 0, 0);
+
+  let calculatedStatus = status;
+  if (startDate && endDate) {
+    if (now >= startDate && now <= endDate) {
+      calculatedStatus = 'Aktif';
+    } else {
+      calculatedStatus = 'Nonaktif';
+    }
+  }
+
   return {
     ...item,
     Id: id,
@@ -47,12 +66,12 @@ const normalizePeriode = (item: any): Periode => {
     NamaDivisi: item.NamaDivisi ?? (item.divisi?.namaDivisi || item.divisi?.name || ''),
     DivisiId: Number(item.DivisiId ?? item.divisiId ?? item.divisi?.id ?? 0),
     Tahun: item.Tahun ?? item.tahun ?? (mulai ? new Date(mulai).getFullYear() : null),
-    Status: status,
+    Status: calculatedStatus,
     TanggalMulai: mulai,
     tanggalMulai: mulai,
     TanggalSelesai: selesai,
     tanggalSelesai: selesai,
-    isAktif: String(status).toLowerCase() === 'aktif',
+    isAktif: String(calculatedStatus).toLowerCase() === 'aktif',
     tahun: item.tahun ?? item.Tahun ?? (mulai ? new Date(mulai).getFullYear() : new Date().getFullYear()),
     divisiId: Number(item.divisiId ?? item.DivisiId ?? item.dept_id ?? 0),
     divisi: item.divisi
@@ -107,13 +126,29 @@ const periodeService = {
   create: async (data: Partial<Periode>) => {
     const tahunRaw = data.Tahun ?? data.tahun;
     const divisiRaw = data.DivisiId ?? data.divisiId;
+
+    // Logic to determine status based on dates
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const mulai = data.TanggalMulai ?? data.tanggalMulai;
+    const selesai = data.TanggalSelesai ?? data.tanggalSelesai;
+    const startDate = mulai ? new Date(mulai) : null;
+    const endDate = selesai ? new Date(selesai) : null;
+    if (startDate) startDate.setHours(0, 0, 0, 0);
+    if (endDate) endDate.setHours(0, 0, 0, 0);
+
+    let calculatedStatus = data.Status || (data.isAktif ? 'Aktif' : 'Nonaktif');
+    if (startDate && endDate) {
+      calculatedStatus = (now >= startDate && now <= endDate) ? 'Aktif' : 'Nonaktif';
+    }
+
     const response = await axios.post<{ Id?: number; success?: boolean; message?: string }>('/spk/periode', {
       NamaPeriode: data.NamaPeriode ?? data.namaPeriode,
       Tahun: toNullableInt(tahunRaw),
       DivisiId: toNullableInt(divisiRaw),
-      TanggalMulai: data.TanggalMulai ?? data.tanggalMulai,
-      TanggalSelesai: data.TanggalSelesai ?? data.tanggalSelesai,
-      Status: data.Status || (data.isAktif ? 'Aktif' : 'Nonaktif'),
+      TanggalMulai: mulai,
+      TanggalSelesai: selesai,
+      Status: calculatedStatus,
     });
     return response.data;
   },
@@ -125,13 +160,28 @@ const periodeService = {
     const tahunRaw = data.Tahun ?? data.tahun;
     const divisiRaw = data.DivisiId ?? data.divisiId;
 
+    // Logic to determine status based on dates
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const mulai = data.TanggalMulai ?? data.tanggalMulai;
+    const selesai = data.TanggalSelesai ?? data.tanggalSelesai;
+    const startDate = mulai ? new Date(mulai) : null;
+    const endDate = selesai ? new Date(selesai) : null;
+    if (startDate) startDate.setHours(0, 0, 0, 0);
+    if (endDate) endDate.setHours(0, 0, 0, 0);
+
+    let calculatedStatus = data.Status || (data.isAktif ? 'Aktif' : 'Nonaktif');
+    if (startDate && endDate) {
+      calculatedStatus = (now >= startDate && now <= endDate) ? 'Aktif' : 'Nonaktif';
+    }
+
     const response = await axios.put<{ success?: boolean; message?: string }>(`/spk/periode/${targetId}`, {
       NamaPeriode: data.NamaPeriode ?? data.namaPeriode,
       Tahun: toNullableInt(tahunRaw),
       DivisiId: toNullableInt(divisiRaw),
-      TanggalMulai: data.TanggalMulai ?? data.tanggalMulai,
-      TanggalSelesai: data.TanggalSelesai ?? data.tanggalSelesai,
-      Status: data.Status || (data.isAktif ? 'Aktif' : 'Nonaktif'),
+      TanggalMulai: mulai,
+      TanggalSelesai: selesai,
+      Status: calculatedStatus,
     });
 
     return response.data;
