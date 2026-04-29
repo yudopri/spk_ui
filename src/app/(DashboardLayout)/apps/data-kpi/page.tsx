@@ -204,7 +204,6 @@ const DataKPI = () => {
                 <Table.HeadCell>Nama Kriteria</Table.HeadCell>
                 <Table.HeadCell>Tipe</Table.HeadCell>
                 <Table.HeadCell>Satuan</Table.HeadCell>
-                <Table.HeadCell>Bobot (AHP)</Table.HeadCell>
                 <Table.HeadCell className="text-center">Aksi</Table.HeadCell>
               </Table.Head>
               <Table.Body className="divide-y">
@@ -227,9 +226,6 @@ const DataKPI = () => {
                       </Table.Cell>
                       <Table.Cell className="text-sm">
                         {kpi.nama_satuan ? `${kpi.nama_satuan} (${kpi.simbol || '-'})` : (kpi.simbol || '-')}
-                      </Table.Cell>
-                      <Table.Cell className="text-sm">
-                        {kpi.BobotAhp ?? kpi.bobot ?? 0}
                       </Table.Cell>
                       <Table.Cell>
                         <div className="flex justify-center gap-2">
@@ -313,18 +309,6 @@ const DataKPI = () => {
                     </option>
                   ))}
                 </Select>
-              </div>
-              <div>
-                <Label htmlFor="bobot" value="Bobot AHP" />
-                <TextInput
-                  id="bobot"
-                  type="number"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={selectedKpi?.bobot ?? selectedKpi?.BobotAhp ?? 0}
-                  onChange={(e) => setSelectedKpi({...selectedKpi!, bobot: parseFloat(e.target.value)})}
-                  disabled={modalType === "view"}
-                />
               </div>
             </div>
           </div>
