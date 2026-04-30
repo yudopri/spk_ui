@@ -63,8 +63,8 @@ const normalizePeriode = (item: any): Periode => {
     id,
     NamaPeriode: item.NamaPeriode ?? item.namaPeriode ?? '',
     namaPeriode: item.namaPeriode ?? item.NamaPeriode ?? '',
-    NamaDivisi: item.NamaDivisi ?? (item.divisi?.namaDivisi || item.divisi?.name || ''),
-    DivisiId: Number(item.DivisiId ?? item.divisiId ?? item.divisi?.id ?? 0),
+    NamaDivisi: item.NamaDivisi ?? (item.divisi?.namaDivisi || item.divisi?.name || 'Semua Divisi'),
+    DivisiId: item.DivisiId ?? item.divisiId ?? item.divisi?.id ?? null,
     Tahun: item.Tahun ?? item.tahun ?? (mulai ? new Date(mulai).getFullYear() : null),
     Status: calculatedStatus,
     TanggalMulai: mulai,
@@ -73,11 +73,11 @@ const normalizePeriode = (item: any): Periode => {
     tanggalSelesai: selesai,
     isAktif: String(calculatedStatus).toLowerCase() === 'aktif',
     tahun: item.tahun ?? item.Tahun ?? (mulai ? new Date(mulai).getFullYear() : new Date().getFullYear()),
-    divisiId: Number(item.divisiId ?? item.DivisiId ?? item.dept_id ?? 0),
+    divisiId: item.divisiId ?? item.DivisiId ?? item.dept_id ?? null,
     divisi: item.divisi
       ? {
-          id: Number(item.divisi.id ?? 0),
-          namaDivisi: item.divisi.namaDivisi ?? item.divisi.name ?? '',
+          id: item.divisi.id ?? null,
+          namaDivisi: item.divisi.namaDivisi ?? item.divisi.name ?? 'Semua Divisi',
         }
       : null,
   };

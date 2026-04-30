@@ -171,6 +171,17 @@ const spkService = {
       page,
       pageSize,
     };
+  },
+
+  // Optimized individual and summary report endpoints
+  getIndividualReport: async (periodeId: number, karyawanId: number) => {
+    const response = await axiosServices.get<any>(`/spk/report/individual/${periodeId}/${karyawanId}`);
+    return response.data;
+  },
+
+  getSummaryReport: async (periodeId: number) => {
+    const response = await axiosServices.get<any>(`/spk/report/summary/${periodeId}`);
+    return response.data;
   }
 };
 

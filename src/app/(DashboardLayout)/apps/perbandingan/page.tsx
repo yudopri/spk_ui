@@ -6,8 +6,10 @@ import { Icon } from "@iconify/react";
 import periodeService, { Periode } from "@/services/periodeService";
 import kpiService, { KPI } from "@/services/kpiService";
 import spkService from "@/services/spkService";
+import { usePermission } from "@/hooks/usePermission";
 
 const NilaiPerbandingan = () => {
+  const { user, isAdminLike } = usePermission();
   const [selectedPeriodeId, setSelectedPeriodeId] = useState<number>(0);
   const [periodes, setPeriodes] = useState<Periode[]>([]);
   const [kpis, setKpis] = useState<KPI[]>([]);
@@ -23,7 +25,17 @@ const NilaiPerbandingan = () => {
       try {
         setLoading(true);
         const res = await periodeService.getAll(1, 100);
-        const aktif = res.data.filter((p: Periode) => p.isAktif);
+        const aktif = res.data.filter((p: Periode) => {
+          if (!p.isAktif) return false;
+          if (isAdminLike && user?.dept_id) {
+            const currentDivisiId = p.DivisiId ?? p.divisiId ?? p.divisi?.id;
+            if (currentDivisiId === null || currentDivisiId === undefined || currentDivisiId === 0) {
+              return true;
+            }
+            return Number(currentDivisiId) === Number(user.dept_id);
+          }
+          return true;
+        });
         setPeriodes(aktif);
         if (aktif.length > 0) {
           setSelectedPeriodeId(aktif[0].Id);

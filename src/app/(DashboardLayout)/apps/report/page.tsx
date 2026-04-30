@@ -8,6 +8,7 @@ import spkService, { SpkReport } from "@/services/spkService";
 import periodeService, { Periode } from "@/services/periodeService";
 import karyawanService from "@/services/karyawanService";
 import { usePermission } from "@/hooks/usePermission";
+import IndividualReportModal from "@/app/components/shared/IndividualReportModal";
 
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
@@ -19,7 +20,13 @@ const ReportHasil = () => {
   const [lokasiOptions, setLokasiOptions] = useState<{id: any, name: string}[]>([]);
   const [reports, setReports] = useState<SpkReport[]>([]);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Individual Report State
+  const [showPrintModal, setShowPrintModal] = useState(false);
+  const [individualData, setIndividualData] = useState<any>(null);
+  const [printingId, setPrintingId] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -54,8 +61,12 @@ const ReportHasil = () => {
           }
 
           if (isAdminLike && user?.dept_id) {
-            const periodeDeptId = Number((item as any)?.Periode?.DivisiId ?? (item as any)?.Periode?.departemen_id ?? 0);
-            return periodeDeptId === Number(user.dept_id);
+            const currentDivisiId = (item as any)?.Periode?.DivisiId ?? (item as any)?.Periode?.departemen_id;
+            // Jika DivisiId null/undefined (Semua Divisi), maka semua Kadiv bisa melihat
+            if (currentDivisiId === null || currentDivisiId === undefined || currentDivisiId === 0) {
+              return true;
+            }
+            return Number(currentDivisiId) === Number(user.dept_id);
           }
 
           return true;
@@ -71,6 +82,50 @@ const ReportHasil = () => {
     };
     fetchReport();
   }, [selectedPeriodeId, selectedLokasi, isKaryawan, isAdminLike, user?.employee_id, user?.dept_id]);
+
+  const handleFetchIndividual = async (karyawanId: number) => {
+    try {
+      setPrintingId(karyawanId);
+      const res = await spkService.getIndividualReport(selectedPeriodeId, karyawanId);
+      if (res.success) {
+        setIndividualData(res);
+        setShowPrintModal(true);
+      }
+    } catch (err: any) {
+      setError("Gagal mengambil data laporan individual");
+    } finally {
+      setPrintingId(null);
+    }
+  };
+
+  const handleExportSummary = async () => {
+    if (!selectedPeriodeId) return;
+    try {
+      setExporting(true);
+      const res = await spkService.getSummaryReport(selectedPeriodeId);
+      if (res.success && res.data && res.columns) {
+        const { columns, data } = res;
+        
+        // Simulating Excel export by building a CSV and triggering download
+        const header = columns.join(",");
+        const rows = data.map((row: any) => 
+            columns.map((col: string) => `"${row[col] ?? ''}"`).join(",")
+        );
+        const csvContent = "data:text/csv;charset=utf-8," + [header, ...rows].join("\n");
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `Rekapitulasi_Hasil_Periode_${selectedPeriodeId}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    } catch (err) {
+      setError("Gagal melakukan ekspor rekapitulasi");
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const chartOptions: any = {
     chart: {
@@ -177,9 +232,9 @@ const ReportHasil = () => {
                     ))}
                 </Select>
              </div>
-             <Button color="dark" size="sm" className="flex items-center">
-                 <Icon icon="solar:printer-minimalistic-bold" className="mr-2 h-4 w-4" />
-                 Export Report
+             <Button color="dark" size="sm" className="flex items-center" onClick={handleExportSummary} disabled={exporting || !selectedPeriodeId}>
+                {exporting ? <Spinner size="sm" className="mr-2" /> : <Icon icon="solar:file-send-bold" className="mr-2 h-4 w-4" />}
+                Ekspor Rekapitulasi
              </Button>
         </div>
       </div>
@@ -248,6 +303,7 @@ const ReportHasil = () => {
                   <Table.HeadCell className="text-center">NIK</Table.HeadCell>
                   <Table.HeadCell className="text-center">Nilai Skala</Table.HeadCell>
                   <Table.HeadCell className="text-center">Status</Table.HeadCell>
+                  <Table.HeadCell className="text-center">Aksi</Table.HeadCell>
                 </Table.Head>
                 <Table.Body className="divide-y text-center">
                   {loading ? (
@@ -265,6 +321,12 @@ const ReportHasil = () => {
                           {report.Ranking <= 3 ? "Prioritas" : "Sesuai"}
                         </Badge>
                       </Table.Cell>
+                      <Table.Cell>
+                        <Button color="light" size="xs" pill onClick={() => handleFetchIndividual(report.Karyawan?.Id ?? 0)}>
+                          {printingId === (report.Karyawan?.Id ?? 0) ? <Spinner size="xs" /> : <Icon icon="solar:printer-minimalistic-bold" className="h-4 w-4" />}
+                          <span className="ml-1">Cetak</span>
+                        </Button>
+                      </Table.Cell>
                     </Table.Row>
                   )) : (
                     <Table.Row>
@@ -277,6 +339,12 @@ const ReportHasil = () => {
           </CardBox>
         </div>
       </div>
+
+      <IndividualReportModal
+        show={showPrintModal}
+        onClose={() => setShowPrintModal(false)}
+        data={individualData}
+      />
     </div>
   );
 };

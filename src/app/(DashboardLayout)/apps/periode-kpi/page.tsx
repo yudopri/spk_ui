@@ -247,11 +247,15 @@ const PeriodeKPI = () => {
               <Label htmlFor="divisi" value="Target Divisi" />
               <Select
                 id="divisi"
-                value={selectedItem?.divisiId ?? 0}
-                onChange={(e) => setSelectedItem({ ...selectedItem!, divisiId: e.target.value === "" ? null : Number(e.target.value) })}
+                value={(selectedItem?.divisiId ?? selectedItem?.DivisiId) === null ? "all" : (selectedItem?.divisiId ?? selectedItem?.DivisiId ?? 0)}
+                onChange={(e) => {
+                  const val = e.target.value === "all" ? null : (e.target.value === "0" ? 0 : Number(e.target.value));
+                  setSelectedItem({ ...selectedItem!, divisiId: val, DivisiId: val });
+                }}
                 disabled={modalMode === "detail"}
               >
                 <option value={0}>Pilih Divisi</option>
+                <option value="all">Semua Divisi (Lintas Divisi)</option>
                 {divisis.map((d) => (
                   <option key={d.id} value={d.id}>{d.namaDivisi}</option>
                 ))}

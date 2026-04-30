@@ -81,7 +81,11 @@ const PenilaianKaryawan = () => {
 
   const filteredPeriodes = periodes.filter((periode: any) => {
     if (selectedDeptId === "all") return true;
-    return Number(periode.DivisiId ?? periode.divisiId ?? periode.divisi?.id ?? 0) === Number(selectedDeptId);
+    const currentDivisiId = periode.DivisiId ?? periode.divisiId ?? periode.divisi?.id;
+    if (currentDivisiId === null || currentDivisiId === undefined || currentDivisiId === 0) {
+      return true;
+    }
+    return Number(currentDivisiId) === Number(selectedDeptId);
   });
 
   useEffect(() => {

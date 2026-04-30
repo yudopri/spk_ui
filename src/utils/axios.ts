@@ -46,6 +46,15 @@ axiosServices.interceptors.response.use(
             });
         }
 
+        // Global Handling for 403 Forbidden - Access Control
+        if (responseStatus === 403) {
+            return Promise.reject({
+                status: 403,
+                message: responseData?.message || "Anda tidak memiliki akses ke laporan divisi ini",
+                data: responseData
+            });
+        }
+
         const errorData: ApiError = {
             status: responseStatus || 0,
             message:
