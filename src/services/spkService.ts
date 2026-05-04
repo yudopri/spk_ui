@@ -182,6 +182,75 @@ const spkService = {
   getSummaryReport: async (periodeId: number) => {
     const response = await axiosServices.get<any>(`/spk/report/summary/${periodeId}`);
     return response.data;
+  },
+
+  // Helper for file downloads to handle auth token
+  downloadReport: async (url: string, filename: string) => {
+    try {
+      const response = await axiosServices.get(url, {
+        responseType: 'arraybuffer',
+        headers: {
+          'Accept': 'application/pdf, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        }
+      });
+
+      // Check if the response is actually a JSON error message disguised as arraybuffer
+      const contentType = response.headers['content-type'] || '';
+      if (contentType.includes('application/json')) {
+        const decoder = new TextDecoder('utf-8');
+        const jsonStr = decoder.decode(response.data);
+        const errorData = JSON.parse(jsonStr);
+        throw new Error(errorData.message || 'Gagal mengunduh file');
+      }
+
+      const blob = new Blob([response.data], { 
+        type: contentType || (filename.endsWith('.pdf') ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') 
+      });
+      
+      // Verification: If PDF is too small (e.g. < 500 bytes), it might be a corrupted text response
+      if (filename.endsWith('.pdf') && blob.size < 500) {
+        console.warn('Warning: Downloaded PDF is unusually small:', blob.size, 'bytes');
+      }
+
+      const blobUrl = window.URL.createObjectURL(blob);
+      
+      // If it's a PDF, we can try to open in new tab instead of just forced download
+      if (filename.endsWith('.pdf')) {
+        const newWindow = window.open(blobUrl, '_blank');
+        if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+          // Fallback to link download if popup blocked
+          const link = document.createElement('a');
+          link.href = blobUrl;
+          link.download = filename;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }
+      } else {
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+      
+      setTimeout(() => {
+        window.URL.revokeObjectURL(blobUrl);
+      }, 5000); // Increased timeout to ensure browser finishes loading
+    } catch (error: any) {
+      console.error('Download Error:', error);
+      // If error.data is an arraybuffer, decode it
+      if (error.data instanceof ArrayBuffer) {
+        const decoder = new TextDecoder('utf-8');
+        const jsonStr = decoder.decode(error.data);
+        const errorData = JSON.parse(jsonStr);
+        alert(errorData.message || 'Gagal mengunduh file');
+      } else {
+        alert(error.message || 'Gagal mengunduh file');
+      }
+      throw error;
+    }
   }
 };
 

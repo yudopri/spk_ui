@@ -102,9 +102,8 @@ const ReportHasil = () => {
     if (!selectedPeriodeId) return;
     try {
       setExporting(true);
-      // Direct Download for Excel using format=excel
-      const downloadUrl = `/api/proxy/spk/report/summary/${selectedPeriodeId}?format=excel`;
-      window.open(downloadUrl, '_blank');
+      const url = `/spk/report/summary/${selectedPeriodeId}?format=excel`;
+      await spkService.downloadReport(url, `Rekapitulasi_Hasil_Periode_${selectedPeriodeId}.xlsx`);
     } catch (err) {
       setError("Gagal melakukan ekspor rekapitulasi");
     } finally {
@@ -112,11 +111,17 @@ const ReportHasil = () => {
     }
   };
 
-  const handlePrintPdf = (karyawanId: number) => {
+  const handlePrintPdf = async (karyawanId: number) => {
     if (!selectedPeriodeId) return;
-    // Direct Open/Download for individual PDF
-    const downloadUrl = `/api/proxy/spk/report/individual/${selectedPeriodeId}/${karyawanId}?format=pdf`;
-    window.open(downloadUrl, '_blank');
+    try {
+      setPrintingId(karyawanId);
+      const url = `/spk/report/individual/${selectedPeriodeId}/${karyawanId}?format=pdf`;
+      await spkService.downloadReport(url, `Laporan_KPI_${karyawanId}.pdf`);
+    } catch (err) {
+      setError("Gagal mengunduh laporan PDF");
+    } finally {
+      setPrintingId(null);
+    }
   };
 
   const chartOptions: any = {
