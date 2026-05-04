@@ -102,29 +102,21 @@ const ReportHasil = () => {
     if (!selectedPeriodeId) return;
     try {
       setExporting(true);
-      const res = await spkService.getSummaryReport(selectedPeriodeId);
-      if (res.success && res.data && res.columns) {
-        const { columns, data } = res;
-        
-        // Simulating Excel export by building a CSV and triggering download
-        const header = columns.join(",");
-        const rows = data.map((row: any) => 
-            columns.map((col: string) => `"${row[col] ?? ''}"`).join(",")
-        );
-        const csvContent = "data:text/csv;charset=utf-8," + [header, ...rows].join("\n");
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `Rekapitulasi_Hasil_Periode_${selectedPeriodeId}.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      }
+      // Direct Download for Excel using format=excel
+      const downloadUrl = `/api/proxy/spk/report/summary/${selectedPeriodeId}?format=excel`;
+      window.open(downloadUrl, '_blank');
     } catch (err) {
       setError("Gagal melakukan ekspor rekapitulasi");
     } finally {
       setExporting(false);
     }
+  };
+
+  const handlePrintPdf = (karyawanId: number) => {
+    if (!selectedPeriodeId) return;
+    // Direct Open/Download for individual PDF
+    const downloadUrl = `/api/proxy/spk/report/individual/${selectedPeriodeId}/${karyawanId}?format=pdf`;
+    window.open(downloadUrl, '_blank');
   };
 
   const chartOptions: any = {
@@ -322,10 +314,16 @@ const ReportHasil = () => {
                         </Badge>
                       </Table.Cell>
                       <Table.Cell>
-                        <Button color="light" size="xs" pill onClick={() => handleFetchIndividual(report.Karyawan?.Id ?? 0)}>
-                          {printingId === (report.Karyawan?.Id ?? 0) ? <Spinner size="xs" /> : <Icon icon="solar:printer-minimalistic-bold" className="h-4 w-4" />}
-                          <span className="ml-1">Cetak</span>
-                        </Button>
+                        <div className="flex justify-center gap-2">
+                          <Button color="light" size="xs" pill onClick={() => handleFetchIndividual(report.Karyawan?.Id ?? 0)}>
+                            {printingId === (report.Karyawan?.Id ?? 0) ? <Spinner size="xs" /> : <Icon icon="solar:eye-bold" className="h-4 w-4" />}
+                            <span className="ml-1">Preview</span>
+                          </Button>
+                          <Button color="info" size="xs" pill onClick={() => handlePrintPdf(report.Karyawan?.Id ?? 0)}>
+                            <Icon icon="solar:file-download-bold" className="h-4 w-4" />
+                            <span className="ml-1">PDF</span>
+                          </Button>
+                        </div>
                       </Table.Cell>
                     </Table.Row>
                   )) : (

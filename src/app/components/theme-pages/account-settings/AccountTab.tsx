@@ -31,6 +31,26 @@ const AccountTab = () => {
               </p>
             </div>
           </OutlineCard>
+
+          <div className="mt-[30px]">
+            <OutlineCard>
+              <h5 className="card-title">Tanda Tangan</h5>
+              <p className="card-subtitle -mt-1">
+                Upload tanda tangan transparan (PNG) untuk laporan
+              </p>
+              <div className="mx-auto text-center mt-5">
+                <div className="w-40 h-24 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center mx-auto mb-4 bg-gray-50">
+                   <p className="text-xs text-gray-400">Belum ada tanda tangan</p>
+                </div>
+                <div className="flex justify-center gap-3">
+                  <Button color={"primary"} size="sm">Upload PNG</Button>
+                </div>
+                <p className="text-[10px] text-bodytext mt-3">
+                  Gunakan background transparan agar terlihat rapi pada laporan PDF.
+                </p>
+              </div>
+            </OutlineCard>
+          </div>
         </div>
         <div className="md:col-span-6 col-span-12">
           <OutlineCard>
