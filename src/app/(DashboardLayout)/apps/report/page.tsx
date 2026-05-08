@@ -9,6 +9,7 @@ import periodeService, { Periode } from "@/services/periodeService";
 import karyawanService from "@/services/karyawanService";
 import { usePermission } from "@/hooks/usePermission";
 import IndividualReportModal from "@/app/components/shared/IndividualReportModal";
+import { isManagerRole } from "@/utils/accessControl";
 
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
@@ -61,13 +62,14 @@ const ReportHasil = () => {
         setLoading(true);
         const res = await spkService.getReport(selectedPeriodeId, 1, 100, selectedLokasi || undefined);
         const rawReports = res.data || [];
+        const isManagerUI_Local = isManagerRole(localStorage.getItem('userRole'));
         const scoped = rawReports.filter((item) => {
           if (isKaryawan) {
             const employeeId = Number(item.Karyawan?.Id ?? 0);
             return employeeId === Number(user?.employee_id ?? 0);
           }
 
-          if (isAdminLike && user?.dept_id && !isManager) {
+          if (isAdminLike && user?.dept_id && !isManagerUI_Local) {
             const currentDivisiId = (item as any)?.Periode?.DivisiId ?? (item as any)?.Periode?.departemen_id;
             // Jika DivisiId null/undefined (Semua Divisi), maka semua Kadiv bisa melihat
             if (currentDivisiId === null || currentDivisiId === undefined || currentDivisiId === 0) {
@@ -222,6 +224,11 @@ const ReportHasil = () => {
 
   const bestEmployee = reports.length > 0 ? reports[0] : null;
 
+  // Gunakan filter dari backend/accessControl.ts untuk konsistensi
+  const isManagerUI = isManagerRole(localStorage.getItem('userRole'));
+
+  const canExport = exporting || !selectedPeriodeId || (!isFinal && !isManagerUI);
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm gap-4">
@@ -263,14 +270,14 @@ const ReportHasil = () => {
                     color="success" 
                     size="sm" 
                     onClick={() => handleUpdateStatus('Final')} 
-                    disabled={updating || !isManager}
-                    title={!isManager ? "Hanya Manager yang dapat melakukan finalisasi" : ""}
+                    disabled={updating || !isManagerUI}
+                    title={!isManagerUI ? "Hanya Manager yang dapat melakukan finalisasi" : ""}
                   >
                     {updating ? <Spinner size="sm" /> : <Icon icon="solar:check-read-linear" className="mr-2 h-4 w-4" />}
                     Finalkan Laporan
                   </Button>
                 )}
-                <Button color="dark" size="sm" className="flex items-center" onClick={handleExportSummary} disabled={exporting || !selectedPeriodeId || (!isFinal && !isManager)}>
+                <Button color="dark" size="sm" className="flex items-center" onClick={handleExportSummary} disabled={Boolean(canExport)}>
                     {exporting ? <Spinner size="sm" className="mr-2" /> : <Icon icon="solar:file-send-bold" className="mr-2 h-4 w-4" />}
                     Ekspor Rekapitulasi
                 </Button>
@@ -281,7 +288,7 @@ const ReportHasil = () => {
       {!isFinal && !loading && (
         <Alert color="warning" className="mb-4" icon={() => <Icon icon="solar:info-circle-bold" className="h-5 w-5" />}>
           Laporan ini masih berstatus <b>DRAFT</b>. 
-          {isManager ? " Silakan klik 'Finalkan Laporan' untuk memberikan persetujuan." : " Menunggu persetujuan dari Manager untuk status Final."}
+          {isManagerUI ? " Silakan klik 'Finalkan Laporan' untuk memberikan persetujuan." : " Menunggu persetujuan dari Manager untuk status Final."}
         </Alert>
       )}
 

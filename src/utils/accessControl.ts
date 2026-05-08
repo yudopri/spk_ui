@@ -24,14 +24,14 @@ function normalizeText(value: string | null | undefined): string {
 }
 
 export function normalizeRole(role: string | null | undefined): UserRole {
-  const normalized = normalizeText(role);
+  const normalized = (role || "").trim();
   if (normalized === "Manager") return "Manager";
   if (normalized === "Dev" || normalized === "Developer") return "Dev";
   if (normalized === "Hrd") return "Hrd";
   if (normalized === "Kadiv") return "Kadiv";
   if (normalized === "Karyawan" || normalized === "Employee" || normalized === "Staff") return "Karyawan";
   if (normalized === "Admin") return "Admin";
-  if (normalized.startsWith("adm")) return "Adm";
+  if (normalized.toLowerCase().startsWith("adm")) return "Adm";
   return "unknown";
 }
 
