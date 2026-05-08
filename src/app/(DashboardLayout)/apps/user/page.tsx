@@ -1,5 +1,5 @@
 ﻿"use client";
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { Table, Badge, Spinner, Alert, TextInput } from "flowbite-react";
 import CardBox from "@/app/components/shared/CardBox";
 import { Icon } from "@iconify/react";
@@ -30,14 +30,11 @@ const UserManagementPage = () => {
         }
     };
 
-    const filteredUsers = useMemo(() => {
-        if (!users) return [];
-        return users.filter(u => 
-            u.name?.toLowerCase().includes(search.toLowerCase()) || 
-            u.email?.toLowerCase().includes(search.toLowerCase()) ||
-            u.role?.toLowerCase().includes(search.toLowerCase())
-        );
-    }, [users, search]);
+    const filteredUsers = users.filter(u => 
+        u.name?.toLowerCase().includes(search.toLowerCase()) || 
+        u.email?.toLowerCase().includes(search.toLowerCase()) ||
+        u.role?.toLowerCase().includes(search.toLowerCase())
+    );
 
     if (!hasPermission("user_manage")) {
         return (

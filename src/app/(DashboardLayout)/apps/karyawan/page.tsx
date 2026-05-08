@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Table, Badge, Spinner, Alert, Button } from "flowbite-react";
 import CardBox from "@/app/components/shared/CardBox";
 import { Icon } from "@iconify/react";
@@ -69,33 +69,23 @@ const DataKaryawan = () => {
     fetchEmployees();
   }, [selectedDeptId, selectedLokasi, roleGroup, includeManagement, normalizedRole]);
 
-  const divisiOptions = useMemo(
-    () => divisiList.map((div) => ({ value: String(div.id), label: div.namaDivisi })),
-    [divisiList]
-  );
+  const divisiOptions = divisiList.map((div) => ({ value: String(div.id), label: div.namaDivisi }));
 
-  const lokasiOptions = useMemo(() => {
-    const unique = Array.from(new Set(employees.map((e) => e.lokasi_kerja).filter(Boolean))) as string[];
-    return unique.map((value) => ({ value, label: value }));
-  }, [employees]);
+  const uniqueLokasi = Array.from(new Set(employees.map((e) => e.lokasi_kerja).filter(Boolean))) as string[];
+  const lokasiOptions = uniqueLokasi.map((value) => ({ value, label: value }));
 
-  const filteredEmployees = useMemo(() => {
-    const keyword = search.trim().toLowerCase();
-    if (!keyword) return employees;
+  const keyword = search.trim().toLowerCase();
+  const filteredEmployees = !keyword ? employees : employees.filter((emp) => {
+    const haystack = [emp.name, emp.nama, emp.nik, emp.department_name, emp.lokasi_kerja]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+    return haystack.includes(keyword);
+  });
 
-    return employees.filter((emp) => {
-      const haystack = [emp.name, emp.nama, emp.nik, emp.department_name, emp.lokasi_kerja]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-      return haystack.includes(keyword);
-    });
-  }, [employees, search]);
-
-  const selectedDeptName = useMemo(() => {
-    if (!selectedDeptId) return "Semua Departemen";
-    return divisiList.find((d) => String(d.id) === selectedDeptId)?.namaDivisi || "Departemen";
-  }, [divisiList, selectedDeptId]);
+  const selectedDeptName = !selectedDeptId 
+    ? "Semua Departemen" 
+    : divisiList.find((d) => String(d.id) === selectedDeptId)?.namaDivisi || "Departemen";
 
   return (
     <div className="flex flex-col gap-6">

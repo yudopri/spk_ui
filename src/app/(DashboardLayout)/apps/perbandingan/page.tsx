@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Table, Select, Button, Badge, Alert, Spinner } from "flowbite-react";
 import CardBox from "@/app/components/shared/CardBox";
 import { Icon } from "@iconify/react";
@@ -96,23 +96,20 @@ const NilaiPerbandingan = () => {
     fetchExistingPerbandingan();
   }, [selectedPeriodeId, kpis]);
 
-  const pairs = useMemo(() => {
-    const generated: { kpiA: KPI; kpiB: KPI; key: string }[] = [];
-    for (let i = 0; i < kpis.length; i++) {
-      for (let j = i + 1; j < kpis.length; j++) {
-        const idA = kpis[i].Id;
-        const idB = kpis[j].Id;
-        generated.push({
-          kpiA: kpis[i],
-          kpiB: kpis[j],
-          key: `${idA}-${idB}`,
-        });
-      }
+  const pairs: { kpiA: KPI; kpiB: KPI; key: string }[] = [];
+  for (let i = 0; i < kpis.length; i++) {
+    for (let j = i + 1; j < kpis.length; j++) {
+      const idA = kpis[i].Id;
+      const idB = kpis[j].Id;
+      pairs.push({
+        kpiA: kpis[i],
+        kpiB: kpis[j],
+        key: `${idA}-${idB}`,
+      });
     }
-    return generated;
-  }, [kpis]);
+  }
 
-  const selectedPeriode = periodes.find((p) => p.Id === selectedPeriodeId);
+  const selectedPeriode = periodes.find((p) => (p.Id || (p as any).id) === selectedPeriodeId);
 
   const handleSavePerbandingan = async () => {
     if (!selectedPeriodeId || pairs.length === 0) return;

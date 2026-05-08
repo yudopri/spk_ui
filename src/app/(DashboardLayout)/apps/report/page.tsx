@@ -26,9 +26,7 @@ const ReportHasil = () => {
   const [updating, setUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const selectedPeriode = useMemo(() => 
-    periodes.find(p => (p.id || p.Id) === selectedPeriodeId),
-  [periodes, selectedPeriodeId]);
+  const [selectedPeriode, setSelectedPeriode] = useState<Periode | null>(null);
 
   const isFinal = selectedPeriode?.Status === 'Final';
 
@@ -61,6 +59,10 @@ const ReportHasil = () => {
       if (!selectedPeriodeId) return;
       try {
         setLoading(true);
+        // Sync selectedPeriode data
+        const currentP = periodes.find(p => (p.id || p.Id) === selectedPeriodeId);
+        if (currentP) setSelectedPeriode(currentP);
+
         const res = await spkService.getReport(selectedPeriodeId, 1, 100, selectedLokasi || undefined);
         const rawReports = res.data || [];
         const isManagerUI_Local = isManagerRole(localStorage.getItem('userRole'));
@@ -143,9 +145,17 @@ const ReportHasil = () => {
       setUpdating(true);
       const res = await spkService.updateStatus(selectedPeriodeId, status);
       if (res.success) {
-        // Refresh periodes to update the status in dropdown/useMemo
+        // Refresh data secara menyeluruh untuk sinkronisasi realtime
         const resP = await periodeService.getAll(1, 100);
         setPeriodes(resP.data);
+        
+        // Update selectedPeriode secara manual untuk segera mengubah state UI
+        const updatedP = resP.data.find((p: any) => (p.id || p.Id) === selectedPeriodeId);
+        if (updatedP) setSelectedPeriode(updatedP);
+        
+        // Refresh laporan untuk memperbarui status per baris
+        const resR = await spkService.getReport(selectedPeriodeId, 1, 100, selectedLokasi || undefined);
+        setReports(resR.data || []);
       }
     } catch (err: any) {
       setError(err?.response?.data?.message || `Gagal mengubah status menjadi ${status}`);
