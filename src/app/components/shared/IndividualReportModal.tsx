@@ -124,17 +124,25 @@ const IndividualReportModal = ({ show, onClose, data }: IndividualReportProps) =
               <p className="mb-20 text-gray-800 font-semibold">Dibuat Oleh,</p>
               <div className="border-b border-gray-800 w-56 mx-auto"></div>
               <p className="mt-2 text-sm font-bold text-gray-900 uppercase">
-                {data.metadata.DibuatOleh || "( Nama Kepala Divisi )"}
+                {data.metadata.DibuatOleh?.split("(")[0].trim() || "( Nama Kepala Divisi )"}
               </p>
-              <p className="text-xs text-gray-500 italic">Atasan Langsung</p>
+              <p className="text-xs text-gray-500 italic">
+                {data.metadata.DibuatOleh?.includes("(") 
+                  ? data.metadata.DibuatOleh.split("(")[1].replace(")", "").trim() 
+                  : "Atasan Langsung"}
+              </p>
             </div>
             <div className="flex flex-col">
               <p className="mb-20 text-gray-800 font-semibold">Disetujui Oleh,</p>
               <div className="border-b border-gray-800 w-56 mx-auto"></div>
               <p className="mt-2 text-sm font-bold text-gray-900 uppercase">
-                {data.metadata.DisetujuiOleh || (data.metadata.Status === 'Final' ? '-' : "( Menunggu Approval )")}
+                {data.metadata.DisetujuiOleh?.split("(")[0].trim() || (data.metadata.Status === 'Final' ? '-' : "( Menunggu Approval )")}
               </p>
-              <p className="text-xs text-gray-500 italic">Pimpinan / Manager</p>
+              <p className="text-xs text-gray-500 italic">
+                {data.metadata.DisetujuiOleh?.includes("(") 
+                  ? data.metadata.DisetujuiOleh.split("(")[1].replace(")", "").trim() 
+                  : "Pimpinan / Manager"}
+              </p>
             </div>
           </div>
 

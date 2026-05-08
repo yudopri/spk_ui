@@ -59,9 +59,11 @@ const ReportHasil = () => {
       if (!selectedPeriodeId) return;
       try {
         setLoading(true);
-        // Sync selectedPeriode data
-        const currentP = periodes.find(p => (p.id || p.Id) === selectedPeriodeId);
-        if (currentP) setSelectedPeriode(currentP);
+        
+        // Refresh detail periode dari DB untuk sinkronisasi status terbaru
+        const resP_Single = await periodeService.getAll(1, 100);
+        const latestP = resP_Single.data.find((p: any) => (p.id || p.Id) === selectedPeriodeId);
+        if (latestP) setSelectedPeriode(latestP);
 
         const res = await spkService.getReport(selectedPeriodeId, 1, 100, selectedLokasi || undefined);
         const rawReports = res.data || [];
