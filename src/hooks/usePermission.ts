@@ -6,6 +6,7 @@ import {
     filterEmployeesByRoleScope,
     isAdminLikeRole,
     isKaryawanRole,
+    isManagerRole,
     isReadOnlyBusinessRole,
     normalizeRole,
 } from "@/utils/accessControl";
@@ -56,6 +57,7 @@ export const usePermission = () => {
         isReadOnly: isReadOnlyBusinessRole(role),
         canSeeAuditLogs: canAccessAuditLogs(role),
         isAdminLike: isAdminLikeRole(role),
+        isManager: isManagerRole(role),
         isKaryawan: isKaryawanRole(role),
         filterEmployeesByScope: <T extends { id: number; departemen_id?: number | null; dept_id?: number | null; employee_id?: number | null; role?: string | null }>(employees: T[]) =>
             filterEmployeesByRoleScope(employees, role, user),

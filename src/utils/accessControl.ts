@@ -36,7 +36,8 @@ export function normalizeRole(role: string | null | undefined): UserRole {
 }
 
 export function isManagerRole(role: string | null | undefined): boolean {
-  return normalizeRole(role) === "Manager";
+  const normalized = normalizeRole(role);
+  return normalized === "Manager";
 }
 
 export function isDevRole(role: string | null | undefined): boolean {

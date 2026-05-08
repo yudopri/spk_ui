@@ -13,7 +13,7 @@ import IndividualReportModal from "@/app/components/shared/IndividualReportModal
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
 const ReportHasil = () => {
-  const { user, isKaryawan, isAdminLike } = usePermission();
+  const { user, isKaryawan, isAdminLike, isManager } = usePermission();
   const [selectedPeriodeId, setSelectedPeriodeId] = useState<number>(0);
   const [selectedLokasi, setSelectedLokasi] = useState<string>("");
   const [periodes, setPeriodes] = useState<Periode[]>([]);
@@ -67,7 +67,7 @@ const ReportHasil = () => {
             return employeeId === Number(user?.employee_id ?? 0);
           }
 
-          if (isAdminLike && user?.dept_id) {
+          if (isAdminLike && user?.dept_id && !isManager) {
             const currentDivisiId = (item as any)?.Periode?.DivisiId ?? (item as any)?.Periode?.departemen_id;
             // Jika DivisiId null/undefined (Semua Divisi), maka semua Kadiv bisa melihat
             if (currentDivisiId === null || currentDivisiId === undefined || currentDivisiId === 0) {
@@ -88,7 +88,7 @@ const ReportHasil = () => {
       }
     };
     fetchReport();
-  }, [selectedPeriodeId, selectedLokasi, isKaryawan, isAdminLike, user?.employee_id, user?.dept_id]);
+  }, [selectedPeriodeId, selectedLokasi, isKaryawan, isAdminLike, isManager, user?.employee_id, user?.dept_id]);
 
   const handleFetchIndividual = async (karyawanId: number) => {
     try {
@@ -258,13 +258,19 @@ const ReportHasil = () => {
              </div>
              
              <div className="flex gap-2">
-                {isAdminLike && !isFinal && (
-                  <Button color="success" size="sm" onClick={() => handleUpdateStatus('Final')} disabled={updating}>
+                {!isFinal && (
+                  <Button 
+                    color="success" 
+                    size="sm" 
+                    onClick={() => handleUpdateStatus('Final')} 
+                    disabled={updating || !isManager}
+                    title={!isManager ? "Hanya Manager yang dapat melakukan finalisasi" : ""}
+                  >
                     {updating ? <Spinner size="sm" /> : <Icon icon="solar:check-read-linear" className="mr-2 h-4 w-4" />}
                     Finalkan Laporan
                   </Button>
                 )}
-                <Button color="dark" size="sm" className="flex items-center" onClick={handleExportSummary} disabled={exporting || !selectedPeriodeId || (!isFinal && !isAdminLike)}>
+                <Button color="dark" size="sm" className="flex items-center" onClick={handleExportSummary} disabled={exporting || !selectedPeriodeId || (!isFinal && !isManager)}>
                     {exporting ? <Spinner size="sm" className="mr-2" /> : <Icon icon="solar:file-send-bold" className="mr-2 h-4 w-4" />}
                     Ekspor Rekapitulasi
                 </Button>
@@ -275,7 +281,7 @@ const ReportHasil = () => {
       {!isFinal && !loading && (
         <Alert color="warning" className="mb-4" icon={() => <Icon icon="solar:info-circle-bold" className="h-5 w-5" />}>
           Laporan ini masih berstatus <b>DRAFT</b>. 
-          {isAdminLike ? " Silakan klik 'Finalkan Laporan' untuk memberikan persetujuan." : " Menunggu persetujuan dari Manager untuk status Final."}
+          {isManager ? " Silakan klik 'Finalkan Laporan' untuk memberikan persetujuan." : " Menunggu persetujuan dari Manager untuk status Final."}
         </Alert>
       )}
 
