@@ -184,6 +184,13 @@ const spkService = {
     return response.data;
   },
 
+  updateStatus: async (periodeId: number, status: 'Final' | 'Draft') => {
+    const response = await axiosServices.put<{ message: string; success: boolean }>(`/spk/periode/${periodeId}/status`, {
+      status
+    });
+    return response.data;
+  },
+
   // Helper for file downloads to handle auth token
   downloadReport: async (url: string, filename: string) => {
     try {

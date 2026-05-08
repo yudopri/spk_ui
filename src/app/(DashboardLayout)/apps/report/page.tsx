@@ -21,7 +21,14 @@ const ReportHasil = () => {
   const [reports, setReports] = useState<SpkReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
+  const [updating, setUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const selectedPeriode = useMemo(() => 
+    periodes.find(p => (p.id || p.Id) === selectedPeriodeId),
+  [periodes, selectedPeriodeId]);
+
+  const isFinal = selectedPeriode?.Status === 'Final';
 
   // Individual Report State
   const [showPrintModal, setShowPrintModal] = useState(false);
@@ -121,6 +128,26 @@ const ReportHasil = () => {
       setError("Gagal mengunduh laporan PDF");
     } finally {
       setPrintingId(null);
+    }
+  };
+
+  const handleUpdateStatus = async (status: 'Final' | 'Draft') => {
+    if (!selectedPeriodeId) return;
+    if (!confirm(`Apakah Anda yakin ingin mengubah status periode ini menjadi ${status}?` + 
+      (status === 'Final' ? '\n\nStatus Final akan membubuhkan tanda tangan digital Anda pada semua laporan.' : ''))) return;
+
+    try {
+      setUpdating(true);
+      const res = await spkService.updateStatus(selectedPeriodeId, status);
+      if (res.success) {
+        // Refresh periodes to update the status in dropdown/useMemo
+        const resP = await periodeService.getAll(1, 100);
+        setPeriodes(resP.data);
+      }
+    } catch (err: any) {
+      setError(err?.response?.data?.message || `Gagal mengubah status menjadi ${status}`);
+    } finally {
+      setUpdating(false);
     }
   };
 
@@ -229,14 +256,30 @@ const ReportHasil = () => {
                     ))}
                 </Select>
              </div>
-             <Button color="dark" size="sm" className="flex items-center" onClick={handleExportSummary} disabled={exporting || !selectedPeriodeId}>
-                {exporting ? <Spinner size="sm" className="mr-2" /> : <Icon icon="solar:file-send-bold" className="mr-2 h-4 w-4" />}
-                Ekspor Rekapitulasi
-             </Button>
+             
+             <div className="flex gap-2">
+                {isAdminLike && !isFinal && (
+                  <Button color="success" size="sm" onClick={() => handleUpdateStatus('Final')} disabled={updating}>
+                    {updating ? <Spinner size="sm" /> : <Icon icon="solar:check-read-linear" className="mr-2 h-4 w-4" />}
+                    Finalkan Laporan
+                  </Button>
+                )}
+                <Button color="dark" size="sm" className="flex items-center" onClick={handleExportSummary} disabled={exporting || !selectedPeriodeId || (!isFinal && !isAdminLike)}>
+                    {exporting ? <Spinner size="sm" className="mr-2" /> : <Icon icon="solar:file-send-bold" className="mr-2 h-4 w-4" />}
+                    Ekspor Rekapitulasi
+                </Button>
+             </div>
         </div>
       </div>
 
-      {error && <Alert color="failure">{error}</Alert>}
+      {!isFinal && !loading && (
+        <Alert color="warning" className="mb-4" icon={() => <Icon icon="solar:info-circle-bold" className="h-5 w-5" />}>
+          Laporan ini masih berstatus <b>DRAFT</b>. 
+          {isAdminLike ? " Silakan klik 'Finalkan Laporan' untuk memberikan persetujuan." : " Menunggu persetujuan dari Manager untuk status Final."}
+        </Alert>
+      )}
+
+      {error && <Alert color="failure" className="mb-4" onDismiss={() => setError(null)}>{error}</Alert>}
 
       <div className="grid grid-cols-12 gap-6">
         <div className="col-span-12 lg:col-span-8">
@@ -314,8 +357,8 @@ const ReportHasil = () => {
                       <Table.Cell>{report.Karyawan?.Nik}</Table.Cell>
                       <Table.Cell className="font-bold text-secondary text-base">{report.NilaiSkala}</Table.Cell>
                       <Table.Cell>
-                        <Badge color={report.Ranking <= 3 ? "success" : "info"} size="sm">
-                          {report.Ranking <= 3 ? "Prioritas" : "Sesuai"}
+                        <Badge color={isFinal ? "success" : "warning"} size="sm">
+                          {isFinal ? "Final" : "Draft"}
                         </Badge>
                       </Table.Cell>
                       <Table.Cell>
@@ -324,8 +367,14 @@ const ReportHasil = () => {
                             {printingId === (report.Karyawan?.Id ?? 0) ? <Spinner size="xs" /> : <Icon icon="solar:eye-bold" className="h-4 w-4" />}
                             <span className="ml-1">Preview</span>
                           </Button>
-                          <Button color="info" size="xs" pill onClick={() => handlePrintPdf(report.Karyawan?.Id ?? 0)}>
-                            <Icon icon="solar:file-download-bold" className="h-4 w-4" />
+                          <Button 
+                            color="dark" 
+                            size="xs" 
+                            pill 
+                            disabled={!isFinal || (printingId === (report.Karyawan?.Id ?? 0))}
+                            onClick={() => handlePrintPdf(report.Karyawan?.Id ?? 0)}
+                          >
+                            <Icon icon="solar:printer-bold" className="h-4 w-4" />
                             <span className="ml-1">PDF</span>
                           </Button>
                         </div>

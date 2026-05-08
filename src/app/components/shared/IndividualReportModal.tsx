@@ -12,6 +12,9 @@ interface IndividualReportProps {
       NIK: string;
       Periode: string;
       Tahun: number;
+      DibuatOleh?: string;
+      DisetujuiOleh?: string;
+      Status?: string;
     };
     rincian: Array<{
       Kriteria: string;
@@ -64,6 +67,18 @@ const IndividualReportModal = ({ show, onClose, data }: IndividualReportProps) =
                 <span className="font-semibold text-gray-700">Tahun</span>
                 <span className="col-span-2">: {data.metadata.Tahun}</span>
               </div>
+              {data.metadata.Status && (
+                <div className="grid grid-cols-3">
+                  <span className="font-semibold text-gray-700">Status</span>
+                  <span className="col-span-2">
+                    : <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${
+                      data.metadata.Status === 'Final' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
+                    }`}>
+                      {data.metadata.Status}
+                    </span>
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -74,8 +89,7 @@ const IndividualReportModal = ({ show, onClose, data }: IndividualReportProps) =
                 <tr className="bg-gray-100">
                   <th className="border border-gray-800 p-3 text-center w-16">No</th>
                   <th className="border border-gray-800 p-3 text-left">Kriteria Penilaian</th>
-                  <th className="border border-gray-800 p-3 text-center w-32">Skor</th>
-                  <th className="border border-gray-800 p-3 text-center w-24">Satuan</th>
+                  <th className="border border-gray-800 p-3 text-center w-32">Nilai</th>
                 </tr>
               </thead>
               <tbody>
@@ -83,8 +97,7 @@ const IndividualReportModal = ({ show, onClose, data }: IndividualReportProps) =
                   <tr key={index}>
                     <td className="border border-gray-800 p-2 text-center">{index + 1}</td>
                     <td className="border border-gray-800 p-2">{item.Kriteria}</td>
-                    <td className="border border-gray-800 p-2 text-center font-semibold">{item.Nilai}</td>
-                    <td className="border border-gray-800 p-2 text-center">{item.Satuan || "-"}</td>
+                    <td className="border border-gray-800 p-2 text-center font-semibold">{item.Nilai} {item.Satuan || ""} </td>
                   </tr>
                 ))}
               </tbody>
@@ -93,14 +106,14 @@ const IndividualReportModal = ({ show, onClose, data }: IndividualReportProps) =
 
           {/* Conclusion */}
           <div className="flex justify-end mb-16">
-            <div className="w-1/2 space-y-2 border-2 border-gray-800 p-4 rounded-lg bg-gray-50">
-              <div className="flex justify-between items-center text-lg">
-                <span className="font-bold text-gray-800">Total Skor Akhir:</span>
-                <span className="font-black text-2xl text-primary">{data.kesimpulan.Skor.toFixed(4)}</span>
+            <div className="w-1/2 space-y-1">
+              <div className="flex justify-between items-center py-2 border-b border-gray-300">
+                <span className="font-bold text-gray-800">Total Nilai Akhir</span>
+                <span className="font-black text-xl text-primary">{data.kesimpulan.Skor.toFixed(4)}</span>
               </div>
-              <div className="flex justify-between items-center bg-white p-2 border border-gray-200">
-                <span className="font-semibold">Peringkat:</span>
-                <span className="font-bold text-xl uppercase">Ke - {data.kesimpulan.Ranking}</span>
+              <div className="flex justify-between items-center py-2 border-b-2 border-gray-800">
+                <span className="font-bold text-gray-800">Peringkat Akhir</span>
+                <span className="font-black text-xl uppercase text-secondary">Ke - {data.kesimpulan.Ranking}</span>
               </div>
             </div>
           </div>
@@ -108,14 +121,20 @@ const IndividualReportModal = ({ show, onClose, data }: IndividualReportProps) =
           {/* Signatures */}
           <div className="grid grid-cols-2 gap-20 text-center mt-20 px-10">
             <div className="flex flex-col">
-              <p className="mb-20 text-gray-800">Atasan Langsung,</p>
-              <div className="border-b border-gray-800 w-48 mx-auto"></div>
-              <p className="mt-2 text-sm text-gray-500 italic">( Nama Lengkap )</p>
+              <p className="mb-20 text-gray-800 font-semibold">Dibuat Oleh,</p>
+              <div className="border-b border-gray-800 w-56 mx-auto"></div>
+              <p className="mt-2 text-sm font-bold text-gray-900 uppercase">
+                {data.metadata.DibuatOleh || "( Nama Kepala Divisi )"}
+              </p>
+              <p className="text-xs text-gray-500 italic">Atasan Langsung</p>
             </div>
             <div className="flex flex-col">
-              <p className="mb-20 text-gray-800">Pimpinan,</p>
-              <div className="border-b border-gray-800 w-48 mx-auto"></div>
-              <p className="mt-2 text-sm text-gray-500 italic">( HRD / Direksi )</p>
+              <p className="mb-20 text-gray-800 font-semibold">Disetujui Oleh,</p>
+              <div className="border-b border-gray-800 w-56 mx-auto"></div>
+              <p className="mt-2 text-sm font-bold text-gray-900 uppercase">
+                {data.metadata.DisetujuiOleh || (data.metadata.Status === 'Final' ? '-' : "( Menunggu Approval )")}
+              </p>
+              <p className="text-xs text-gray-500 italic">Pimpinan / Manager</p>
             </div>
           </div>
 
@@ -126,11 +145,30 @@ const IndividualReportModal = ({ show, onClose, data }: IndividualReportProps) =
 
         <style jsx global>{`
           @media print {
+            @page {
+              size: A4;
+              margin: 20mm;
+            }
+            body {
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
+              background-color: white !important;
+            }
             body * {
               visibility: hidden;
             }
             .print-modal, .print-modal * {
               visibility: visible !important;
+            }
+            .print-modal {
+              position: fixed;
+              left: 0;
+              top: 0;
+              width: 100%;
+              height: auto;
+              margin: 0;
+              padding: 0 !important;
+              box-shadow: none !important;
             }
             #printable-report {
               position: absolute;
@@ -138,10 +176,15 @@ const IndividualReportModal = ({ show, onClose, data }: IndividualReportProps) =
               top: 0;
               width: 100%;
               padding: 0 !important;
+              margin: 0 !important;
             }
             .print\\:hidden {
               display: none !important;
             }
+            /* Ensure table borders and backgrounds are printed */
+            table { border-collapse: collapse !important; }
+            th, td { border: 1px solid black !important; }
+            .bg-gray-100 { background-color: #f3f4f6 !important; }
           }
         `}</style>
       </Modal.Body>

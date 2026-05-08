@@ -144,7 +144,7 @@ const PenilaianKaryawan = () => {
       // Hitung otomatis MOORA setelah simpan penilaian
       await spkService.calculateMoora(selectedPeriodeId);
       
-      setSuccess(res?.message || "Penilaian berhasil disimpan dan ranking diperbarui");
+      setSuccess("Penilaian berhasil disimpan (Draft) dan ranking diperbarui. Laporan kini menunggu persetujuan Manager.");
     } catch (err: any) {
       setError(err?.response?.data?.message || "Gagal menyimpan penilaian");
     } finally {
@@ -214,8 +214,14 @@ const PenilaianKaryawan = () => {
         </div>
       </div>
 
-      {error && <Alert color="failure">{error}</Alert>}
-      {success && <Alert color="success">{success}</Alert>}
+      {error && <Alert color="failure" className="mb-4">{error}</Alert>}
+      {success && (
+        <Alert color="success" className="mb-4" icon={() => <Icon icon="solar:check-circle-bold" className="h-5 w-5" />}>
+           <div>
+            <span className="font-bold">{success}</span>
+          </div>
+        </Alert>
+      )}
 
       <CardBox>
         <div className="mb-4 flex items-center justify-between">
