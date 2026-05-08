@@ -185,8 +185,9 @@ const spkService = {
   },
 
   updateStatus: async (periodeId: number, status: 'Final' | 'Draft') => {
-    const response = await axiosServices.put<{ message: string; success: boolean }>(`/spk/periode/${periodeId}/status`, {
-      status
+    // Sesuai instruksi backend spkController.js:198-203, kirim field "Status" ke endpoint periode
+    const response = await axiosServices.put<{ message: string; success: boolean }>(`/spk/periode/${periodeId}`, {
+      Status: status
     });
     return response.data;
   },
