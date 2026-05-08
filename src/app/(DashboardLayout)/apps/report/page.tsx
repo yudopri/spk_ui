@@ -10,6 +10,7 @@ import karyawanService from "@/services/karyawanService";
 import { usePermission } from "@/hooks/usePermission";
 import IndividualReportModal from "@/app/components/shared/IndividualReportModal";
 import { isManagerRole } from "@/utils/accessControl";
+import { useEffect as useClientEffect } from "react";
 
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
@@ -224,8 +225,12 @@ const ReportHasil = () => {
 
   const bestEmployee = reports.length > 0 ? reports[0] : null;
 
-  // Gunakan filter dari backend/accessControl.ts untuk konsistensi
-  const isManagerUI = isManagerRole(localStorage.getItem('userRole'));
+  const [isManagerUI, setIsManagerUI] = useState(false);
+  
+  useClientEffect(() => {
+    const role = localStorage.getItem('userRole');
+    setIsManagerUI(isManagerRole(role));
+  }, []);
 
   const canExport = exporting || !selectedPeriodeId || (!isFinal && !isManagerUI);
 
