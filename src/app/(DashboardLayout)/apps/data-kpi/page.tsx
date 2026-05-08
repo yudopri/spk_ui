@@ -152,12 +152,17 @@ const DataKPI = () => {
     }
   };
 
+  const currentPeriode = periodes.find(p => p.id === selectedPeriodeId);
+  const isLocked = currentPeriode?.Status === 'Final';
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Master Kriteria KPI</h1>
-          <p className="text-sm text-gray-500">Kelola kriteria penilaian berdasarkan Periode & Divisi</p>
+          <p className="text-sm text-gray-500">
+            {isLocked ? "Periode ini sudah Final dan terkunci" : "Kelola kriteria penilaian berdasarkan Periode & Divisi"}
+          </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <div className="w-64">
@@ -169,7 +174,7 @@ const DataKPI = () => {
               <option value={0}>Pilih Periode</option>
               {periodes.map((p) => (
                 <option key={p.id} value={p.id}>
-                  {(p.NamaPeriode || p.namaPeriode) + " - " + (p.NamaDivisi || p.divisi?.namaDivisi || "") +  (p.isAktif ? '(Aktif)' : '(Tidak Aktif)')}
+                  {(p.NamaPeriode || p.namaPeriode) + " - " + (p.NamaDivisi || p.divisi?.namaDivisi || "") +  (p.Status === 'Final' ? ' (Final)' : p.isAktif ? ' (Aktif)' : ' (Tidak Aktif)')}
                 </option>
               ))}
             </Select>
@@ -181,7 +186,8 @@ const DataKPI = () => {
             disabled={
               isReadOnly ||
               selectedPeriodeId === 0 ||
-              !periodes.find(p => p.id === selectedPeriodeId)?.isAktif
+              isLocked ||
+              !currentPeriode?.isAktif
             }
           >
             <Icon icon="solar:add-circle-linear" className="mr-2 h-5 w-5" />
@@ -238,7 +244,7 @@ const DataKPI = () => {
                                 color="light" 
                                 size="xs" 
                                 onClick={() => handleOpenModal("edit", kpi)}
-                                disabled={!periodes.find(p => p.id === selectedPeriodeId)?.isAktif}
+                                disabled={isLocked || !currentPeriode?.isAktif}
                               >
                                 <Icon icon="solar:pen-new-square-linear" className="h-4 w-4 text-primary" />
                               </Button>
@@ -246,7 +252,7 @@ const DataKPI = () => {
                                 color="light" 
                                 size="xs" 
                                 onClick={() => handleDelete(kpi.id)}
-                                disabled={!periodes.find(p => p.id === selectedPeriodeId)?.isAktif}
+                                disabled={isLocked || !currentPeriode?.isAktif}
                               >
                                 <Icon icon="solar:trash-bin-trash-linear" className="h-4 w-4 text-red-500" />
                               </Button>

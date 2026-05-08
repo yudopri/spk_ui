@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { Table, Button, Badge, Modal, Label, TextInput, Select, Spinner, Alert } from "flowbite-react";
+import { Table, Button, Badge, Modal, Label, TextInput, Select, Spinner, Alert, Tooltip } from "flowbite-react";
 import CardBox from "@/app/components/shared/CardBox";
 import { Icon } from "@iconify/react";
 import periodeService, { Periode } from "@/services/periodeService";
@@ -180,23 +180,43 @@ const PeriodeKPI = () => {
                     <Table.Cell className="text-sm">{new Date(period.tanggalMulai).toLocaleDateString("id-ID")}</Table.Cell>
                     <Table.Cell className="text-sm">{new Date(period.tanggalSelesai).toLocaleDateString("id-ID")}</Table.Cell>
                     <Table.Cell className="text-center">
-                      <Badge color={period.isAktif ? "success" : "failure"} className="w-fit mx-auto">
-                        {period.isAktif ? "Aktif" : "Tidak Aktif"}
-                      </Badge>
+                      <div className="flex flex-col items-center gap-1">
+                        <Badge color={period.Status === 'Final' ? "success" : period.isAktif ? "info" : "failure"} className="w-fit mx-auto">
+                          {period.Status === 'Final' ? 'Final' : period.isAktif ? "Aktif" : "Tidak Aktif"}
+                        </Badge>
+                      </div>
                     </Table.Cell>
                     <Table.Cell>
                       <div className="flex justify-center gap-2">
-                        <Button color="light" size="xs" onClick={() => handleAction("detail", period)}>
-                          <Icon icon="solar:eye-linear" className="h-4 w-4" />
-                        </Button>
+                        <Tooltip content="Detail">
+                          <Button color="light" size="xs" onClick={() => handleAction("detail", period)}>
+                            <Icon icon="solar:eye-linear" className="h-4 w-4" />
+                          </Button>
+                        </Tooltip>
                         {!isReadOnly && (
                           <>
-                            <Button color="light" size="xs" onClick={() => handleAction("edit", period)}>
-                              <Icon icon="solar:pen-new-square-linear" className="h-4 w-4 text-primary" />
-                            </Button>
-                            <Button color="light" size="xs" onClick={() => handleDelete(period.id)}>
-                              <Icon icon="solar:trash-bin-trash-linear" className="h-4 w-4 text-red-500" />
-                            </Button>
+                            <Tooltip content={period.Status === 'Final' ? "Tidak dapat mengedit periode yang sudah Final" : "Edit"}>
+                              <Button 
+                                color="light" 
+                                size="xs" 
+                                onClick={() => handleAction("edit", period)}
+                                disabled={period.Status === 'Final'}
+                                className={period.Status === 'Final' ? 'opacity-50 cursor-not-allowed' : ''}
+                              >
+                                <Icon icon="solar:pen-new-square-linear" className="h-4 w-4 text-primary" />
+                              </Button>
+                            </Tooltip>
+                            <Tooltip content={period.Status === 'Final' ? "Tidak dapat menghapus periode yang sudah Final" : "Hapus"}>
+                              <Button 
+                                color="light" 
+                                size="xs" 
+                                onClick={() => handleDelete(period.id)}
+                                disabled={period.Status === 'Final'}
+                                className={period.Status === 'Final' ? 'opacity-50 cursor-not-allowed' : ''}
+                              >
+                                <Icon icon="solar:trash-bin-trash-linear" className="h-4 w-4 text-red-500" />
+                              </Button>
+                            </Tooltip>
                           </>
                         )}
                       </div>

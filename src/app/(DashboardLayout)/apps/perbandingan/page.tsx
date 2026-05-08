@@ -179,13 +179,17 @@ const NilaiPerbandingan = () => {
     }
   };
 
+  const isLocked = selectedPeriode?.Status === 'Final';
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm gap-4">
         <div>
           <h1 className="text-2xl font-bold">Perbandingan Kriteria</h1>
           <p className="text-sm text-gray-500">
-            Tentukan bobot prioritas untuk {selectedPeriode?.namaPeriode || ""} - {selectedPeriode?.divisi?.namaDivisi || ""}
+            {isLocked 
+              ? `Periode ${selectedPeriode?.namaPeriode || ""} sudah Final (Locked)`
+              : `Tentukan bobot prioritas untuk ${selectedPeriode?.namaPeriode || ""} - ${selectedPeriode?.divisi?.namaDivisi || ""}`}
           </p>
         </div>
         <div className="flex gap-4">
@@ -198,18 +202,18 @@ const NilaiPerbandingan = () => {
               <option value={0}>Pilih Periode Aktif</option>
               {periodes.map((p) => (
                 <option key={p.Id} value={p.Id}>
-                  {(p.NamaPeriode || p.namaPeriode) + " - " + (p.NamaDivisi || p.divisi?.namaDivisi || "")}
+                  {(p.NamaPeriode || p.namaPeriode) + " - " + (p.NamaDivisi || p.divisi?.namaDivisi || "") + (p.Status === 'Final' ? ' (Final)' : '')}
                 </option>
               ))}
             </Select>
           </div>
-          <Button color="info" onClick={handleSavePerbandingan} disabled={submitting || pairs.length === 0}>
+          <Button color="info" onClick={handleSavePerbandingan} disabled={submitting || pairs.length === 0 || isLocked}>
             {submitting ? <Spinner size="sm" className="mr-2" /> : <Icon icon="solar:diskette-bold-duotone" className="mr-2 h-5 w-5" />}
-            Simpan Perbandingan
+            {isLocked ? "Terkunci" : "Simpan Perbandingan"}
           </Button>
-          <Button color="primary" onClick={handleCalculate} disabled={calculating || pairs.length === 0}>
+          <Button color="primary" onClick={handleCalculate} disabled={calculating || pairs.length === 0 || isLocked}>
             <Icon icon="solar:calculator-linear" className="mr-2 h-5 w-5" />
-            {calculating ? "Menghitung..." : "Hitung Bobot"}
+            {calculating ? "Menghitung..." : isLocked ? "Terkunci" : "Hitung Bobot"}
           </Button>
         </div>
       </div>
@@ -245,6 +249,7 @@ const NilaiPerbandingan = () => {
                             const nilai = Number(e.target.value);
                             setComparisonValues((prev) => ({ ...prev, [pair.key]: nilai }));
                           }}
+                          disabled={isLocked}
                         >
                           <option value="1">1 - Sama Penting</option>
                           <option value="3">3 - Sedikit Lebih Penting</option>

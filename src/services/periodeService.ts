@@ -49,7 +49,8 @@ const normalizePeriode = (item: any): Periode => {
   if (endDate) endDate.setHours(0, 0, 0, 0);
 
   let calculatedStatus = status;
-  if (startDate && endDate) {
+  // HANYA hitung status berdasarkan tanggal jika status saat ini BUKAN 'Final'
+  if (status !== 'Final' && startDate && endDate) {
     if (now >= startDate && now <= endDate) {
       calculatedStatus = 'Aktif';
     } else {
@@ -71,7 +72,7 @@ const normalizePeriode = (item: any): Periode => {
     tanggalMulai: mulai,
     TanggalSelesai: selesai,
     tanggalSelesai: selesai,
-    isAktif: String(calculatedStatus).toLowerCase() === 'aktif',
+    isAktif: String(calculatedStatus).toLowerCase() === 'aktif' || calculatedStatus === 'Final',
     tahun: item.tahun ?? item.Tahun ?? (mulai ? new Date(mulai).getFullYear() : new Date().getFullYear()),
     divisiId: item.divisiId ?? item.DivisiId ?? item.dept_id ?? null,
     divisi: item.divisi

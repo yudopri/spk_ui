@@ -36,13 +36,18 @@ const PenilaianKaryawan = () => {
       ]);
       const locationRes = await karyawanService.getWorkLocations();
 
-      const activeList = (periodeRes.data as any[]).filter((p) => p.isAktif);
+      const activeList = (periodeRes.data as any[]).map((p: any) => ({
+        ...p,
+        // Ensure status mapping consistency for filtering
+        isAktif: p.Status === 'Final' ? true : p.isAktif
+      }));
       setPeriodes(activeList);
       setDepartments(karyawanRes.data);
       setWorkLocations(locationRes.data || []);
 
-      if (activeList.length > 0) {
-        setSelectedPeriodeId(activeList[0].Id || activeList[0].id);
+      const firstActive = activeList.find(p => p.Status !== 'Final' && p.isAktif) || activeList[0];
+      if (firstActive) {
+        setSelectedPeriodeId(firstActive.Id || firstActive.id);
       }
 
       if (karyawanRes.data.length > 0) {
@@ -196,7 +201,7 @@ const PenilaianKaryawan = () => {
                 <option value={0}>Pilih Periode</option>
                 {filteredPeriodes.map((p: any) => (
                   <option key={p.Id || p.id} value={p.Id || p.id}>
-                    {(p.NamaPeriode || p.namaPeriode) + " - " + (p.NamaDivisi || p.divisi?.namaDivisi || "Divisi")}
+                    {(p.NamaPeriode || p.namaPeriode) + " - " + (p.NamaDivisi || p.divisi?.namaDivisi || "Divisi") + (p.Status === 'Final' ? ' (Final)' : '')}
                   </option>
                 ))}
             </Select>
@@ -205,10 +210,10 @@ const PenilaianKaryawan = () => {
                 color="primary"
                 size="sm"
                 onClick={handleSaveAll}
-                disabled={submitting || !selectedPeriodeId || kpis.length === 0 || employees.length === 0}
+                disabled={submitting || !selectedPeriodeId || kpis.length === 0 || employees.length === 0 || selectedPeriode?.Status === 'Final'}
               >
                  <Icon icon="solar:diskette-bold-duotone" className="mr-2 h-5 w-5" />
-                 {submitting ? "Menyimpan..." : "Simpan Semua"}
+                 {submitting ? "Menyimpan..." : selectedPeriode?.Status === 'Final' ? "Terkunci (Final)" : "Simpan Semua"}
               </Button>
             )}
         </div>
@@ -261,13 +266,13 @@ const PenilaianKaryawan = () => {
                          <input
                            type="number"
                            placeholder="0-100"
-                           className="block w-full rounded-l-md border border-gray-300 px-2 py-1 text-sm focus:border-primary focus:ring-primary"
+                           className="block w-full rounded-l-md border border-gray-300 px-2 py-1 text-sm focus:border-primary focus:ring-primary disabled:bg-gray-100 disabled:cursor-not-allowed"
                            value={scores[key] ?? ""}
                            onChange={(e) => {
                              const value = e.target.value;
                              setScores((prev) => ({ ...prev, [key]: value }));
                            }}
-                           disabled={!hasPermission("score_input")}
+                           disabled={!hasPermission("score_input") || selectedPeriode?.Status === 'Final'}
                          />
                          <span className="inline-flex min-w-[40px] items-center justify-center rounded-r-md border border-l-0 border-gray-300 bg-gray-100 px-2 text-xs font-semibold text-gray-600">
                            {kpi.simbol || "-"}
