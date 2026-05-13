@@ -40,114 +40,154 @@ const IndividualReportModal = ({ show, onClose, data }: IndividualReportProps) =
       <Modal.Header className="print:hidden">Laporan Hasil Penilaian Individual</Modal.Header>
       <Modal.Body>
         <div id="printable-report" className="p-8 bg-white text-black font-sans leading-relaxed">
-          {/* Header */}
-          <div className="text-center mb-10 border-b-2 border-gray-800 pb-4">
-            <h1 className="text-2xl font-bold uppercase tracking-widest">Laporan Hasil Penilaian Kinerja</h1>
-            <p className="text-sm mt-1">Sistem Pendukung Keputusan Penilaian Karyawan</p>
-          </div>
-
-          {/* Metadata */}
-          <div className="grid grid-cols-2 gap-4 mb-8">
-            <div className="space-y-1">
-              <div className="grid grid-cols-3">
-                <span className="font-semibold text-gray-700">Nama</span>
-                <span className="col-span-2">: {data.metadata.Nama}</span>
-              </div>
-              <div className="grid grid-cols-3">
-                <span className="font-semibold text-gray-700">NIK</span>
-                <span className="col-span-2">: {data.metadata.NIK}</span>
-              </div>
+          {/* Header - Industrial Formal Style */}
+          <div className="flex justify-between items-center mb-6 border-b-4 border-double border-gray-900 pb-6">
+            <div className="text-left">
+              <h1 className="text-2xl font-black uppercase tracking-tighter leading-none mb-1">
+                Laporan Hasil Penilaian Kinerja
+              </h1>
+              <p className="text-xs font-bold text-gray-600 uppercase tracking-widest leading-none">
+                Performance Evaluation Report
+              </p>
             </div>
-            <div className="space-y-1">
-              <div className="grid grid-cols-3">
-                <span className="font-semibold text-gray-700">Periode</span>
-                <span className="col-span-2">: {data.metadata.Periode}</span>
+            <div className="text-right flex flex-col items-end">
+              <div className="bg-gray-900 text-white px-3 py-1 text-[10px] font-bold uppercase tracking-widest mb-2">
+                Confidential Document
               </div>
-              <div className="grid grid-cols-3">
-                <span className="font-semibold text-gray-700">Tahun</span>
-                <span className="col-span-2">: {data.metadata.Tahun}</span>
-              </div>
-              {data.metadata.Status && (
-                <div className="grid grid-cols-3">
-                  <span className="font-semibold text-gray-700">Status</span>
-                  <span className="col-span-2">
-                    : <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${
-                      data.metadata.Status === 'Final' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
-                    }`}>
-                      {data.metadata.Status}
-                    </span>
-                  </span>
-                </div>
-              )}
+              <p className="text-[10px] text-gray-500 font-mono tracking-tighter uppercase font-bold">
+                Doc Ref: {data.metadata.Tahun}/{data.metadata.Periode.replace(/\s+/g, '')}/{data.metadata.NIK}
+              </p>
             </div>
           </div>
 
-          {/* Table */}
-          <div className="mb-10">
-            <table className="w-full border-collapse border border-gray-800">
+          <div className="grid grid-cols-12 gap-6 mb-8 items-start">
+            {/* Metadata Left */}
+            <div className="col-span-12 md:col-span-7 bg-gray-50/50 border-l-4 border-gray-900 p-4">
+              <h3 className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-3 border-b border-gray-200 pb-1">Employee Information</h3>
+              <div className="grid grid-cols-12 gap-y-2 text-sm">
+                <div className="col-span-4 font-bold text-gray-500 uppercase text-[10px]">Nama Lengkap</div>
+                <div className="col-span-8 font-black text-gray-900 uppercase">: {data.metadata.Nama}</div>
+                
+                <div className="col-span-4 font-bold text-gray-500 uppercase text-[10px]">Nomor Induk (NIK)</div>
+                <div className="col-span-8 font-mono font-bold text-gray-800 tracking-wider">: {data.metadata.NIK}</div>
+              </div>
+            </div>
+
+            {/* Metadata Right */}
+            <div className="col-span-12 md:col-span-5 bg-gray-50 p-4 border border-gray-200">
+              <h3 className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-3 border-b border-gray-200 pb-1">Period Details</h3>
+              <div className="grid grid-cols-12 gap-y-2 text-sm">
+                <div className="col-span-5 font-bold text-gray-500 uppercase text-[10px]">Periode Kerja</div>
+                <div className="col-span-7 font-black text-gray-900 uppercase">: {data.metadata.Periode}</div>
+                
+                <div className="col-span-5 font-bold text-gray-500 uppercase text-[10px]">Tahun Buku</div>
+                <div className="col-span-7 font-black text-gray-900">: {data.metadata.Tahun}</div>
+
+                {data.metadata.Status && (
+                  <>
+                    <div className="col-span-5 font-bold text-gray-500 uppercase text-[10px]">Status Laporan</div>
+                    <div className="col-span-7 font-black uppercase text-xs flex items-center">
+                      : <span className={`ml-1 ${data.metadata.Status === 'Final' ? 'text-green-600' : 'text-orange-500'}`}>
+                        {data.metadata.Status}
+                      </span>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Table - Professional Industrial Style */}
+          <div className="mb-8">
+            <h3 className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">Performance breakdown</h3>
+            <table className="w-full border-2 border-gray-900 text-sm">
               <thead>
-                <tr className="bg-gray-100">
-                  <th className="border border-gray-800 p-3 text-center w-16">No</th>
-                  <th className="border border-gray-800 p-3 text-left">Kriteria Penilaian</th>
-                  <th className="border border-gray-800 p-3 text-center w-32">Nilai</th>
+                <tr className="bg-gray-900 text-white uppercase text-[10px] tracking-widest">
+                  <th className="p-3 text-center w-12 border-r border-white/20">#</th>
+                  <th className="p-3 text-left border-r border-white/20">Kriteria Penilaian / Key Performance Indicator</th>
+                  <th className="p-3 text-center w-32 font-black">Score (0-100)</th>
                 </tr>
               </thead>
               <tbody>
                 {data.rincian.map((item, index) => (
-                  <tr key={index}>
-                    <td className="border border-gray-800 p-2 text-center">{index + 1}</td>
-                    <td className="border border-gray-800 p-2">{item.Kriteria}</td>
-                    <td className="border border-gray-800 p-2 text-center font-semibold">{item.Nilai} {item.Satuan || ""} </td>
+                  <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                    <td className="border-r border-b border-gray-300 p-2 text-center text-gray-500 font-mono text-[10px]">{String(index + 1).padStart(2, '0')}</td>
+                    <td className="border-r border-b border-gray-300 p-2 font-bold text-gray-800 uppercase text-xs tracking-tight">{item.Kriteria}</td>
+                    <td className="border-b border-gray-300 p-2 text-center font-black text-gray-900">{item.Nilai} <span className="text-[9px] font-normal text-gray-400 italic">{item.Satuan}</span></td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
 
-          {/* Conclusion */}
-          <div className="flex justify-end mb-16">
-            <div className="w-1/2 space-y-1">
-              <div className="flex justify-between items-center py-2 border-b border-gray-300">
-                <span className="font-bold text-gray-800">Total Nilai Akhir</span>
-                <span className="font-black text-xl text-primary">{data.kesimpulan.Skor.toFixed(4)}</span>
+          {/* Conclusion - Industrial Scoreboard */}
+          <div className="flex justify-between items-center mb-12 gap-8 border-t-2 border-dashed border-gray-300 pt-8 mt-8">
+             <div className="flex-1 space-y-2">
+                <div className="border border-gray-300 p-4 relative overflow-hidden">
+                   <div className="absolute top-0 right-0 bg-gray-200 text-gray-600 px-2 py-0.5 text-[8px] font-black uppercase tracking-tighter">System Methodology</div>
+                   <h4 className="text-[10px] font-black uppercase mb-1">Methodology Statement</h4>
+                   <p className="text-[9px] leading-relaxed text-gray-500 text-justify">
+                      Skor numerik yang ditampilkan merupakan hasil ekstraksi data kinerja yang diproses menggunakan algoritma Multi-Objective Optimization on the basis of Ratio Analysis (MOORA) dengan pembobotan Analytical Hierarchy Process (AHP). Hasil ini bersifat objektif berdasarkan variabel kriteria yang telah ditetapkan oleh manajemen.
+                   </p>
+                </div>
+             </div>
+
+             <div className="w-48 text-center border-4 border-gray-900 p-4 bg-gray-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                <span className="block text-[8px] font-black uppercase text-gray-500 tracking-[0.2em] mb-1">Final Score Index</span>
+                <span className="block text-4xl font-black text-gray-900 leading-none mb-1 tracking-tighter">{data.kesimpulan.Skor.toFixed(2)}</span>
+             </div>
+
+             <div className="w-48 text-center border-4 border-gray-900 p-4 bg-yellow-400 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                <span className="block text-[8px] font-black uppercase text-gray-900 tracking-[0.2em] mb-1">Merit Ranking</span>
+                <div className="flex items-center justify-center gap-1 leading-none">
+                   <span className="text-[10px] font-black text-gray-900 opacity-50 uppercase">RANK</span>
+                   <span className="text-4xl font-black text-gray-900 tracking-tighter">{data.kesimpulan.Ranking}</span>
+                </div>
+             </div>
+          </div>
+
+          {/* Signatures - Formal Industrial Style */}
+          <div className="grid grid-cols-2 gap-12 mt-16 px-4">
+            <div className="text-left">
+              <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 block mb-1">Evaluated by:</span>
+              <p className="text-[11px] text-gray-800 font-bold mb-16 uppercase italic">Head of Department / Atasan Langsung</p>
+              <div className="space-y-0 text-left border-l-2 border-gray-900 pl-3">
+                <p className="text-xs font-black text-gray-900 uppercase tracking-tight">
+                  {data.metadata.DibuatOleh?.split("(")[0].trim() || "N/A"}
+                </p>
+                <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">
+                  {data.metadata.DibuatOleh?.includes("(") 
+                    ? data.metadata.DibuatOleh.split("(")[1].replace(")", "").trim() 
+                    : "Position Not Specified"}
+                </p>
               </div>
-              <div className="flex justify-between items-center py-2 border-b-2 border-gray-800">
-                <span className="font-bold text-gray-800">Peringkat Akhir</span>
-                <span className="font-black text-xl uppercase text-secondary">Ke - {data.kesimpulan.Ranking}</span>
+            </div>
+
+            <div className="text-left">
+              <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 block mb-1">Approved by:</span>
+              <p className="text-[11px] text-gray-800 font-bold mb-16 uppercase italic">General Manager / Pimpinan Unit</p>
+              <div className="space-y-0 text-left border-l-2 border-gray-900 pl-3">
+                <p className="text-xs font-black text-gray-900 uppercase tracking-tight">
+                  {data.metadata.DisetujuiOleh?.split("(")[0].trim() || (data.metadata.Status === 'Final' ? 'VERIFIED SYSTEM' : "AWAITING APPROVAL")}
+                </p>
+                <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">
+                  {data.metadata.DisetujuiOleh?.includes("(") 
+                    ? data.metadata.DisetujuiOleh.split("(")[1].replace(")", "").trim() 
+                    : (data.metadata.Status === 'Final' ? 'DIGITAL SIGNATURE' : "Manager")}
+                </p>
               </div>
             </div>
           </div>
 
-          {/* Signatures */}
-          <div className="grid grid-cols-2 gap-20 text-center mt-20 px-10">
-            <div className="flex flex-col">
-              <p className="mb-20 text-gray-800 font-semibold">Dibuat Oleh,</p>
-              <div className="border-b border-gray-800 w-56 mx-auto"></div>
-              <p className="mt-2 text-sm font-bold text-gray-900 uppercase">
-                {data.metadata.DibuatOleh?.split("(")[0].trim() || "( Nama Kepala Divisi )"}
-              </p>
-              <p className="text-xs text-gray-500 italic">
-                {data.metadata.DibuatOleh?.includes("(") 
-                  ? data.metadata.DibuatOleh.split("(")[1].replace(")", "").trim() 
-                  : "Atasan Langsung"}
-              </p>
+          <div className="mt-16 pt-6 border-t border-gray-200 flex justify-between items-center text-[8px] text-gray-400 font-mono tracking-tighter uppercase font-bold">
+            <div className="flex gap-4">
+               <span>Generated: {new Date().toLocaleString('id-ID')}</span>
+               <span className="text-gray-300">|</span>
+               <span>Doc Type: HR/PERF/EVAL-V2</span>
             </div>
-            <div className="flex flex-col">
-              <p className="mb-20 text-gray-800 font-semibold">Disetujui Oleh,</p>
-              <div className="border-b border-gray-800 w-56 mx-auto"></div>
-              <p className="mt-2 text-sm font-bold text-gray-900 uppercase">
-                {data.metadata.DisetujuiOleh?.split("(")[0].trim() || (data.metadata.Status === 'Final' ? '-' : "( Menunggu Approval )")}
-              </p>
-              <p className="text-xs text-gray-500 italic">
-                {data.metadata.DisetujuiOleh?.includes("(") 
-                  ? data.metadata.DisetujuiOleh.split("(")[1].replace(")", "").trim() 
-                  : "Pimpinan / Manager"}
-              </p>
+            <div className="print:hidden italic font-sans text-primary">
+               * Preview Mode - Click Print to Generate Formal Document
             </div>
-          </div>
-
-          <div className="mt-12 text-center text-xs text-gray-400 print:hidden italic">
-            Dicetak otomatis melalui Sistem SPK - {new Date().toLocaleDateString('id-ID')}
           </div>
         </div>
 

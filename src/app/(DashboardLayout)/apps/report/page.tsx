@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useMemo } from "react";
-import { Table, Button, Badge, Select, Spinner, Alert } from "flowbite-react";
+import { Table, Button, Badge, Select, Spinner, Alert, Modal, Label, Textarea } from "flowbite-react";
 import CardBox from "@/app/components/shared/CardBox";
 import { Icon } from "@iconify/react";
 import dynamic from "next/dynamic";
@@ -34,6 +34,17 @@ const ReportHasil = () => {
   const [showPrintModal, setShowPrintModal] = useState(false);
   const [individualData, setIndividualData] = useState<any>(null);
   const [printingId, setPrintingId] = useState<number | null>(null);
+
+  // Review Modal State
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [reviewNote, setReviewNote] = useState("");
+  const [reviewReportId, setReviewReportId] = useState<number | null>(null);
+  const [reviewLoading, setReviewLoading] = useState(false);
+
+  const allReviewed = useMemo(() => {
+    if (reports.length === 0) return false;
+    return reports.every(r => r.Status === 'Reviewed');
+  }, [reports]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -135,6 +146,26 @@ const ReportHasil = () => {
       setError("Gagal mengunduh laporan PDF");
     } finally {
       setPrintingId(null);
+    }
+  };
+
+  const handleReview = async () => {
+    if (!reviewReportId) return;
+    try {
+      setReviewLoading(true);
+      const res = await spkService.reviewMooraResult(reviewReportId, reviewNote);
+      if (res.success) {
+        setShowReviewModal(false);
+        setReviewNote("");
+        setReviewReportId(null);
+        // Refresh Reports highlight status change
+        const resR = await spkService.getReport(selectedPeriodeId, 1, 100, selectedLokasi || undefined);
+        setReports(resR.data || []);
+      }
+    } catch (err: any) {
+      setError(err?.response?.data?.message || "Gagal menyimpan review");
+    } finally {
+      setReviewLoading(false);
     }
   };
 
@@ -287,8 +318,8 @@ const ReportHasil = () => {
                     color="success" 
                     size="sm" 
                     onClick={() => handleUpdateStatus('Final')} 
-                    disabled={updating || !isManagerUI}
-                    title={!isManagerUI ? "Hanya Manager yang dapat melakukan finalisasi" : ""}
+                    disabled={updating || !isManagerUI || !allReviewed}
+                    title={!isManagerUI ? "Hanya Manager yang dapat melakukan finalisasi" : !allReviewed ? "Semua karyawan harus berstatus Reviewed terlebih dahulu" : ""}
                   >
                     {updating ? <Spinner size="sm" /> : <Icon icon="solar:check-read-linear" className="mr-2 h-4 w-4" />}
                     Finalkan Laporan
@@ -367,55 +398,74 @@ const ReportHasil = () => {
             <h4 className="text-lg font-bold mb-4 text-gray-800 dark:text-white">Detail Nilai</h4>
             <div className="overflow-x-auto">
               <Table hoverable striped>
-                <Table.Head>
-                  <Table.HeadCell className="text-center">Rank</Table.HeadCell>
-                  <Table.HeadCell>Nama</Table.HeadCell>
-                  <Table.HeadCell className="text-center">NIK</Table.HeadCell>
-                  <Table.HeadCell className="text-center">Nilai Skala</Table.HeadCell>
-                  <Table.HeadCell className="text-center">Status</Table.HeadCell>
-                  <Table.HeadCell className="text-center">Aksi</Table.HeadCell>
-                </Table.Head>
-                <Table.Body className="divide-y text-center">
-                  {loading ? (
-                    <Table.Row><Table.Cell colSpan={6} className="py-10"><Spinner /></Table.Cell></Table.Row>
-                  ) : reports.length > 0 ? reports.map((report) => (
-                    <Table.Row key={report.Id} className="bg-white dark:border-gray-700 dark:bg-gray-800">
-                      <Table.Cell className="font-bold text-lg text-primary">{report.Ranking}</Table.Cell>
-                      <Table.Cell className="text-left font-bold text-gray-900 dark:text-white">
-                        {report.Karyawan?.Nama}
-                      </Table.Cell>
-                      <Table.Cell>{report.Karyawan?.Nik}</Table.Cell>
-                      <Table.Cell className="font-bold text-secondary text-base">{report.NilaiSkala}</Table.Cell>
-                      <Table.Cell>
-                        <Badge color={isFinal ? "success" : "warning"} size="sm">
-                          {isFinal ? "Final" : "Draft"}
-                        </Badge>
-                      </Table.Cell>
-                      <Table.Cell>
-                        <div className="flex justify-center gap-2">
-                          <Button color="light" size="xs" pill onClick={() => handleFetchIndividual(report.Karyawan?.Id ?? 0)}>
-                            {printingId === (report.Karyawan?.Id ?? 0) ? <Spinner size="xs" /> : <Icon icon="solar:eye-bold" className="h-4 w-4" />}
-                            <span className="ml-1">Preview</span>
-                          </Button>
-                          <Button 
-                            color="dark" 
-                            size="xs" 
-                            pill 
-                            disabled={!isFinal || (printingId === (report.Karyawan?.Id ?? 0))}
-                            onClick={() => handlePrintPdf(report.Karyawan?.Id ?? 0)}
-                          >
-                            <Icon icon="solar:printer-bold" className="h-4 w-4" />
-                            <span className="ml-1">PDF</span>
-                          </Button>
-                        </div>
-                      </Table.Cell>
-                    </Table.Row>
-                  )) : (
-                    <Table.Row>
-                      <Table.Cell colSpan={6} className="py-10 text-gray-500 italic">Belum ada data penilaian pada periode ini.</Table.Cell>
-                    </Table.Row>
-                  )}
-                </Table.Body>
+                  <Table.Head>
+                    <Table.HeadCell className="text-center">Rank</Table.HeadCell>
+                    <Table.HeadCell>Nama</Table.HeadCell>
+                    <Table.HeadCell className="text-center">NIK</Table.HeadCell>
+                    <Table.HeadCell className="text-center">Nilai Skala</Table.HeadCell>
+                    <Table.HeadCell className="text-center">Status</Table.HeadCell>
+                    <Table.HeadCell className="text-center">Catatan</Table.HeadCell>
+                    <Table.HeadCell className="text-center">Aksi</Table.HeadCell>
+                  </Table.Head>
+                  <Table.Body className="divide-y text-center">
+                    {loading ? (
+                      <Table.Row><Table.Cell colSpan={7} className="py-10"><Spinner /></Table.Cell></Table.Row>
+                    ) : reports.length > 0 ? reports.map((report) => (
+                      <Table.Row key={report.Id} className="bg-white dark:border-gray-700 dark:bg-gray-800">
+                        <Table.Cell className="font-bold text-lg text-primary">{report.Ranking}</Table.Cell>
+                        <Table.Cell className="text-left font-bold text-gray-900 dark:text-white">
+                          {report.Karyawan?.Nama}
+                        </Table.Cell>
+                        <Table.Cell>{report.Karyawan?.Nik}</Table.Cell>
+                        <Table.Cell className="font-bold text-secondary text-base">{report.NilaiSkala}</Table.Cell>
+                        <Table.Cell>
+                          <Badge color={isFinal ? "success" : report.Status === 'Reviewed' ? "info" : "warning"} size="sm">
+                            {isFinal ? "Final" : (report.Status || "Draft")}
+                          </Badge>
+                        </Table.Cell>
+                        <Table.Cell className="max-w-xs truncate text-xs italic text-gray-500">
+                          {report.Catatan || "-"}
+                        </Table.Cell>
+                        <Table.Cell>
+                          <div className="flex justify-center gap-2">
+                            {isManagerUI && !isFinal && (
+                              <Button 
+                                color="info" 
+                                size="xs" 
+                                pill 
+                                onClick={() => {
+                                  setReviewReportId(report.Id);
+                                  setReviewNote(report.Catatan || "");
+                                  setShowReviewModal(true);
+                                }}
+                              >
+                                <Icon icon="solar:notes-minimalistic-bold" className="h-4 w-4" />
+                                <span className="ml-1">Review</span>
+                              </Button>
+                            )}
+                            <Button color="light" size="xs" pill onClick={() => handleFetchIndividual(report.Karyawan?.Id ?? 0)}>
+                              {printingId === (report.Karyawan?.Id ?? 0) ? <Spinner size="xs" /> : <Icon icon="solar:eye-bold" className="h-4 w-4" />}
+                              <span className="ml-1">Preview</span>
+                            </Button>
+                            <Button 
+                              color="dark" 
+                              size="xs" 
+                              pill 
+                              disabled={!isFinal || (printingId === (report.Karyawan?.Id ?? 0))}
+                              onClick={() => handlePrintPdf(report.Karyawan?.Id ?? 0)}
+                            >
+                              <Icon icon="solar:printer-bold" className="h-4 w-4" />
+                              <span className="ml-1">PDF</span>
+                            </Button>
+                          </div>
+                        </Table.Cell>
+                      </Table.Row>
+                    )) : (
+                      <Table.Row>
+                        <Table.Cell colSpan={7} className="py-10 text-gray-500 italic">Belum ada data penilaian pada periode ini.</Table.Cell>
+                      </Table.Row>
+                    )}
+                  </Table.Body>
               </Table>
             </div>
           </CardBox>
@@ -427,6 +477,37 @@ const ReportHasil = () => {
         onClose={() => setShowPrintModal(false)}
         data={individualData}
       />
+
+      {/* Modal Review */}
+      <Modal show={showReviewModal} onClose={() => setShowReviewModal(false)} size="md">
+        <Modal.Header>Review Hasil Penilaian</Modal.Header>
+        <Modal.Body>
+          <div className="space-y-4">
+            <div>
+              <div className="mb-2 block">
+                <Label htmlFor="catatan" value="Catatan untuk Karyawan" />
+              </div>
+              <Textarea
+                id="catatan"
+                placeholder="Berikan masukan atau catatan hasil review..."
+                required
+                rows={4}
+                value={reviewNote}
+                onChange={(e) => setReviewNote(e.target.value)}
+              />
+            </div>
+          </div>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button color="info" onClick={handleReview} disabled={reviewLoading}>
+            {reviewLoading ? <Spinner size="sm" className="mr-2" /> : <Icon icon="solar:check-circle-bold" className="mr-2 h-5 w-5" />}
+            Setujui (Reviewed)
+          </Button>
+          <Button color="gray" onClick={() => setShowReviewModal(false)}>
+            Batal
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 };

@@ -55,6 +55,8 @@ export interface SpkReport {
   NilaiSkala: number;
   NilaiOptimasi: number;
   Ranking: number;
+  Status?: string;
+  Catatan?: string;
   Karyawan: {
     Id: number;
     Nik: string;
@@ -146,6 +148,8 @@ const spkService = {
         NilaiSkala: Number(item.NilaiSkala ?? item.nilai_skala ?? item.nilai ?? 0),
         NilaiOptimasi: Number(item.NilaiOptimasi ?? item.nilai_optimasi ?? 0),
         Ranking: Number(item.Ranking ?? item.ranking ?? 0),
+        Status: item.Status ?? item.status ?? 'Draft',
+        Catatan: item.Catatan ?? item.catatan ?? '',
         Karyawan: item.Karyawan
           ? {
               Id: Number(item.Karyawan.Id ?? item.Karyawan.id ?? 0),
@@ -181,6 +185,14 @@ const spkService = {
 
   getSummaryReport: async (periodeId: number) => {
     const response = await axiosServices.get<any>(`/spk/report/summary/${periodeId}`);
+    return response.data;
+  },
+
+  reviewMooraResult: async (id: number, catatan: string) => {
+    const response = await axiosServices.patch<{ message: string; success: boolean }>(`/spk/moora/hasil/${id}/review`, {
+      status: 'Reviewed',
+      catatan: catatan
+    });
     return response.data;
   },
 
