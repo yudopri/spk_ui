@@ -130,46 +130,46 @@ const KPIGroupPage = () => {
                             <Table.HeadCell className="text-center">Bobot Global (Level 1)</Table.HeadCell>
                             <Table.HeadCell className="text-center">Aksi</Table.HeadCell>
                         </Table.Head>
-                        <Table.Body className="divide-y">
-                            {loading ? (
-                                <Table.Row><Table.Cell colSpan={3} className="text-center py-10"><Spinner /></Table.Cell></Table.Row>
-                            ) : groups.length > 0 ? groups.map((group) => (
-                                <Table.Row key={group.Id || group.id} className="bg-white">
-                                    <Table.Cell className="font-bold text-gray-900">{group.NamaGroup}</Table.Cell>
-                                    <Table.Cell className="text-center">
-                                        {group.BobotGrup ? (
-                                            <Badge color="info">{(group.BobotGrup * 100).toFixed(2)}%</Badge>
-                                        ) : (
-                                            <span className="text-gray-400 italic text-xs">Belum dihitung</span>
-                                        )}
-                                    </Table.Cell>
-                                    <Table.Cell className="text-center">
-                                        <div className="flex justify-center gap-2">
-                                            <Button
-                                                size="xs"
-                                                color="info"
-                                                onClick={() => {
-                                                    setIsEdit(true);
-                                                    setCurrentGroup(group);
-                                                    setShowModal(true);
-                                                }}
-                                            >
-                                                Edit
-                                            </Button>
-                                            <Button size="xs" color="failure" onClick={() => handleDelete(group.Id || group.id)}>
-                                                Hapus
-                                            </Button>
-                                        </div>
-                                    </Table.Cell>
-                                </Table.Row>
-                            )) : (
-                                <Table.Row>
-                                    <Table.Cell colSpan={3} className="text-center py-10 text-gray-400 italic">
-                                        Belum ada grup KPI. Silakan buat grup tingkat pertama.
-                                    </Table.Cell>
-                                </Table.Row>
-                            )}
-                        </Table.Body>
+                <Table.Body className="divide-y">
+                    {loading ? (
+                        <Table.Row><Table.Cell colSpan={3} className="text-center py-10"><Spinner /></Table.Cell></Table.Row>
+                    ) : (groups || []).length > 0 ? (groups || []).map((group) => (
+                        <Table.Row key={group.Id || group.id} className="bg-white">
+                            <Table.Cell className="font-bold text-gray-900">{group.NamaGroup}</Table.Cell>
+                            <Table.Cell className="text-center">
+                                {group.BobotGrup ? (
+                                    <Badge color="info">{(Number(group.BobotGrup) * 100).toFixed(2)}%</Badge>
+                                ) : (
+                                    <span className="text-gray-400 italic text-xs">Belum dihitung</span>
+                                )}
+                            </Table.Cell>
+                            <Table.Cell className="text-center">
+                                <div className="flex justify-center gap-2">
+                                    <Button
+                                        size="xs"
+                                        color="info"
+                                        onClick={() => {
+                                            setIsEdit(true);
+                                            setCurrentGroup(group);
+                                            setShowModal(true);
+                                        }}
+                                    >
+                                        Edit
+                                    </Button>
+                                    <Button size="xs" color="failure" onClick={() => handleDelete(group.Id || group.id)}>
+                                        Hapus
+                                    </Button>
+                                </div>
+                            </Table.Cell>
+                        </Table.Row>
+                    )) : (
+                        <Table.Row>
+                            <Table.Cell colSpan={3} className="text-center py-10 text-gray-400 italic">
+                                Belum ada grup KPI. Silakan buat grup tingkat pertama.
+                            </Table.Cell>
+                        </Table.Row>
+                    )}
+                </Table.Body>
                     </Table>
                 </div>
             </CardBox>

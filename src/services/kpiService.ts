@@ -5,9 +5,11 @@ export interface KPIGroup {
   NamaGroup: string;
   PeriodeId: number;
   BobotGrup?: number | null;
-  // Legacy
+  // Legacy support for backend mapping (lowercase)
   id: number;
-  namaGroup: string;
+  nama_grup: string;
+  periode_id: number;
+  bobot_grup: string | number | null;
 }
 
 export interface KPI {
@@ -163,12 +165,14 @@ const kpiService = {
         : [];
 
     const data: KPIGroup[] = rawList.map((item: any) => ({
-      Id: Number(item.Id ?? item.id ?? 0),
+      Id: Number(item.id ?? item.Id ?? 0),
       id: Number(item.id ?? item.Id ?? 0),
-      NamaGroup: item.NamaGroup ?? item.namaGroup ?? '',
-      namaGroup: item.namaGroup ?? item.NamaGroup ?? '',
-      PeriodeId: Number(item.PeriodeId ?? item.periodeId ?? 0),
-      BobotGrup: item.BobotGrup ?? item.bobotGrup ?? null,
+      NamaGroup: item.nama_grup ?? item.NamaGroup ?? item.namaGroup ?? '',
+      nama_grup: item.nama_grup ?? item.NamaGroup ?? item.namaGroup ?? '',
+      PeriodeId: Number(item.periode_id ?? item.PeriodeId ?? item.periodeId ?? 0),
+      periode_id: Number(item.periode_id ?? item.PeriodeId ?? item.periodeId ?? 0),
+      BobotGrup: item.bobot_grup !== null ? Number(item.bobot_grup) : null,
+      bobot_grup: item.bobot_grup ?? null,
     }));
 
     return {
@@ -177,13 +181,20 @@ const kpiService = {
     };
   },
 
-  createGroup: async (data: { NamaGroup: string; PeriodeId: number }) => {
-    const response = await axios.post<{ success: boolean; message: string }>('/spk/kpi-group', data);
+  createGroup: async (data: { NamaGroup: string; PeriodeId: number; BobotGrup?: number }) => {
+    const response = await axios.post<{ success: boolean; id?: number }>('/spk/kpi-group', {
+      nama_grup: data.NamaGroup,
+      periode_id: data.PeriodeId,
+      bobot_grup: data.BobotGrup ?? 0
+    });
     return response.data;
   },
 
-  updateGroup: async (id: number, data: { NamaGroup: string }) => {
-    const response = await axios.put<{ success: boolean; message: string }>(`/spk/kpi-group/${id}`, data);
+  updateGroup: async (id: number, data: { NamaGroup: string; BobotGrup?: number }) => {
+    const response = await axios.put<{ success: boolean; message: string }>(`/spk/kpi-group/${id}`, {
+      nama_grup: data.NamaGroup,
+      bobot_grup: data.BobotGrup ?? 0
+    });
     return response.data;
   },
 
