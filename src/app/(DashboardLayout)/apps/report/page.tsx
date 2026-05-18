@@ -276,8 +276,45 @@ const ReportHasil = () => {
 
   const canExport = exporting || !selectedPeriodeId || (!isFinal && !isManagerUI);
 
+  const getStatusBadge = (status?: string) => {
+    const s = (status || 'Draft').toLowerCase();
+    if (s === 'reviewed') return <Badge color="success" icon={() => <Icon icon="solar:check-circle-bold" className="mr-1 h-3 w-3" />}>Reviewed</Badge>;
+    if (s === 'pending') return <Badge color="warning" icon={() => <Icon icon="solar:clock-circle-bold" className="mr-1 h-3 w-3" />}>Pending</Badge>;
+    return <Badge color="gray" icon={() => <Icon icon="solar:file-text-bold" className="mr-1 h-3 w-3" />}>Draft</Badge>;
+  };
+
   return (
     <div className="flex flex-col gap-6">
+      {/* Stepper for Laporan */}
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm">
+        <div className="flex items-center justify-between max-w-4xl mx-auto overflow-x-auto gap-4">
+          {[
+            { step: 1, label: "Master KPI", icon: "solar:settings-bold" },
+            { step: 2, label: "Bandingkan Grup", icon: "solar:folder-2-bold" },
+            { step: 3, label: "Bandingkan KPI", icon: "solar:documents-bold" },
+            { step: 4, label: "Input Nilai", icon: "solar:pen-new-square-bold" },
+            { step: 5, label: "Hasil & Review", icon: "solar:chart-square-bold" }
+          ].map((s, idx) => {
+            const isCurrent = s.step === 5;
+            const isDone = s.step < 5;
+            return (
+              <React.Fragment key={s.step}>
+                <div className="flex flex-col items-center min-w-[100px] text-center">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 transition-colors ${
+                    isCurrent ? "bg-primary text-white ring-4 ring-primary/20" : 
+                    isDone ? "bg-green-500 text-white" : "bg-gray-100 text-gray-400"
+                  }`}>
+                    <Icon icon={isDone ? "solar:check-read-bold" : s.icon} className="h-5 w-5" />
+                  </div>
+                  <span className={`text-xs font-bold whitespace-nowrap ${isCurrent ? "text-primary" : "text-gray-500"}`}>{s.label}</span>
+                </div>
+                {idx < 4 && <div className={`flex-1 h-[2px] min-w-[20px] mb-6 ${isDone ? "bg-green-500" : "bg-gray-100"}`} />}
+              </React.Fragment>
+            );
+          })}
+        </div>
+      </div>
+
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Laporan Hasil Penilaian</h1>
@@ -429,9 +466,7 @@ const ReportHasil = () => {
                         <Table.Cell>{report.Karyawan?.Nik}</Table.Cell>
                         <Table.Cell className="font-bold text-secondary text-base">{report.NilaiSkala}</Table.Cell>
                         <Table.Cell>
-                          <Badge color={isFinal ? "success" : report.Status === 'Reviewed' ? "info" : "warning"} size="sm">
-                            {isFinal ? "Final" : (report.Status || "Draft")}
-                          </Badge>
+                          {getStatusBadge(isFinal ? "Final" : report.Status)}
                         </Table.Cell>
                         <Table.Cell className="max-w-xs truncate text-xs italic text-gray-500">
                           {report.Catatan || "-"}

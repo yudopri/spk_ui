@@ -119,12 +119,12 @@ const kpiService = {
     };
   },
 
-  create: async (data: { NamaKpi?: string; Tipe?: string; PeriodeId?: string; GroupId?: number; Deskripsi?: string; namaKpi?: string; tipe?: string; periodeId?: number; bobot?: number; id_satuan?: number; attributeId?: number; BobotAhp?: number }) => {
+  create: async (data: { NamaKpi?: string; Tipe?: string; PeriodeId?: string; GroupId?: number; group_id?: number; Deskripsi?: string; namaKpi?: string; tipe?: string; periodeId?: number; bobot?: number; id_satuan?: number; attributeId?: number; BobotAhp?: number }) => {
     const response = await axios.post<{ Id?: number; success?: boolean; message?: string }>('/spk/kpi', {
       NamaKpi: data.NamaKpi ?? data.namaKpi,
       Tipe: data.Tipe ?? data.tipe ?? 'Benefit',
       PeriodeId: Number(data.PeriodeId ?? data.periodeId),
-      GroupId: Number(data.GroupId ?? 0) || null,
+      group_id: Number(data.group_id ?? data.GroupId ?? 0) || null,
       Deskripsi: data.Deskripsi ?? '',
       attributeId: data.attributeId ?? data.id_satuan ?? null, // Backend uses attributeId (lowercase a)
       BobotAhp: Number(data.BobotAhp ?? data.bobot ?? 0),
@@ -140,7 +140,7 @@ const kpiService = {
       NamaKpi: data.NamaKpi ?? data.namaKpi,
       Tipe: data.Tipe ?? data.tipe,
       PeriodeId: Number(data.PeriodeId ?? data.periodeId),
-      GroupId: Number(data.GroupId ?? 0) || null,
+      group_id: Number(data.GroupId ?? (data as any).group_id ?? 0) || null,
       Deskripsi: data.Deskripsi  ?? '',
       attributeId: data.attributeId ?? data.id_satuan ?? data.AttributeId ?? null,
       BobotAhp: Number(data.BobotAhp ?? data.bobot ?? data.Bobot ?? 0),

@@ -89,7 +89,11 @@ const spkService = {
 
   saveAhpGroupPerbandingan: async (periodeId: number, comparisons: { id_a: number; id_b: number; nilai: number }[]) => {
     const response = await axiosServices.post<{ message: string; success: boolean }>(`/spk/ahp-group/perbandingan/${periodeId}`, {
-      comparisons
+      comparisons: comparisons.map(c => ({
+        group_a_id: c.id_a,
+        group_b_id: c.id_b,
+        nilai: c.nilai
+      }))
     });
     return response.data;
   },
