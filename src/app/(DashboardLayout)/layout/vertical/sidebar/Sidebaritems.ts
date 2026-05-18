@@ -72,7 +72,14 @@ const SidebarContent: MenuItem[] = [
             permission: "kpi_manage",
           },
           {
-            name: "Data KPI (Kriteria)",
+            name: "Grup KPI (Level 1)",
+            icon: "solar:folder-2-linear",
+            id: uniqueId(),
+            url: "/apps/data-kpi/group",
+            permission: "kpi_manage",
+          },
+          {
+            name: "Data KPI (Level 2)",
             icon: "solar:documents-line-duotone",
             id: uniqueId(),
             url: "/apps/data-kpi",
