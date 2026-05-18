@@ -4,21 +4,23 @@ import { Table, Select, Button, Badge, Alert, Spinner } from "flowbite-react";
 import CardBox from "@/app/components/shared/CardBox";
 import { Icon } from "@iconify/react";
 import periodeService, { Periode } from "@/services/periodeService";
-import kpiService, { KPI } from "@/services/kpiService";
+import kpiService, { KPI, KPIGroup } from "@/services/kpiService";
 import spkService from "@/services/spkService";
 import { usePermission } from "@/hooks/usePermission";
 
 const NilaiPerbandingan = () => {
   const { user, isAdminLike } = usePermission();
   const [selectedPeriodeId, setSelectedPeriodeId] = useState<number>(0);
+  const [selectedGroupId, setSelectedGroupId] = useState<number>(0);
   const [periodes, setPeriodes] = useState<Periode[]>([]);
-  const [kpis, setKpis] = useState<KPI[]>([]);
+  const [groups, setGroups] = useState<KPIGroup[]>([]);
+  const [kpis, setKpis] = useState<any[]>([]);
   const [comparisonValues, setComparisonValues] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [calculating, setCalculating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [cr, setCr] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchPeriodes = async () => {
@@ -29,305 +31,179 @@ const NilaiPerbandingan = () => {
           if (!p.isAktif) return false;
           if (isAdminLike && user?.dept_id) {
             const currentDivisiId = p.DivisiId ?? p.divisiId ?? p.divisi?.id;
-            if (currentDivisiId === null || currentDivisiId === undefined || currentDivisiId === 0) {
-              return true;
-            }
-            return Number(currentDivisiId) === Number(user.dept_id);
+            return currentDivisiId === null || currentDivisiId === undefined || currentDivisiId === 0 || Number(currentDivisiId) === Number(user.dept_id);
           }
           return true;
         });
         setPeriodes(aktif);
-        if (aktif.length > 0) {
-          setSelectedPeriodeId(aktif[0].Id);
-        }
+        if (aktif.length > 0) setSelectedPeriodeId(aktif[0].Id || (aktif[0] as any).id);
       } catch (err: any) {
-        setError(err?.response?.data?.message || "Gagal mengambil data periode aktif");
+        setError("Gagal mengambil data periode");
       } finally {
         setLoading(false);
       }
     };
-
     fetchPeriodes();
   }, []);
 
   useEffect(() => {
-    const fetchKpis = async () => {
+    const fetchGroups = async () => {
       if (!selectedPeriodeId) return;
       try {
-        setLoading(true);
-        const res = await kpiService.getByPeriode(selectedPeriodeId);
-        setKpis(res.data);
-
-        const nextValues: Record<string, number> = {};
-        for (let i = 0; i < res.data.length; i++) {
-          for (let j = i + 1; j < res.data.length; j++) {
-            const idA = res.data[i].Id;
-            const idB = res.data[j].Id;
-            nextValues[`${idA}-${idB}`] = 1;
-          }
-        }
-        setComparisonValues(nextValues);
-      } catch (err: any) {
-        setError(err?.response?.data?.message || "Gagal mengambil data KPI");
-      } finally {
-        setLoading(false);
+        const res = await kpiService.getGroups(selectedPeriodeId);
+        setGroups(res.data);
+      } catch (err) {
+        console.error("Gagal mengambil grup", err);
       }
     };
-
-    fetchKpis();
+    fetchGroups();
   }, [selectedPeriodeId]);
 
   useEffect(() => {
-    const fetchExistingPerbandingan = async () => {
-      if (!selectedPeriodeId || kpis.length === 0) return;
+    const fetchData = async () => {
+      if (!selectedPeriodeId) return;
       try {
-        const res = await spkService.getAhpPerbandingan(selectedPeriodeId);
-        if (res.success && res.data && res.data.length > 0) {
-          const loadedValues: Record<string, number> = {};
-          res.data.forEach((item) => {
-            loadedValues[`${item.kpiAId}-${item.kpiBId}`] = item.nilai;
-          });
-          setComparisonValues((prev) => ({ ...prev, ...loadedValues }));
-        }
+          setLoading(true);
+          setCr(null);
+          setSuccess(null);
+          let items: any[] = [];
+          if (selectedGroupId === 0) {
+              const res = await kpiService.getGroups(selectedPeriodeId);
+              items = res.data;
+          } else {
+              const res = await kpiService.getByPeriode(selectedPeriodeId);
+              items = res.data.filter((k: KPI) => Number(k.GroupId) === selectedGroupId);
+          }
+          setKpis(items);
+
+          const nextValues: Record<string, number> = {};
+          for (let i = 0; i < items.length; i++) {
+              for (let j = i + 1; j < items.length; j++) {
+                  nextValues[`${items[i].Id || items[i].id}-${items[j].Id || items[j].id}`] = 1;
+              }
+          }
+          
+          const resComp = await spkService.getAhpPerbandingan(selectedPeriodeId, selectedGroupId || undefined);
+          if (resComp.success && resComp.data) {
+              resComp.data.forEach((item) => {
+                  nextValues[`${item.kpiAId}-${item.kpiBId}`] = item.nilai;
+              });
+          }
+          setComparisonValues(nextValues);
       } catch (err) {
-        console.error("Gagal mengambil data perbandingan eksisting", err);
+          setError("Gagal memuat data matriks");
+      } finally {
+          setLoading(false);
       }
     };
-    fetchExistingPerbandingan();
-  }, [selectedPeriodeId, kpis]);
+    fetchData();
+  }, [selectedPeriodeId, selectedGroupId]);
 
-  const pairs: { kpiA: KPI; kpiB: KPI; key: string }[] = [];
+  const pairs: { itemA: any; itemB: any; key: string }[] = [];
   for (let i = 0; i < kpis.length; i++) {
     for (let j = i + 1; j < kpis.length; j++) {
-      const idA = kpis[i].Id;
-      const idB = kpis[j].Id;
       pairs.push({
-        kpiA: kpis[i],
-        kpiB: kpis[j],
-        key: `${idA}-${idB}`,
+        itemA: kpis[i],
+        itemB: kpis[j],
+        key: `${kpis[i].Id || kpis[i].id}-${kpis[j].Id || kpis[j].id}`,
       });
     }
   }
 
-  const selectedPeriode = periodes.find((p) => (p.Id || (p as any).id) === selectedPeriodeId);
-
-  const handleSavePerbandingan = async () => {
-    if (!selectedPeriodeId || pairs.length === 0) return;
-
+  const handleSave = async () => {
     try {
       setSubmitting(true);
       setError(null);
       setSuccess(null);
-
-      // Construct matrix
-      const comparison_matrix: number[][] = Array(kpis.length).fill(0).map(() => Array(kpis.length).fill(1));
-
-      for (let i = 0; i < kpis.length; i++) {
-        for (let j = i + 1; j < kpis.length; j++) {
-          const kpiA = kpis[i];
-          const kpiB = kpis[j];
-          const key = `${kpiA.Id}-${kpiB.Id}`;
-          const val = Number(comparisonValues[key] || 1);
-          comparison_matrix[i][j] = val;
-          comparison_matrix[j][i] = 1 / val;
-        }
-      }
-
-      // Prepare payload for Flask: list of comparisons
-      const payload = pairs.map(pair => ({
+      const payload = pairs.map(p => ({
         PeriodeId: selectedPeriodeId,
-        KpiAId: pair.kpiA.Id,
-        KpiBId: pair.kpiB.Id,
-        Nilai: comparisonValues[pair.key] || 1
+        Nilai: comparisonValues[p.key] || 1,
+        ...(selectedGroupId === 0 ? { GroupIdA: p.itemA.Id, GroupIdB: p.itemB.Id } : { KpiAId: p.itemA.Id, KpiBId: p.itemB.Id })
       }));
-
-      const res = await spkService.saveAhpPerbandingan(payload);
-
-      setSuccess(res?.message || "Perbandingan berhasil disimpan");
-      
-      // Calculate weights
-      await spkService.calculateAhpWeight(selectedPeriodeId);
-      
-      // Refresh KPI data to get new weights
-      const kpiRes = await kpiService.getByPeriode(selectedPeriodeId);
-      setKpis(kpiRes.data);
-    } catch (err: any) {
-      setError(err?.response?.data?.message || "Gagal menyimpan perbandingan AHP");
+      await spkService.saveAhpPerbandingan(payload as any);
+      const resCalc = await spkService.calculateAhpWeight(selectedPeriodeId, selectedGroupId || undefined);
+      if (resCalc.data?.cr !== undefined) {
+          setCr(resCalc.data.cr);
+          if (resCalc.data.cr >= 0.1) setError(`Inkonsistensi terdeteksi (CR = ${resCalc.data.cr.toFixed(4)})`);
+          else setSuccess("Bobot berhasil dihitung dan konsisten");
+      }
+    } catch (err) {
+      setError("Gagal menyimpan matriks");
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleCalculate = async () => {
-    if (!selectedPeriodeId || kpis.length === 0) return;
-
-    try {
-      setCalculating(true);
-      setError(null);
-      setSuccess(null);
-
-      const res = await spkService.calculateAhpWeight(selectedPeriodeId);
-      
-      setSuccess("Perhitungan bobot berhasil");
-      // Refresh KPI data to get new weights
-      const kpiRes = await kpiService.getByPeriode(selectedPeriodeId);
-      setKpis(kpiRes.data);
-    } catch (err: any) {
-      setError(err?.response?.data?.message || "Gagal menghitung bobot AHP");
-    } finally {
-      setCalculating(false);
-    }
-  };
-
-  const isLocked = selectedPeriode?.Status === 'Final';
-
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm gap-4">
+      <div className="flex flex-col md:flex-row justify-between items-center bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Perbandingan Kriteria</h1>
-          <p className="text-sm text-gray-500">
-            {isLocked 
-              ? `Periode ${selectedPeriode?.namaPeriode || ""} sudah Final (Locked)`
-              : `Tentukan bobot prioritas untuk ${selectedPeriode?.namaPeriode || ""} - ${selectedPeriode?.divisi?.namaDivisi || ""}`}
-          </p>
+           <h1 className="text-2xl font-bold">Matriks AHP Berjenjang</h1>
+           <p className="text-sm text-gray-500">Bandingkan prioritas kriteria tiap tingkatan hierarki</p>
         </div>
-        <div className="flex gap-4">
-          <div className="w-64">
-            <Select
-              value={selectedPeriodeId}
-              onChange={(e) => setSelectedPeriodeId(Number(e.target.value))}
-              sizing="sm"
-            >
-              <option value={0}>Pilih Periode Aktif</option>
-              {periodes.map((p) => (
-                <option key={p.Id} value={p.Id}>
-                  {(p.NamaPeriode || p.namaPeriode) + " - " + (p.NamaDivisi || p.divisi?.namaDivisi || "") + (p.Status === 'Final' ? ' (Final)' : '')}
-                </option>
-              ))}
-            </Select>
-          </div>
-          <Button color="info" onClick={handleSavePerbandingan} disabled={submitting || pairs.length === 0 || isLocked}>
-            {submitting ? <Spinner size="sm" className="mr-2" /> : <Icon icon="solar:diskette-bold-duotone" className="mr-2 h-5 w-5" />}
-            {isLocked ? "Terkunci" : "Simpan Perbandingan"}
-          </Button>
-          <Button color="primary" onClick={handleCalculate} disabled={calculating || pairs.length === 0 || isLocked}>
-            <Icon icon="solar:calculator-linear" className="mr-2 h-5 w-5" />
-            {calculating ? "Menghitung..." : isLocked ? "Terkunci" : "Hitung Bobot"}
-          </Button>
+        <div className="flex flex-wrap gap-2">
+          <Select sizing="sm" value={selectedPeriodeId} onChange={(e) => setSelectedPeriodeId(Number(e.target.value))}>
+            {periodes.map(p => <option key={p.Id} value={p.Id}>{p.NamaPeriode}</option>)}
+          </Select>
+          <Select sizing="sm" value={selectedGroupId} onChange={(e) => setSelectedGroupId(Number(e.target.value))}>
+            <option value={0}>Mode Grosir (Group Level 1)</option>
+            {groups.map(g => <option key={g.Id} value={g.Id}>Detail: {g.NamaGroup} (Level 2)</option>)}
+          </Select>
         </div>
       </div>
 
-      {error && <Alert color="failure">{error}</Alert>}
-      {success && <Alert color="success">{success}</Alert>}
+      {cr !== null && (
+        <Alert color={cr < 0.1 ? "success" : "failure"} icon={() => <Icon icon="solar:chart-square-bold" className="h-5 w-5" />}>
+           Consistency Ratio (CR): <b>{cr.toFixed(4)}</b> 
+           {cr >= 0.1 ? " - Matriks TIDAK KONSISTEN! Mohon diperbaiki." : " - Matriks Konsisten."}
+        </Alert>
+      )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <CardBox>
-            <div className="mb-4 flex items-center gap-2 text-blue-600 bg-blue-50 p-3 rounded-lg dark:bg-blue-900/20 dark:text-blue-400">
-               <Icon icon="solar:info-circle-linear" className="h-5 w-5 flex-shrink-0" />
-               <p className="text-xs font-medium italic">Petunjuk: Bandingkan tingkat kepentingan Kriteria A terhadap Kriteria B (Skala 1-9 Saaty).</p>
-            </div>
-            <div className="overflow-x-auto">
-              <Table hoverable>
-                <Table.Head>
-                  <Table.HeadCell className="w-1/3 text-center">Kriteria A</Table.HeadCell>
-                  <Table.HeadCell className="w-1/3 text-center">Nilai Perbandingan</Table.HeadCell>
-                  <Table.HeadCell className="w-1/3 text-center">Kriteria B</Table.HeadCell>
-                </Table.Head>
-                <Table.Body className="divide-y">
-                  {pairs.map((pair) => (
-                    <Table.Row key={pair.key} className="bg-white dark:border-gray-700 dark:bg-gray-800">
-                      <Table.Cell className="font-bold text-gray-900 dark:text-white text-center">
-                        {pair.kpiA.NamaKpi}
-                      </Table.Cell>
-                      <Table.Cell>
-                        <Select
-                          sizing="sm"
-                          value={String(comparisonValues[pair.key] ?? 1)}
-                          onChange={(e) => {
-                            const nilai = Number(e.target.value);
-                            setComparisonValues((prev) => ({ ...prev, [pair.key]: nilai }));
-                          }}
-                          disabled={isLocked}
-                        >
-                          <option value="1">1 - Sama Penting</option>
-                          <option value="3">3 - Sedikit Lebih Penting</option>
-                          <option value="5">5 - Lebih Penting</option>
-                          <option value="7">7 - Sangat Lebih Penting</option>
-                          <option value="9">9 - Mutlak Lebih Penting</option>
-                          <option value="0.33">1/3 - Sedikit Kurang Penting</option>
-                          <option value="0.2">1/5 - Kurang Penting</option>
-                          <option value="0.14">1/7 - Sangat Kurang Penting</option>
-                          <option value="0.11">1/9 - Mutlak Kurang Penting</option>
-                        </Select>
-                      </Table.Cell>
-                      <Table.Cell className="font-bold text-gray-900 dark:text-white text-center">
-                        {pair.kpiB.NamaKpi}
-                      </Table.Cell>
-                    </Table.Row>
-                  ))}
-                  {pairs.length === 0 && (
-                    <Table.Row>
-                      <Table.Cell colSpan={3} className="text-center py-10 text-gray-500 italic">
-                        Belum ada kriteria untuk dibandingkan pada periode ini.
-                      </Table.Cell>
-                    </Table.Row>
-                  )}
-                </Table.Body>
-              </Table>
-            </div>
-          </CardBox>
-        </div>
+      {error && <Alert color="failure" onDismiss={() => setError(null)}>{error}</Alert>}
+      {success && <Alert color="success" onDismiss={() => setSuccess(null)}>{success}</Alert>}
 
-        <div className="space-y-6">
-          <CardBox>
-            <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-              <Icon icon="solar:chart-2-linear" className="text-primary" />
-              Hasil Bobot (Prioritas)
-            </h3>
-            <div className="space-y-4">
-              {kpis.length > 0 ? (
-                kpis.map((k, i: number) => {
-                  const percent = (k as any).BobotAhp ? ((k as any).BobotAhp * 100).toFixed(2) : "0";
-                  return (
-                    <div key={i}>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span className="font-medium">{k.NamaKpi}</span>
-                        <span className="font-bold text-primary">{percent}%</span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-700">
-                        <div 
-                          className="bg-primary h-2 rounded-full transition-all duration-500" 
-                          style={{ width: `${percent}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                  );
-                })
-              ) : (
-                <p className="text-sm text-gray-400 italic text-center py-4">Pilih periode yang valid</p>
-              )}
-                {kpis.length > 0 && kpis.some(k => (k as any).BobotAhp !== null) && (
-                <div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-700">
-                   <div className="flex justify-between items-center text-xs">
-                      <span className="text-gray-500">Status Konsistensi</span>
-                      <Badge color="success">Konsisten</Badge>
-                   </div>
+      <CardBox>
+        {loading ? <div className="flex justify-center p-10"><Spinner size="xl" /></div> : pairs.length === 0 ? (
+            <div className="text-center py-20 text-gray-400 italic">Dibutuhkan minimal 2 kriteria untuk dibandingkan.</div>
+        ) : (
+            <>
+                <div className="overflow-x-auto">
+                    <Table hoverable striped>
+                        <Table.Head>
+                            <Table.HeadCell>Kriteria A</Table.HeadCell>
+                            <Table.HeadCell className="text-center">Skala Saaty (1-9)</Table.HeadCell>
+                            <Table.HeadCell>Kriteria B</Table.HeadCell>
+                        </Table.Head>
+                        <Table.Body className="divide-y">
+                            {pairs.map(p => (
+                                <Table.Row key={p.key}>
+                                    <Table.Cell className="font-bold">{p.itemA.NamaGroup || p.itemA.NamaKpi}</Table.Cell>
+                                    <Table.Cell>
+                                        <div className="flex flex-col items-center">
+                                            <input 
+                                                type="range" min="1" max="9" step="1"
+                                                value={comparisonValues[p.key] || 1}
+                                                onChange={(e) => setComparisonValues({...comparisonValues, [p.key]: Number(e.target.value)})}
+                                                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary"
+                                            />
+                                            <Badge color="dark" className="mt-2">Nilai: {comparisonValues[p.key] || 1}</Badge>
+                                        </div>
+                                    </Table.Cell>
+                                    <Table.Cell className="font-bold">{p.itemB.NamaGroup || p.itemB.NamaKpi}</Table.Cell>
+                                </Table.Row>
+                            ))}
+                        </Table.Body>
+                    </Table>
                 </div>
-              )}
-            </div>
-          </CardBox>
-
-          <CardBox>
-            <h3 className="text-md font-bold mb-2">Informasi Metodologi</h3>
-            <p className="text-xs text-gray-500 leading-relaxed">
-              Metode AHP digunakan untuk mencari bobot prioritas dari setiap kriteria melalui perbandingan berpasangan. 
-              Hasil bobot ini nantinya akan digunakan dalam perhitungan MOORA untuk menentukan peringkat karyawan terbaik.
-            </p>
-          </CardBox>
-        </div>
-      </div>
+                <div className="flex justify-end mt-6">
+                    <Button color="primary" onClick={handleSave} disabled={submitting}>
+                        {submitting ? <Spinner size="sm" /> : <Icon icon="solar:diskette-bold" className="mr-2 h-5 w-5" />}
+                        Simpan & Hitung Bobot {selectedGroupId === 0 ? "Grup" : "Detail"}
+                    </Button>
+                </div>
+            </>
+        )}
+      </CardBox>
     </div>
   );
 };

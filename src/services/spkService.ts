@@ -82,8 +82,10 @@ export interface ApiBaseResponse<T = unknown> {
 
 const spkService = {
   // AHP Endpoints
-  getAhpPerbandingan: async (periodeId: number) => {
-    const response = await axiosServices.get<any>(`/spk/ahp/perbandingan/${periodeId}`);
+  getAhpPerbandingan: async (periodeId: number, groupId?: number) => {
+    const response = await axiosServices.get<any>(`/spk/ahp/perbandingan/${periodeId}`, {
+      params: { group_id: groupId }
+    });
     const rawList = Array.isArray(response.data)
       ? response.data
       : Array.isArray(response.data?.data)
@@ -94,8 +96,8 @@ const spkService = {
       ...item,
       id: Number(item.id ?? 0),
       periodeId: Number(item.periodeId ?? item.PeriodeId ?? periodeId),
-      kpiAId: Number(item.kpiAId ?? item.KpiAId ?? item.kpi_a_id ?? 0),
-      kpiBId: Number(item.kpiBId ?? item.KpiBId ?? item.kpi_b_id ?? 0),
+      kpiAId: Number(item.kpiAId ?? item.KpiAId ?? item.kpi_a_id ?? item.groupIdA ?? 0),
+      kpiBId: Number(item.kpiBId ?? item.KpiBId ?? item.kpi_b_id ?? item.groupIdB ?? 0),
       nilai: Number(item.nilai ?? item.Nilai ?? 1),
     }));
 
@@ -105,13 +107,15 @@ const spkService = {
     };
   },
 
-  saveAhpPerbandingan: async (payload: { PeriodeId: number; KpiAId: number; KpiBId: number; Nilai: number }[]) => {
+  saveAhpPerbandingan: async (payload: { PeriodeId: number; KpiAId?: number; KpiBId?: number; GroupIdA?: number; GroupIdB?: number; Nilai: number }[]) => {
     const response = await axiosServices.post<{ message: string; success: boolean }>('/spk/ahp/perbandingan', payload);
     return response.data;
   },
 
-  calculateAhpWeight: async (periodeId: number) => {
-    const response = await axiosServices.post<{ data: number[]; success: boolean }>(`/spk/ahp/calculate-weight/${periodeId}`);
+  calculateAhpWeight: async (periodeId: number, groupId?: number) => {
+    const response = await axiosServices.post<{ data: any; success: boolean }>(`/spk/ahp/calculate-weight/${periodeId}`, {
+      group_id: groupId
+    });
     return response.data;
   },
 

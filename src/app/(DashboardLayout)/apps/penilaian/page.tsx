@@ -4,7 +4,7 @@ import { Table, Button, Select, TextInput, Badge, Alert, Spinner } from "flowbit
 import CardBox from "@/app/components/shared/CardBox";
 import { Icon } from "@iconify/react";
 import periodeService, { Periode } from "@/services/periodeService";
-import kpiService, { KPI } from "@/services/kpiService";
+import kpiService, { KPI, KPIGroup } from "@/services/kpiService";
 import karyawanService, { Karyawan } from "@/services/karyawanService";
 import divisiService, { Divisi } from "@/services/divisiService";
 import spkService from "@/services/spkService";
@@ -15,6 +15,7 @@ const PenilaianKaryawan = () => {
   const { hasPermission, filterEmployeesByScope, normalizedRole } = usePermission();
   const [selectedPeriodeId, setSelectedPeriodeId] = useState<number>(0);
   const [periodes, setPeriodes] = useState<Periode[]>([]);
+  const [groups, setGroups] = useState<KPIGroup[]>([]);
   const [kpis, setKpis] = useState<KPI[]>([]);
   const [workLocations, setWorkLocations] = useState<Array<{ id: string | number; name: string }>>([]);
   const [allEmployees, setAllEmployees] = useState<Karyawan[]>([]);
@@ -95,17 +96,22 @@ const PenilaianKaryawan = () => {
 
   useEffect(() => {
     if (selectedPeriodeId !== 0) {
-      const fetchKpis = async () => {
+      const fetchData = async () => {
         try {
-          const res = await kpiService.getByPeriode(selectedPeriodeId);
-          setKpis(res.data);
+          const [resKpi, resGroup] = await Promise.all([
+            kpiService.getByPeriode(selectedPeriodeId),
+            kpiService.getGroups(selectedPeriodeId)
+          ]);
+          setKpis(resKpi.data);
+          setGroups(resGroup.data);
         } catch (err) {
-          console.error("Gagal ambil KPI", err);
+          console.error("Gagal ambil data penunjang", err);
         }
       };
-      fetchKpis();
+      fetchData();
     } else {
       setKpis([]);
+      setGroups([]);
     }
   }, [selectedPeriodeId]);
 
@@ -229,69 +235,96 @@ const PenilaianKaryawan = () => {
       )}
 
       <CardBox>
-        <div className="mb-4 flex items-center justify-between">
-           <h5 className="font-semibold text-primary underline decoration-dotted">
-             {selectedPeriodeId === 0
-              ? "Silakan pilih periode untuk melihat kriteria" 
-              : `Kriteria Aktif: ${kpis.map((k: any) => k.NamaKpi || k.namaKpi).join(", ")}`}
-           </h5>
-           {selectedPeriodeId !== 0 && (
-             <Badge color="info">Periode: {selectedPeriode?.NamaPeriode || (selectedPeriode as any)?.namaPeriode}</Badge>
-           )}
-        </div>
         <div className="overflow-x-auto">
           {loading ? (
             <div className="flex justify-center p-10">
               <Spinner size="xl" />
             </div>
+          ) : employees.length === 0 ? (
+             <div className="text-center py-20 text-gray-400 italic">
+               {selectedPeriodeId === 0 ? "Pilih Periode - Divisi di atas" : "Tidak ada karyawan ditemukan untuk unit kerja ini."}
+             </div>
           ) : (
-          <Table hoverable>
-            <Table.Head>
-              <Table.HeadCell>NIK</Table.HeadCell>
-              <Table.HeadCell>Nama Karyawan</Table.HeadCell>
-              {kpis.map((kpi) => (
-                <Table.HeadCell key={kpi.Id || kpi.id} className="text-center">{kpi.NamaKpi || kpi.namaKpi}</Table.HeadCell>
-              ))}
-            </Table.Head>
-            <Table.Body className="divide-y">
-              {employees.length > 0 ? employees.map((emp, index) => (
-                <Table.Row key={`${emp.id}-${emp.nik || 'no-nik'}-${emp.departemen_id ?? 'no-dept'}-${index}`} className="bg-white dark:border-gray-700 dark:bg-gray-800">
-                  <Table.Cell className="font-medium text-gray-900 dark:text-white">{emp.nik}</Table.Cell>
-                  <Table.Cell>{emp.nama}</Table.Cell>
-                  {kpis.map((kpi: any) => {
-                    const key = `${emp.id}-${kpi.Id || kpi.id}`;
-                    return (
-                    <Table.Cell key={kpi.Id || kpi.id} className="text-center">
-                       <div className="mx-auto flex w-28 rounded-md shadow-sm">
-                         <input
-                           type="number"
-                           placeholder="0-100"
-                           className="block w-full rounded-l-md border border-gray-300 px-2 py-1 text-sm focus:border-primary focus:ring-primary disabled:bg-gray-100 disabled:cursor-not-allowed"
-                           value={scores[key] ?? ""}
-                           onChange={(e) => {
-                             const value = e.target.value;
-                             setScores((prev) => ({ ...prev, [key]: value }));
-                           }}
-                           disabled={!hasPermission("score_input") || selectedPeriode?.Status === 'Final'}
-                         />
-                         <span className="inline-flex min-w-[40px] items-center justify-center rounded-r-md border border-l-0 border-gray-300 bg-gray-100 px-2 text-xs font-semibold text-gray-600">
-                           {kpi.simbol || "-"}
-                         </span>
-                       </div>
-                    </Table.Cell>
-                  );})}
-                </Table.Row>
-              )) : (
-                <Table.Row>
-                   <Table.Cell colSpan={2 + kpis.length} className="text-center py-20 text-gray-400">
-                      {selectedPeriodeId === 0
-                        ? "Pilih Periode - Divisi di atas untuk menampilkan daftar karyawan" 
-                        : "Tidak ada karyawan ditemukan untuk unit kerja ini."}
-                   </Table.Cell>
-                </Table.Row>
+            <div className="space-y-8">
+              {groups.length === 0 ? (
+                <Table hoverable>
+                  <Table.Head>
+                    <Table.HeadCell>NIK</Table.HeadCell>
+                    <Table.HeadCell>Nama Karyawan</Table.HeadCell>
+                    {kpis.map((kpi) => (
+                      <Table.HeadCell key={kpi.Id || kpi.id} className="text-center">{kpi.NamaKpi}</Table.HeadCell>
+                    ))}
+                  </Table.Head>
+                  <Table.Body className="divide-y">
+                    {employees.map((emp) => (
+                      <Table.Row key={emp.id} className="bg-white">
+                        <Table.Cell className="font-medium">{emp.nik}</Table.Cell>
+                        <Table.Cell>{emp.nama}</Table.Cell>
+                        {kpis.map((kpi) => {
+                          const key = `${emp.id}-${kpi.Id}`;
+                          return (
+                            <Table.Cell key={kpi.Id} className="text-center">
+                              <TextInput
+                                sizing="sm"
+                                type="number"
+                                value={scores[key] ?? ""}
+                                onChange={(e) => setScores({...scores, [key]: e.target.value})}
+                                disabled={selectedPeriode?.Status === 'Final'}
+                              />
+                            </Table.Cell>
+                          );
+                        })}
+                      </Table.Row>
+                    ))}
+                  </Table.Body>
+                </Table>
+              ) : (
+                groups.map((group) => {
+                  const groupKpis = kpis.filter(k => Number(k.GroupId) === group.Id);
+                  if (groupKpis.length === 0) return null;
+                  return (
+                    <div key={group.Id} className="border border-gray-100 rounded-lg p-4 bg-gray-50/30">
+                      <div className="flex items-center gap-2 mb-4">
+                        <Badge color="info" className="uppercase font-bold">{group.NamaGroup}</Badge>
+                        <span className="text-xs text-gray-400">Level 2 Indicators</span>
+                      </div>
+                      <Table hoverable striped>
+                        <Table.Head>
+                          <Table.HeadCell className="w-48 text-left">Nama Karyawan</Table.HeadCell>
+                          {groupKpis.map(k => (
+                            <Table.HeadCell key={k.Id} className="text-center">{k.NamaKpi}</Table.HeadCell>
+                          ))}
+                        </Table.Head>
+                        <Table.Body className="divide-y">
+                          {employees.map(emp => (
+                            <Table.Row key={`${emp.id}-${group.Id}`} className="bg-white">
+                              <Table.Cell className="text-sm font-bold text-gray-700">{emp.nama}</Table.Cell>
+                              {groupKpis.map(k => {
+                                const key = `${emp.id}-${k.Id}`;
+                                return (
+                                  <Table.Cell key={k.Id} className="text-center">
+                                    <div className="flex justify-center">
+                                      <TextInput
+                                        sizing="sm"
+                                        type="number"
+                                        className="w-24 text-center"
+                                        value={scores[key] ?? ""}
+                                        onChange={(e) => setScores({...scores, [key]: e.target.value})}
+                                        disabled={selectedPeriode?.Status === 'Final'}
+                                      />
+                                    </div>
+                                  </Table.Cell>
+                                );
+                              })}
+                            </Table.Row>
+                          ))}
+                        </Table.Body>
+                      </Table>
+                    </div>
+                  );
+                })
               )}
-            </Table.Body>
-          </Table>
+            </div>
           )}
         </div>
       </CardBox>

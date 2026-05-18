@@ -1,10 +1,21 @@
 import axios from '../utils/axios';
 
+export interface KPIGroup {
+  Id: number;
+  NamaGroup: string;
+  PeriodeId: number;
+  BobotGrup?: number | null;
+  // Legacy
+  id: number;
+  namaGroup: string;
+}
+
 export interface KPI {
   Id: number;
   NamaKpi: string;
   Tipe: 'Benefit' | 'Cost';
   PeriodeId: number;
+  GroupId?: number;
   AttributeId?: number;
   attributeId?: number;
   id_satuan?: number;
@@ -41,6 +52,7 @@ const normalizeKpi = (item: any): KPI => {
     tipe,
     PeriodeId: Number(item.PeriodeId ?? item.periodeId ?? 0),
     periodeId: Number(item.periodeId ?? item.PeriodeId ?? 0),
+    GroupId: Number(item.GroupId ?? item.groupId ?? item.group_id ?? 0),
     AttributeId: Number(item.AttributeId ?? item.attributeId ?? item.id_satuan ?? 0),
     attributeId: Number(item.attributeId ?? item.AttributeId ?? item.id_satuan ?? 0),
     id_satuan: Number(item.id_satuan ?? item.attributeId ?? item.AttributeId ?? 0),
@@ -105,11 +117,12 @@ const kpiService = {
     };
   },
 
-  create: async (data: { NamaKpi?: string; Tipe?: string; PeriodeId?: string; Deskripsi?: string; namaKpi?: string; tipe?: string; periodeId?: number; bobot?: number; id_satuan?: number; attributeId?: number; BobotAhp?: number }) => {
+  create: async (data: { NamaKpi?: string; Tipe?: string; PeriodeId?: string; GroupId?: number; Deskripsi?: string; namaKpi?: string; tipe?: string; periodeId?: number; bobot?: number; id_satuan?: number; attributeId?: number; BobotAhp?: number }) => {
     const response = await axios.post<{ Id?: number; success?: boolean; message?: string }>('/spk/kpi', {
       NamaKpi: data.NamaKpi ?? data.namaKpi,
       Tipe: data.Tipe ?? data.tipe ?? 'Benefit',
       PeriodeId: Number(data.PeriodeId ?? data.periodeId),
+      GroupId: Number(data.GroupId ?? 0) || null,
       Deskripsi: data.Deskripsi ?? '',
       attributeId: data.attributeId ?? data.id_satuan ?? null, // Backend uses attributeId (lowercase a)
       BobotAhp: Number(data.BobotAhp ?? data.bobot ?? 0),
@@ -125,6 +138,7 @@ const kpiService = {
       NamaKpi: data.NamaKpi ?? data.namaKpi,
       Tipe: data.Tipe ?? data.tipe,
       PeriodeId: Number(data.PeriodeId ?? data.periodeId),
+      GroupId: Number(data.GroupId ?? 0) || null,
       Deskripsi: data.Deskripsi  ?? '',
       attributeId: data.attributeId ?? data.id_satuan ?? data.AttributeId ?? null,
       BobotAhp: Number(data.BobotAhp ?? data.bobot ?? data.Bobot ?? 0),
@@ -134,6 +148,47 @@ const kpiService = {
 
   delete: async (id: number) => {
     const response = await axios.delete<{ success?: boolean; message?: string }>(`/spk/kpi/${id}`);
+    return response.data;
+  },
+
+  // KPI Group Services
+  getGroups: async (periodeId: number) => {
+    const response = await axios.get<any>('/spk/kpi-group', {
+      params: { periode_id: periodeId }
+    });
+    const rawList = Array.isArray(response.data)
+      ? response.data
+      : Array.isArray(response.data?.data)
+        ? response.data.data
+        : [];
+
+    const data: KPIGroup[] = rawList.map((item: any) => ({
+      Id: Number(item.Id ?? item.id ?? 0),
+      id: Number(item.id ?? item.Id ?? 0),
+      NamaGroup: item.NamaGroup ?? item.namaGroup ?? '',
+      namaGroup: item.namaGroup ?? item.NamaGroup ?? '',
+      PeriodeId: Number(item.PeriodeId ?? item.periodeId ?? 0),
+      BobotGrup: item.BobotGrup ?? item.bobotGrup ?? null,
+    }));
+
+    return {
+      success: true,
+      data,
+    };
+  },
+
+  createGroup: async (data: { NamaGroup: string; PeriodeId: number }) => {
+    const response = await axios.post<{ success: boolean; message: string }>('/spk/kpi-group', data);
+    return response.data;
+  },
+
+  updateGroup: async (id: number, data: { NamaGroup: string }) => {
+    const response = await axios.put<{ success: boolean; message: string }>(`/spk/kpi-group/${id}`, data);
+    return response.data;
+  },
+
+  deleteGroup: async (id: number) => {
+    const response = await axios.delete<{ success: boolean; message: string }>(`/spk/kpi-group/${id}`);
     return response.data;
   }
 };

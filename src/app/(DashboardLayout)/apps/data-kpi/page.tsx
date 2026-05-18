@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { Table, Button, Badge, Modal, Label, TextInput, Select, Textarea, Spinner, Alert } from "flowbite-react";
 import CardBox from "@/app/components/shared/CardBox";
 import { Icon } from "@iconify/react";
-import kpiService, { KPI } from "@/services/kpiService";
+import kpiService, { KPI, KPIGroup } from "@/services/kpiService";
 import periodeService, { Periode } from "@/services/periodeService";
 import { usePermission } from "@/hooks/usePermission";
 
@@ -20,6 +20,7 @@ const DataKPI = () => {
   const [modalType, setModalType] = useState<"add" | "edit" | "view">("add");
   const [selectedKpi, setSelectedKpi] = useState<Partial<KPI> | null>(null);
   const [periodes, setPeriodes] = useState<Periode[]>([]);
+  const [groups, setGroups] = useState<KPIGroup[]>([]);
   const [kpis, setKpis] = useState<KPI[]>([]);
   const [attributes, setAttributes] = useState<Attribute[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,11 +40,22 @@ const DataKPI = () => {
   useEffect(() => {
     if (selectedPeriodeId !== 0) {
       fetchKpis();
+      fetchGroups();
     } else {
       setKpis([]);
+      setGroups([]);
       setLoading(false);
     }
   }, [selectedPeriodeId, currentPage]);
+
+  const fetchGroups = async () => {
+    try {
+      const res = await kpiService.getGroups(selectedPeriodeId);
+      setGroups(res.data);
+    } catch (err) {
+      console.error("Gagal mengambil data grup KPI", err);
+    }
+  };
 
   const fetchPeriodes = async () => {
     try {
@@ -117,6 +129,7 @@ const DataKPI = () => {
         NamaKpi: selectedKpi.namaKpi || selectedKpi.NamaKpi,
         Tipe: selectedKpi.tipe || selectedKpi.Tipe,
         PeriodeId: Number(selectedKpi.periodeId || selectedKpi.PeriodeId),
+        GroupId: Number(selectedKpi.GroupId || 0) || null,
         attributeId: selectedKpi.attributeId || null,
         BobotAhp: Number(selectedKpi.bobot || selectedKpi.BobotAhp || selectedKpi.Bobot || 0),
       };
@@ -276,6 +289,20 @@ const DataKPI = () => {
         </Modal.Header>
         <Modal.Body>
           <div className="space-y-4">
+            <div>
+              <Label htmlFor="group" value="Grup KPI (Level 1)" />
+              <Select
+                id="group"
+                value={selectedKpi?.GroupId || 0}
+                onChange={(e) => setSelectedKpi({...selectedKpi!, GroupId: Number(e.target.value)})}
+                disabled={modalType === "view"}
+              >
+                <option value={0}>Tidak Ada Grup</option>
+                {groups.map(g => (
+                  <option key={g.Id || g.id} value={g.Id || g.id}>{g.NamaGroup}</option>
+                ))}
+              </Select>
+            </div>
             <div>
               <Label htmlFor="nama" value="Nama Kriteria" />
               <TextInput
