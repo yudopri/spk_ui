@@ -82,7 +82,6 @@ const DeveloperPage = () => {
   };
 
   return (
-    <RoleGuard allow={["manager", "dev", "hrd"]}>
     <div className="flex flex-col gap-6">
       <div className="flex justify-between items-center bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm">
         <div>
@@ -202,76 +201,8 @@ const DeveloperPage = () => {
              </CardBox>
            ) : <div className="text-center py-20 text-gray-400 italic">Data debug MOORA akan tampil di sini.</div>}
         </Tabs.Item>
-
-        <Tabs.Item title="Audit Logs" icon={() => <Icon icon="solar:history-bold-duotone" className="mr-2" />}>
-           <CardBox>
-             {auditError && <Alert color="warning" className="mb-4">{auditError}</Alert>}
-             <div className="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
-                <div className="w-full md:w-64">
-                   <TextInput 
-                     placeholder="Cari logs..." 
-                     icon={() => <Icon icon="solar:magnifer-linear" />} 
-                     value={search}
-                     onChange={(e) => setSearch(e.target.value)}
-                   />
-                </div>
-                <div className="text-sm text-gray-500">
-                   Total: <b>{totalLogs}</b> entries
-                </div>
-             </div>
-             <div className="overflow-x-auto mb-4">
-               <Table hoverable>
-                 <Table.Head>
-                   <Table.HeadCell>Time</Table.HeadCell>
-                   <Table.HeadCell>User</Table.HeadCell>
-                   <Table.HeadCell>Action</Table.HeadCell>
-                   <Table.HeadCell>Entity</Table.HeadCell>
-                   <Table.HeadCell>Details</Table.HeadCell>
-                   <Table.HeadCell>IP Address</Table.HeadCell>
-                 </Table.Head>
-                 <Table.Body>
-                   {auditLogs.length > 0 ? auditLogs.map(log => (
-                     <Table.Row key={log.id}>
-                       <Table.Cell className="whitespace-nowrap">{new Date(log.timestamp).toLocaleString()}</Table.Cell>
-                       <Table.Cell className="font-bold">{log.username}</Table.Cell>
-                       <Table.Cell>
-                          <Badge color={
-                             log.action === 'DELETE' ? 'failure' : 
-                             log.action === 'CREATE' ? 'success' : 
-                             log.action === 'LOGIN' ? 'warning' : 'info'
-                          }>
-                             {log.action}
-                          </Badge>
-                       </Table.Cell>
-                       <Table.Cell>{log.entityName}</Table.Cell>
-                       <Table.Cell className="text-xs text-gray-500 max-w-[300px] truncate" title={log.details}>
-                          {log.details}
-                       </Table.Cell>
-                       <Table.Cell className="text-xs font-mono">{log.ipAddress}</Table.Cell>
-                     </Table.Row>
-                   )) : (
-                     <Table.Row>
-                       <Table.Cell colSpan={6} className="text-center py-8 text-gray-500">
-                         {auditError ? "Audit logs tidak tersedia." : "Belum ada data audit logs."}
-                       </Table.Cell>
-                     </Table.Row>
-                   )}
-                 </Table.Body>
-               </Table>
-             </div>
-             <div className="flex justify-center">
-                <Pagination
-                   currentPage={logPage}
-                   totalPages={Math.ceil(totalLogs / pageSize)}
-                   onPageChange={(page) => setLogPage(page)}
-                   showIcons
-                />
-             </div>
-           </CardBox>
-        </Tabs.Item>
       </Tabs>
     </div>
-    </RoleGuard>
   );
 };
 

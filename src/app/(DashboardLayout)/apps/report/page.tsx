@@ -11,6 +11,7 @@ import { usePermission } from "@/hooks/usePermission";
 import IndividualReportModal from "@/app/components/shared/IndividualReportModal";
 import { isManagerRole } from "@/utils/accessControl";
 import { useEffect as useClientEffect } from "react";
+import PerformanceEvaluationForm from "@/app/components/shared/PerformanceEvaluationForm";
 
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
@@ -37,9 +38,14 @@ const ReportHasil = () => {
 
   // Review Modal State
   const [showReviewModal, setShowReviewModal] = useState(false);
-  const [reviewNote, setReviewNote] = useState("");
   const [reviewReportId, setReviewReportId] = useState<number | null>(null);
   const [reviewLoading, setReviewLoading] = useState(false);
+  const [reviewForm, setReviewForm] = useState({
+    status: 'Reviewed' as 'Reviewed' | 'Draft' | 'Pending',
+    catatan_prestasi: '',
+    catatan_indisipliner: '',
+    catatan_saran: ''
+  });
 
   const allReviewed = useMemo(() => {
     if (reports.length === 0) return false;
@@ -153,10 +159,24 @@ const ReportHasil = () => {
     if (!reviewReportId) return;
     try {
       setReviewLoading(true);
-      const res = await spkService.reviewMooraResult(reviewReportId, reviewNote, 'Reviewed');
+      
+      // Gabungkan catatan menjadi string format JSON atau terstruktur jika backend belum support 3 field
+      // Mengikuti pola existing reviewMooraResult(id, catatan, status)
+      const combinedNote = JSON.stringify({
+        p: reviewForm.catatan_prestasi,
+        i: reviewForm.catatan_indisipliner,
+        s: reviewForm.catatan_saran
+      });
+
+      const res = await spkService.reviewMooraResult(reviewReportId, combinedNote, reviewForm.status);
       if (res.success) {
         setShowReviewModal(false);
-        setReviewNote("");
+        setReviewForm({
+            status: 'Reviewed',
+            catatan_prestasi: '',
+            catatan_indisipliner: '',
+            catatan_saran: ''
+        });
         setReviewReportId(null);
         // Refresh data
         window.location.reload(); 
@@ -480,7 +500,28 @@ const ReportHasil = () => {
                                 pill 
                                 onClick={() => {
                                   setReviewReportId(report.Id);
-                                  setReviewNote(report.Catatan || "");
+                                  
+                                  // Inisialisasi form review
+                                  let p = "", i = "", s = "";
+                                  try {
+                                    if (report.Catatan?.startsWith('{')) {
+                                      const parsed = JSON.parse(report.Catatan);
+                                      p = parsed.p || "";
+                                      i = parsed.i || "";
+                                      s = parsed.s || "";
+                                    } else {
+                                      p = report.Catatan || "";
+                                    }
+                                  } catch (e) {
+                                    p = report.Catatan || "";
+                                  }
+
+                                  setReviewForm({
+                                    status: (report.Status as any) || 'Reviewed',
+                                    catatan_prestasi: p,
+                                    catatan_indisipliner: i,
+                                    catatan_saran: s
+                                  });
                                   setShowReviewModal(true);
                                 }}
                               >
@@ -517,41 +558,94 @@ const ReportHasil = () => {
         </div>
       </div>
 
-      <IndividualReportModal
-        show={showPrintModal}
-        onClose={() => setShowPrintModal(false)}
-        data={individualData}
-      />
-
-      {/* Modal Review */}
-      <Modal show={showReviewModal} onClose={() => setShowReviewModal(false)} size="md">
-        <Modal.Header>Review Hasil Penilaian</Modal.Header>
+      {/* Review & Notes Modal */}
+      <Modal show={showReviewModal} onClose={() => setShowReviewModal(false)} size="lg">
+        <Modal.Header>Review Laporan & Catatan Evaluasi</Modal.Header>
         <Modal.Body>
           <div className="space-y-4">
             <div>
-              <div className="mb-2 block">
-                <Label htmlFor="catatan" value="Catatan untuk Karyawan" />
+              <Label value="Status Persetujuan" />
+              <Select 
+                value={reviewForm.status} 
+                onChange={(e) => setReviewForm({...reviewForm, status: e.target.value as any})}
+              >
+                <option value="Reviewed">SETUJUI (Reviewed)</option>
+                <option value="Pending">TUNDA (Pending)</option>
+                <option value="Draft">KEMBALIKAN KE DRAFT</option>
+              </Select>
+            </div>
+            
+            <div className="border-t pt-4 space-y-3">
+              <h4 className="text-xs font-black uppercase text-gray-500 tracking-widest">Catatan Kualitatif</h4>
+              
+              <div>
+                <Label value="1. Prestasi yang perlu dicatat" className="text-[10px] uppercase" />
+                <Textarea 
+                  placeholder="Contoh: Sangat proaktif dalam tim..."
+                  rows={2}
+                  value={reviewForm.catatan_prestasi}
+                  onChange={(e) => setReviewForm({...reviewForm, catatan_prestasi: e.target.value})}
+                />
               </div>
-              <Textarea
-                id="catatan"
-                placeholder="Berikan masukan atau catatan hasil review..."
-                required
-                rows={4}
-                value={reviewNote}
-                onChange={(e) => setReviewNote(e.target.value)}
-              />
+
+              <div>
+                <Label value="2. Indisipliner / Pelanggaran" className="text-[10px] uppercase" />
+                <Textarea 
+                  placeholder="Contoh: Terlambat tanpa izin 2x..."
+                  rows={2}
+                  value={reviewForm.catatan_indisipliner}
+                  onChange={(e) => setReviewForm({...reviewForm, catatan_indisipliner: e.target.value})}
+                />
+              </div>
+
+              <div>
+                <Label value="3. Saran Perbaikan" className="text-[10px] uppercase" />
+                <Textarea 
+                  placeholder="Contoh: Tingkatkan ketelitian data..."
+                  rows={2}
+                  value={reviewForm.catatan_saran}
+                  onChange={(e) => setReviewForm({...reviewForm, catatan_saran: e.target.value})}
+                />
+              </div>
             </div>
           </div>
         </Modal.Body>
         <Modal.Footer>
-          <Button color="info" onClick={handleReview} disabled={reviewLoading}>
-            {reviewLoading ? <Spinner size="sm" className="mr-2" /> : <Icon icon="solar:check-circle-bold" className="mr-2 h-5 w-5" />}
-            Setujui (Reviewed)
+          <Button color="primary" onClick={handleReview} disabled={reviewLoading}>
+            {reviewLoading ? <Spinner size="sm" /> : "Simpan Review"}
           </Button>
-          <Button color="gray" onClick={() => setShowReviewModal(false)}>
-            Batal
-          </Button>
+          <Button color="gray" onClick={() => setShowReviewModal(false)}>Batal</Button>
         </Modal.Footer>
+      </Modal>
+
+      {/* Individual Report - WBA Official Style */}
+      <Modal show={showPrintModal} onClose={() => setShowPrintModal(false)} size="5xl">
+        <Modal.Header className="print:hidden">Pratinjau Laporan Resmi</Modal.Header>
+        <Modal.Body className="p-0 bg-gray-100">
+           {individualData && (
+             <PerformanceEvaluationForm 
+                data={{
+                  employeeName: individualData.metadata.Nama,
+                  jabatan: individualData.metadata.Jabatan || "Karyawan",
+                  periode: individualData.metadata.Periode,
+                  lokasi: individualData.metadata.Lokasi || "JAKARTA",
+                  totalScore: individualData.kesimpulan.Skor,
+                  evaluator: individualData.metadata.DibuatOleh || user?.name || "SUPERVISOR",
+                  approver: individualData.metadata.DisetujuiOleh || "HR MANAGER",
+                  scores: individualData.rincian.reduce((acc: any, item: any) => {
+                    // Mapping kriteria ke ID yang dikenal form
+                    acc[item.Kriteria.toLowerCase().replace(/\s/g, '_')] = item.Nilai;
+                    return acc;
+                  }, {}),
+                  notes: {
+                    prestasi: individualData.metadata.CatatanPrestasi || "-",
+                    indisipliner: individualData.metadata.CatatanIndisipliner || "-",
+                    saran: individualData.metadata.CatatanSaran || "-"
+                  }
+                }}
+             />
+           )}
+        </Modal.Body>
       </Modal>
     </div>
   );
