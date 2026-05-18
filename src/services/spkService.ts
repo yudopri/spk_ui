@@ -82,6 +82,18 @@ export interface ApiBaseResponse<T = unknown> {
 
 const spkService = {
   // AHP Endpoints
+  getAhpGroupPerbandingan: async (periodeId: number) => {
+    const response = await axiosServices.get<{ success: boolean; data: any }>(`/spk/ahp-group/perbandingan/${periodeId}`);
+    return response.data;
+  },
+
+  saveAhpGroupPerbandingan: async (periodeId: number, comparisons: { id_a: number; id_b: number; nilai: number }[]) => {
+    const response = await axiosServices.post<{ message: string; success: boolean }>(`/spk/ahp-group/perbandingan/${periodeId}`, {
+      comparisons
+    });
+    return response.data;
+  },
+
   getAhpPerbandingan: async (periodeId: number, groupId?: number) => {
     const response = await axiosServices.get<any>(`/spk/ahp/perbandingan/${periodeId}`, {
       params: { group_id: groupId }
@@ -192,9 +204,9 @@ const spkService = {
     return response.data;
   },
 
-  reviewMooraResult: async (id: number, catatan: string) => {
+  reviewMooraResult: async (id: number, catatan: string, status: 'Draft' | 'Pending' | 'Reviewed' = 'Reviewed') => {
     const response = await axiosServices.patch<{ message: string; success: boolean }>(`/spk/moora/hasil/${id}/review`, {
-      status: 'Reviewed',
+      status: status,
       catatan: catatan
     });
     return response.data;

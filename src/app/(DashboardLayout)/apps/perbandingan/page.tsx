@@ -67,28 +67,37 @@ const NilaiPerbandingan = () => {
           setCr(null);
           setSuccess(null);
           let items: any[] = [];
+          const nextValues: Record<string, number> = {};
+          
           if (selectedGroupId === 0) {
               const res = await kpiService.getGroups(selectedPeriodeId);
               items = res.data;
+              const resComp = await spkService.getAhpGroupPerbandingan(selectedPeriodeId);
+              if (resComp.success && resComp.data) {
+                  resComp.data.forEach((item: any) => {
+                      nextValues[`${item.id_a || item.IdA}-${item.id_b || item.IdB}`] = item.nilai;
+                  });
+              }
           } else {
               const res = await kpiService.getByPeriode(selectedPeriodeId);
               items = res.data.filter((k: KPI) => Number(k.GroupId) === selectedGroupId);
+              const resComp = await spkService.getAhpPerbandingan(selectedPeriodeId, selectedGroupId);
+              if (resComp.success && resComp.data) {
+                  resComp.data.forEach((item: any) => {
+                      nextValues[`${item.kpiAId || item.KpiAId}-${item.kpiBId || item.KpiBId}`] = item.nilai;
+                  });
+              }
           }
           setKpis(items);
 
-          const nextValues: Record<string, number> = {};
+          // Fill missing with 1
           for (let i = 0; i < items.length; i++) {
               for (let j = i + 1; j < items.length; j++) {
-                  nextValues[`${items[i].Id || items[i].id}-${items[j].Id || items[j].id}`] = 1;
+                  const key = `${items[i].Id || items[i].id}-${items[j].Id || items[j].id}`;
+                  if (!(key in nextValues)) nextValues[key] = 1;
               }
           }
           
-          const resComp = await spkService.getAhpPerbandingan(selectedPeriodeId, selectedGroupId || undefined);
-          if (resComp.success && resComp.data) {
-              resComp.data.forEach((item) => {
-                  nextValues[`${item.kpiAId}-${item.kpiBId}`] = item.nilai;
-              });
-          }
           setComparisonValues(nextValues);
       } catch (err) {
           setError("Gagal memuat data matriks");
@@ -115,12 +124,24 @@ const NilaiPerbandingan = () => {
       setSubmitting(true);
       setError(null);
       setSuccess(null);
-      const payload = pairs.map(p => ({
-        PeriodeId: selectedPeriodeId,
-        Nilai: comparisonValues[p.key] || 1,
-        ...(selectedGroupId === 0 ? { GroupIdA: p.itemA.Id, GroupIdB: p.itemB.Id } : { KpiAId: p.itemA.Id, KpiBId: p.itemB.Id })
-      }));
-      await spkService.saveAhpPerbandingan(payload as any);
+      
+      if (selectedGroupId === 0) {
+        const payload = pairs.map(p => ({
+          id_a: p.itemA.Id || p.itemA.id,
+          id_b: p.itemB.Id || p.itemB.id,
+          nilai: comparisonValues[p.key] || 1
+        }));
+        await spkService.saveAhpGroupPerbandingan(selectedPeriodeId, payload);
+      } else {
+        const payload = pairs.map(p => ({
+          PeriodeId: selectedPeriodeId,
+          Nilai: comparisonValues[p.key] || 1,
+          KpiAId: p.itemA.Id || p.itemA.id,
+          KpiBId: p.itemB.Id || p.itemB.id
+        }));
+        await spkService.saveAhpPerbandingan(payload as any);
+      }
+
       const resCalc = await spkService.calculateAhpWeight(selectedPeriodeId, selectedGroupId || undefined);
       if (resCalc.data?.cr !== undefined) {
           setCr(resCalc.data.cr);

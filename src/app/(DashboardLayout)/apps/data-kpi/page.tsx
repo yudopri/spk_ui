@@ -111,6 +111,7 @@ const DataKPI = () => {
         deskripsi: "",
         tipe: "Benefit",
         attributeId: attributes[0]?.id,
+        GroupId: groups[0]?.Id || groups[0]?.id,
         bobot: 0
       });
     } else {

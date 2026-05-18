@@ -153,14 +153,13 @@ const ReportHasil = () => {
     if (!reviewReportId) return;
     try {
       setReviewLoading(true);
-      const res = await spkService.reviewMooraResult(reviewReportId, reviewNote);
+      const res = await spkService.reviewMooraResult(reviewReportId, reviewNote, 'Reviewed');
       if (res.success) {
         setShowReviewModal(false);
         setReviewNote("");
         setReviewReportId(null);
-        // Refresh Reports highlight status change
-        const resR = await spkService.getReport(selectedPeriodeId, 1, 100, selectedLokasi || undefined);
-        setReports(resR.data || []);
+        // Refresh data
+        window.location.reload(); 
       }
     } catch (err: any) {
       setError(err?.response?.data?.message || "Gagal menyimpan review");
@@ -319,10 +318,21 @@ const ReportHasil = () => {
                     size="sm" 
                     onClick={() => handleUpdateStatus('Final')} 
                     disabled={updating || !isManagerUI || !allReviewed}
-                    title={!isManagerUI ? "Hanya Manager yang dapat melakukan finalisasi" : !allReviewed ? "Semua karyawan harus berstatus Reviewed terlebih dahulu" : ""}
+                    title={!isManagerUI ? "Hanya Manager yang dapat melakukan finalisasi" : !allReviewed ? "Semua karyawan harus direview secara individual terlebih dahulu" : ""}
                   >
                     {updating ? <Spinner size="sm" /> : <Icon icon="solar:check-read-linear" className="mr-2 h-4 w-4" />}
                     Finalkan Laporan
+                  </Button>
+                )}
+                {isFinal && isManagerUI && (
+                  <Button 
+                    color="warning" 
+                    size="sm" 
+                    onClick={() => handleUpdateStatus('Draft')} 
+                    disabled={updating}
+                  >
+                    {updating ? <Spinner size="sm" /> : <Icon icon="solar:undo-left-round-linear" className="mr-2 h-4 w-4" />}
+                    Kembalikan ke Draft
                   </Button>
                 )}
                 <Button color="dark" size="sm" className="flex items-center" onClick={handleExportSummary} disabled={Boolean(canExport)}>
