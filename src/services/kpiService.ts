@@ -53,7 +53,6 @@ export interface Attribute {
 const normalizeKpi = (item: any): KPI => {
   const id = Number(item.Id ?? item.id ?? 0);
   const tipe = (item.Tipe ?? item.tipe ?? 'Benefit') as 'Benefit' | 'Cost';
-  const group = item.GrupKpi ?? item.group_kpi ?? item.GroupKpi ?? null;
   return {
     ...item,
     Id: id,
@@ -78,10 +77,8 @@ const normalizeKpi = (item: any): KPI => {
     Deskripsi: item.Deskripsi ?? item.deskripsi ?? '',
     deskripsi: item.deskripsi ?? item.Deskripsi ?? '',
     simbol: item.simbol ?? '',
-    GrupKpi: group ? {
-      idGrup: group.idGrup ?? group.Id ?? group.id,
-      namaGrup: group.namaGrup ?? group.NamaGroup ?? group.nama_grup,
-    } : undefined
+    idGrup: item.idGrup ?? item.Id ?? item.id,
+    namaGrup: item.namaGrup ?? item.NamaGroup ?? item.nama_grup,
   };
 };
 
