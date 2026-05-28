@@ -16,18 +16,27 @@ const AuditLogsPage = () => {
   const [pageSize, setPageSize] = useState(10);
   const [totalLogs, setTotalLogs] = useState(0);
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setLogPage(1);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   useEffect(() => {
     fetchAuditLogs();
-  }, [logPage, search]);
+  }, [logPage, debouncedSearch]);
 
   const fetchAuditLogs = async () => {
     try {
       setLoading(true);
       setAuditError(null);
-      const res = await developerService.getAuditLogs(logPage, pageSize, search);
-      setAuditLogs(res.data);
-      setTotalLogs(res.totalCount);
+      const res = await developerService.getAuditLogs(logPage, pageSize, debouncedSearch);
+      setAuditLogs(res.data || []);
+      setTotalLogs(res.meta?.total || 0);
     } catch (err: any) {
       const status = err?.status || err?.response?.status;
       if (status === 404) {

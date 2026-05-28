@@ -27,10 +27,20 @@ const karyawanService = {
       lokasi_kerja?: string;
       include_management_roles?: boolean;
       role_group?: string;
+      page?: number;
+      pageSize?: number;
+      search?: string;
+      sort?: string;
+      filter?: any;
     } = {}
-  ) => {
+  ): Promise<ApiResponse<Karyawan[]>> => {
     const response = await axiosServices.get<any>('/employees', {
       params: {
+        page: params.page,
+        pageSize: params.pageSize,
+        search: params.search,
+        sort: params.sort,
+        filter: params.filter ? JSON.stringify(params.filter) : undefined,
         ...(params.dept_id ? { dept_id: params.dept_id } : {}),
         ...(params.lokasi_kerja ? { lokasi_kerja: params.lokasi_kerja } : {}),
         ...(typeof params.include_management_roles === 'boolean'
@@ -39,13 +49,11 @@ const karyawanService = {
         ...(params.role_group ? { role_group: params.role_group } : {}),
       },
     });
-    const rawList = Array.isArray(response.data)
-      ? response.data
-      : Array.isArray(response.data?.data)
-        ? response.data.data
-        : [];
 
-    const data = rawList.map((item: any) => ({
+    const rawList = response.data.data || [];
+    const meta = response.data.meta;
+
+    const mapped = rawList.map((item: any) => ({
       ...item,
       id: Number(item.id ?? 0),
       name: item.name ?? item.nama ?? '',
@@ -59,9 +67,12 @@ const karyawanService = {
       jabatan: item.jabatan ?? item.role ?? '',
       divisiId: item.departemen_id ?? item.dept_id ?? params.dept_id ?? 0,
     }));
+
     return {
         success: true,
-        data
+        message: 'Success',
+        data: mapped,
+        meta
     };
   },
 

@@ -56,12 +56,18 @@ export interface SpkReport {
   NilaiOptimasi: number;
   Ranking: number;
   Status?: string;
-  Catatan?: string;
+  status?: string;
+  Catatan?: any;
+  catatan?: any;
   Karyawan: {
     Id: number;
+    id?: number;
     Nik: string;
+    nik?: string;
     Nama: string;
+    name?: string;
     Jabatan: string;
+    jabatan?: string;
   } | null;
 }
 
@@ -147,19 +153,19 @@ const spkService = {
   },
 
   // Report Endpoints
-  getReport: async (periodeId: number, page = 1, pageSize = 10, lokasiKerja?: string) => {
+  getReport: async (periodeId: number, page = 1, pageSize = 10, search = '', sort = '', filter = {}) => {
     const response = await axiosServices.get<any>(`/spk/moora/hasil/${periodeId}`, {
       params: {
         page,
         pageSize,
-        ...(lokasiKerja ? { lokasi_kerja: lokasiKerja } : {}),
+        search,
+        sort,
+        filter: JSON.stringify(filter),
       }
     });
-    const rawList = Array.isArray(response.data)
-      ? response.data
-      : Array.isArray(response.data?.data)
-        ? response.data.data
-        : [];
+
+    const rawList = response.data.data || [];
+    const meta = response.data.meta;
 
     const mapped: SpkReport[] = rawList.map((item: any): SpkReport => ({
         Id: Number(item.Id ?? item.id ?? item.karyawan_id ?? 0),
@@ -169,31 +175,37 @@ const spkService = {
         NilaiOptimasi: Number(item.NilaiOptimasi ?? item.nilai_optimasi ?? 0),
         Ranking: Number(item.Ranking ?? item.ranking ?? 0),
         Status: item.Status ?? item.status ?? 'Draft',
+        status: item.status ?? item.Status ?? 'Draft',
         Catatan: item.Catatan ?? item.catatan ?? '',
+        catatan: item.catatan ?? item.Catatan ?? '',
         Karyawan: item.Karyawan
           ? {
               Id: Number(item.Karyawan.Id ?? item.Karyawan.id ?? 0),
+              id: Number(item.Karyawan.id ?? item.Karyawan.Id ?? 0),
               Nik: item.Karyawan.Nik ?? item.Karyawan.nik ?? '',
+              nik: item.Karyawan.nik ?? item.Karyawan.Nik ?? '',
               Nama: item.Karyawan.Nama ?? item.Karyawan.name ?? '',
+              name: item.Karyawan.name ?? item.Karyawan.Nama ?? '',
               Jabatan: item.Karyawan.Jabatan ?? item.Karyawan.role ?? '',
+              jabatan: item.Karyawan.jabatan ?? item.Karyawan.role ?? '',
             }
           : {
               Id: Number(item.karyawan_id ?? 0),
+              id: Number(item.karyawan_id ?? 0),
               Nik: item.nik ?? '',
+              nik: item.nik ?? '',
               Nama: item.name ?? item.nama ?? '',
+              name: item.name ?? item.nama ?? '',
               Jabatan: item.role ?? '',
+              jabatan: item.role ?? '',
             },
       }));
 
-    const data = mapped.sort((left, right) => left.Ranking - right.Ranking);
-
     return {
-      success: Boolean(response.data?.success ?? true),
-      message: response.data?.message || 'OK',
-      data,
-      totalCount: data.length,
-      page,
-      pageSize,
+      success: true,
+      message: 'Success',
+      data: mapped,
+      meta,
     };
   },
 

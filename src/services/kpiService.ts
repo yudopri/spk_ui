@@ -1,4 +1,5 @@
-import axios from '../utils/axios';
+import axiosServices from '@/utils/axios';
+import { ApiResponse } from './divisiService';
 
 export interface KPIGroup {
   Id: number;
@@ -70,12 +71,12 @@ const normalizeKpi = (item: any): KPI => {
 
 const kpiService = {
   getAttributes: async () => {
-    const response = await axios.get('/attribute');
+    const response = await axiosServices.get('/attribute');
     return response.data;
   },
 
   createAttribute: async (data: { nama: string; simbol: string }) => {
-    const response = await axios.post<{ success?: boolean; message?: string; data?: Attribute }>('/attribute', {
+    const response = await axiosServices.post<{ success?: boolean; message?: string; data?: Attribute }>('/attribute', {
       nama: data.nama,
       simbol: data.simbol,
     });
@@ -83,7 +84,7 @@ const kpiService = {
   },
 
   updateAttribute: async (id: number, data: { nama: string; simbol: string }) => {
-    const response = await axios.put<{ success?: boolean; message?: string; data?: Attribute }>(`/attribute/${id}`, {
+    const response = await axiosServices.put<{ success?: boolean; message?: string; data?: Attribute }>(`/attribute/${id}`, {
       nama: data.nama,
       simbol: data.simbol,
     });
@@ -91,42 +92,41 @@ const kpiService = {
   },
 
   deleteAttribute: async (id: number) => {
-    const response = await axios.delete<{ success?: boolean; message?: string }>(`/attribute/${id}`);
+    const response = await axiosServices.delete<{ success?: boolean; message?: string }>(`/attribute/${id}`);
     return response.data;
   },
 
-  getByPeriode: async (periodeId: number, page = 1, pageSize = 10) => {
-    const response = await axios.get<any>('/spk/kpi', {
-      params: { periode_id: periodeId }
+  getByPeriode: async (periodeId: number, page = 1, pageSize = 10, search = '', sort = ''): Promise<ApiResponse<KPI[]>> => {
+    const response = await axiosServices.get<any>('/spk/kpi', {
+      params: { 
+        periode_id: periodeId,
+        page,
+        pageSize,
+        search,
+        sort
+      }
     });
 
-    const rawList = Array.isArray(response.data)
-      ? response.data
-      : Array.isArray(response.data?.data)
-        ? response.data.data
-        : [];
-
+    const rawList = response.data.data || [];
+    const meta = response.data.meta;
     const mapped = rawList.map(normalizeKpi);
-    const start = (page - 1) * pageSize;
-    const paged = mapped.slice(start, start + pageSize);
 
     return {
       success: true,
-      data: paged,
-      totalCount: mapped.length,
-      page,
-      pageSize,
+      message: 'Success',
+      data: mapped,
+      meta,
     };
   },
 
-  create: async (data: { NamaKpi?: string; Tipe?: string; PeriodeId?: string; GroupId?: number; group_id?: number; Deskripsi?: string; namaKpi?: string; tipe?: string; periodeId?: number; bobot?: number; id_satuan?: number; attributeId?: number; BobotAhp?: number }) => {
-    const response = await axios.post<{ Id?: number; success?: boolean; message?: string }>('/spk/kpi', {
+  create: async (data: any) => {
+    const response = await axiosServices.post<{ Id?: number; success?: boolean; message?: string }>('/spk/kpi', {
       NamaKpi: data.NamaKpi ?? data.namaKpi,
       Tipe: data.Tipe ?? data.tipe ?? 'Benefit',
       PeriodeId: Number(data.PeriodeId ?? data.periodeId),
       group_id: Number(data.group_id ?? data.GroupId ?? 0) || null,
       Deskripsi: data.Deskripsi ?? '',
-      attributeId: data.attributeId ?? data.id_satuan ?? null, // Backend uses attributeId (lowercase a)
+      attributeId: data.attributeId ?? data.id_satuan ?? null,
       BobotAhp: Number(data.BobotAhp ?? data.bobot ?? 0),
     });
     return response.data;
@@ -136,7 +136,7 @@ const kpiService = {
     const targetId = Number(data.Id ?? data.id ?? 0);
     if (!targetId) throw new Error('ID KPI tidak ditemukan');
 
-    const response = await axios.put<{ success?: boolean; message?: string }>(`/spk/kpi/${targetId}`, {
+    const response = await axiosServices.put<{ success?: boolean; message?: string }>(`/spk/kpi/${targetId}`, {
       NamaKpi: data.NamaKpi ?? data.namaKpi,
       Tipe: data.Tipe ?? data.tipe,
       PeriodeId: Number(data.PeriodeId ?? data.periodeId),
@@ -149,13 +149,12 @@ const kpiService = {
   },
 
   delete: async (id: number) => {
-    const response = await axios.delete<{ success?: boolean; message?: string }>(`/spk/kpi/${id}`);
+    const response = await axiosServices.delete<{ success?: boolean; message?: string }>(`/spk/kpi/${id}`);
     return response.data;
   },
 
-  // KPI Group Services
-  getGroups: async (periodeId: number) => {
-    const response = await axios.get<any>('/spk/kpi-group', {
+  getGroups: async (periodeId: number): Promise<ApiResponse<KPIGroup[]>> => {
+    const response = await axiosServices.get<any>('/spk/kpi-group', {
       params: { periode_id: periodeId }
     });
     const rawList = Array.isArray(response.data)
@@ -177,12 +176,13 @@ const kpiService = {
 
     return {
       success: true,
+      message: 'Success',
       data,
     };
   },
 
   createGroup: async (data: { NamaGroup: string; PeriodeId: number; BobotGrup?: number }) => {
-    const response = await axios.post<{ success: boolean; id?: number }>('/spk/kpi-group', {
+    const response = await axiosServices.post<{ success: boolean; id?: number }>('/spk/kpi-group', {
       nama_grup: data.NamaGroup,
       periode_id: data.PeriodeId,
       bobot_grup: data.BobotGrup ?? 0
@@ -191,7 +191,7 @@ const kpiService = {
   },
 
   updateGroup: async (id: number, data: { NamaGroup: string; BobotGrup?: number }) => {
-    const response = await axios.put<{ success: boolean; message: string }>(`/spk/kpi-group/${id}`, {
+    const response = await axiosServices.put<{ success: boolean; message: string }>(`/spk/kpi-group/${id}`, {
       nama_grup: data.NamaGroup,
       bobot_grup: data.BobotGrup ?? 0
     });
@@ -199,7 +199,7 @@ const kpiService = {
   },
 
   deleteGroup: async (id: number) => {
-    const response = await axios.delete<{ success: boolean; message: string }>(`/spk/kpi-group/${id}`);
+    const response = await axiosServices.delete<{ success: boolean; message: string }>(`/spk/kpi-group/${id}`);
     return response.data;
   }
 };

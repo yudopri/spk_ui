@@ -1,134 +1,96 @@
-import axios from '../utils/axios';
-
-export interface KPI {
-  id: number;
-  periodeId: number;
-  namaKpi: string;
-  deskripsi: string;
-  tipe: string;
-  bobot: number;
-}
+import axiosServices from '@/utils/axios';
+import { ApiResponse } from './divisiService';
 
 export interface Periode {
+  id: number;
   Id: number;
+  namaPeriode: string;
   NamaPeriode: string;
+  tahun: number;
+  Tahun: number;
+  divisiId: number;
   DivisiId: number;
-  NamaDivisi: string;
-  Tahun?: number | null;
-  Status: string;
+  tanggalMulai: string;
   TanggalMulai: string;
+  tanggalSelesai: string;
   TanggalSelesai: string;
-  id?: number;
-  namaPeriode?: string;
-  tahun?: number;
-  tanggalMulai?: string;
-  tanggalSelesai?: string;
+  status: string;
+  Status: string;
+  isAktif: boolean;
+  NamaDivisi?: string;
   divisi?: {
     id: number;
     namaDivisi: string;
   } | null;
-  // UI legacy fields (optional for compatibility)
-  isAktif?: boolean;
-  divisiId?: number;
 }
 
 const normalizePeriode = (item: any): Periode => {
-  const mulai = item.TanggalMulai ?? item.tanggalMulai ?? '';
-  const selesai = item.TanggalSelesai ?? item.tanggalSelesai ?? '';
-  const status = item.Status ?? item.status ?? 'Nonaktif';
   const id = Number(item.Id ?? item.id ?? 0);
-
-  // Logic to determine active status based on dates
-  const now = new Date();
-  now.setHours(0, 0, 0, 0); // Reset time for date-only comparison
-
-  const startDate = mulai ? new Date(mulai) : null;
-  const endDate = selesai ? new Date(selesai) : null;
-
-  if (startDate) startDate.setHours(0, 0, 0, 0);
-  if (endDate) endDate.setHours(0, 0, 0, 0);
-
-  let calculatedStatus = status;
-  // HANYA hitung status berdasarkan tanggal jika status saat ini BUKAN 'Final'
-  if (status !== 'Final' && startDate && endDate) {
-    if (now >= startDate && now <= endDate) {
-      calculatedStatus = 'Aktif';
-    } else {
-      calculatedStatus = 'Nonaktif';
-    }
-  }
-
+  const status = item.Status ?? item.status ?? 'Nonaktif';
+  const isAktif = status === 'Aktif';
+  
   return {
     ...item,
-    Id: id,
     id,
+    Id: id,
+    namaPeriode: item.NamaPeriode ?? item.namaPeriode ?? '',
     NamaPeriode: item.NamaPeriode ?? item.namaPeriode ?? '',
-    namaPeriode: item.namaPeriode ?? item.NamaPeriode ?? '',
-    NamaDivisi: item.NamaDivisi ?? (item.divisi?.namaDivisi || item.divisi?.name || 'Semua Divisi'),
-    DivisiId: item.DivisiId ?? item.divisiId ?? item.divisi?.id ?? null,
-    Tahun: item.Tahun ?? item.tahun ?? (mulai ? new Date(mulai).getFullYear() : null),
-    Status: calculatedStatus,
-    TanggalMulai: mulai,
-    tanggalMulai: mulai,
-    TanggalSelesai: selesai,
-    tanggalSelesai: selesai,
-    isAktif: String(calculatedStatus).toLowerCase() === 'aktif' || calculatedStatus === 'Final',
-    tahun: item.tahun ?? item.Tahun ?? (mulai ? new Date(mulai).getFullYear() : new Date().getFullYear()),
-    divisiId: item.divisiId ?? item.DivisiId ?? item.dept_id ?? null,
-    divisi: item.divisi
-      ? {
-          id: item.divisi.id ?? null,
-          namaDivisi: item.divisi.namaDivisi ?? item.divisi.name ?? 'Semua Divisi',
-        }
-      : null,
+    tahun: Number(item.Tahun ?? item.tahun ?? 0),
+    Tahun: Number(item.Tahun ?? item.tahun ?? 0),
+    divisiId: Number(item.DivisiId ?? item.divisiId ?? 0),
+    DivisiId: Number(item.DivisiId ?? item.divisiId ?? 0),
+    tanggalMulai: item.TanggalMulai ?? item.tanggalMulai ?? '',
+    TanggalMulai: item.TanggalMulai ?? item.tanggalMulai ?? '',
+    tanggalSelesai: item.TanggalSelesai ?? item.tanggalSelesai ?? '',
+    TanggalSelesai: item.TanggalSelesai ?? item.tanggalSelesai ?? '',
+    status,
+    Status: status,
+    isAktif,
+    NamaDivisi: item.NamaDivisi ?? item.namaDivisi ?? item.divisi?.namaDivisi ?? '',
+    divisi: item.divisi || null
   };
 };
 
 const toNullableInt = (value: unknown): number | null => {
-  if (value === undefined || value === null) return null;
-  if (typeof value === 'string' && value.trim() === '') return null;
-  const parsed = Number(value);
-  return Number.isNaN(parsed) ? null : parsed;
+  if (value === null || value === undefined || value === '') return null;
+  const n = Number(value);
+  return isNaN(n) ? null : n;
 };
 
 const periodeService = {
-  getAll: async (page = 1, pageSize = 100, search = '') => {
-    const response = await axios.get<any>('/spk/periode', {
+  getAll: async (page = 1, pageSize = 10, search = '', sort = '', filter = {}): Promise<ApiResponse<Periode[]>> => {
+    const response = await axiosServices.get<any>('/spk/periode', {
       params: {
-        ...(search ? { search } : {}),
+        page,
+        pageSize,
+        search,
+        sort,
+        filter: JSON.stringify(filter),
       },
     });
 
-    const rawList = Array.isArray(response.data)
-      ? response.data
-      : Array.isArray(response.data?.data)
-        ? response.data.data
-        : [];
-
+    const rawList = response.data.data || [];
+    const meta = response.data.meta;
     const mapped = rawList.map(normalizePeriode);
-    const start = (page - 1) * pageSize;
-    const paged = mapped.slice(start, start + pageSize);
 
     return {
       success: true,
-      data: paged,
-      totalCount: mapped.length,
-      page,
-      pageSize,
+      message: 'Success',
+      data: mapped,
+      meta,
     };
   },
 
-  getById: async (id: number) => {
+  getById: async (id: number): Promise<ApiResponse<Periode | null>> => {
     const all = await periodeService.getAll(1, 1000);
     const found = all.data.find((p: Periode) => p.Id === id || p.id === id) || null;
-    return { success: true, data: found };
+    return { success: true, message: 'Success', data: found };
   },
 
   create: async (data: Partial<Periode>) => {
     const tahunRaw = data.Tahun ?? data.tahun;
     const divisiRaw = data.DivisiId ?? data.divisiId;
 
-    // Logic to determine status based on dates
     const now = new Date();
     now.setHours(0, 0, 0, 0);
     const mulai = data.TanggalMulai ?? data.tanggalMulai;
@@ -143,7 +105,7 @@ const periodeService = {
       calculatedStatus = (now >= startDate && now <= endDate) ? 'Aktif' : 'Nonaktif';
     }
 
-    const response = await axios.post<{ Id?: number; success?: boolean; message?: string }>('/spk/periode', {
+    const response = await axiosServices.post<{ Id?: number; success?: boolean; message?: string }>('/spk/periode', {
       NamaPeriode: data.NamaPeriode ?? data.namaPeriode,
       Tahun: toNullableInt(tahunRaw),
       DivisiId: toNullableInt(divisiRaw),
@@ -161,7 +123,6 @@ const periodeService = {
     const tahunRaw = data.Tahun ?? data.tahun;
     const divisiRaw = data.DivisiId ?? data.divisiId;
 
-    // Logic to determine status based on dates
     const now = new Date();
     now.setHours(0, 0, 0, 0);
     const mulai = data.TanggalMulai ?? data.tanggalMulai;
@@ -176,7 +137,7 @@ const periodeService = {
       calculatedStatus = (now >= startDate && now <= endDate) ? 'Aktif' : 'Nonaktif';
     }
 
-    const response = await axios.put<{ success?: boolean; message?: string }>(`/spk/periode/${targetId}`, {
+    const response = await axiosServices.put<{ success?: boolean; message?: string }>(`/spk/periode/${targetId}`, {
       NamaPeriode: data.NamaPeriode ?? data.namaPeriode,
       Tahun: toNullableInt(tahunRaw),
       DivisiId: toNullableInt(divisiRaw),
@@ -189,7 +150,7 @@ const periodeService = {
   },
 
   delete: async (id: number) => {
-    const response = await axios.delete<{ success?: boolean; message?: string }>(`/spk/periode/${id}`);
+    const response = await axiosServices.delete<{ success?: boolean; message?: string }>(`/spk/periode/${id}`);
     return response.data;
   }
 };

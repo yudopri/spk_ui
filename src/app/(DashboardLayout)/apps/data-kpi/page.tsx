@@ -93,7 +93,7 @@ const DataKPI = () => {
       setLoading(true);
       const res = await kpiService.getByPeriode(selectedPeriodeId, currentPage, pageSize);
       setKpis(res.data);
-      setTotalItems(res.totalCount);
+      setTotalItems(Number(res.meta?.total || (res as any).totalCount || 0));
       setError(null);
     } catch (err: any) {
       setError(err.response?.data?.message || "Gagal mengambil data KPI");

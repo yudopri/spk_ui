@@ -22,11 +22,18 @@ const PenilaianKaryawan = () => {
   const [departments, setDepartments] = useState<Divisi[]>([]);
   const [selectedDeptId, setSelectedDeptId] = useState<number | string>("all");
   const [selectedLocation, setSelectedLocation] = useState<string>("all");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [scores, setScores] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchTerm), 500);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   const fetchInitialData = async () => {
     try {
@@ -68,6 +75,8 @@ const PenilaianKaryawan = () => {
           {
             ...(selectedDeptId === "all" ? {} : { dept_id: Number(selectedDeptId) }),
             ...(selectedLocation === "all" ? {} : { lokasi_kerja: selectedLocation }),
+            search: debouncedSearch,
+            pageSize: 100
           }
         );
         const scopedEmployees = (filterEmployeesByScope(res.data || []) as Karyawan[]).filter((employee) => {
@@ -83,7 +92,7 @@ const PenilaianKaryawan = () => {
     };
 
     fetchEmployees();
-  }, [selectedDeptId, selectedLocation]);
+  }, [selectedDeptId, selectedLocation, debouncedSearch]);
 
   const filteredPeriodes = periodes.filter((periode: any) => {
     if (selectedDeptId === "all") return true;
@@ -203,6 +212,15 @@ const PenilaianKaryawan = () => {
           <p className="text-sm text-gray-500">Pilih departemen dan periode untuk memulai penilaian</p>
         </div>
         <div className="flex flex-wrap gap-4">
+            <div className="w-56">
+                <TextInput 
+                    icon={() => <Icon icon="solar:magnifer-linear" />}
+                    placeholder="Nama Karyawan..." 
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    sizing="sm"
+                />
+            </div>
             <Select 
               value={selectedDeptId} 
               onChange={(e) => {

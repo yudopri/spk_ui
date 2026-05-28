@@ -12,24 +12,12 @@ const DeveloperPage = () => {
   const [periodes, setPeriodes] = useState<Periode[]>([]);
   const [ahpData, setAhpData] = useState<AhpDebugData | null>(null);
   const [mooraData, setMooraData] = useState<MooraDebugData | null>(null);
-  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [auditError, setAuditError] = useState<string | null>(null);
-
-  // Audit Log Pagination & Search
-  const [logPage, setLogPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-  const [totalLogs, setTotalLogs] = useState(0);
-  const [search, setSearch] = useState("");
 
   useEffect(() => {
     fetchPeriodes();
   }, []);
-
-  useEffect(() => {
-    fetchAuditLogs();
-  }, [logPage, search]);
 
   const fetchPeriodes = async () => {
     try {
@@ -38,28 +26,6 @@ const DeveloperPage = () => {
       if (res.data.length > 0) setSelectedPeriodeId(res.data[0].id);
     } catch (err) {
       setError("Gagal mengambil periode");
-    }
-  };
-
-  const fetchAuditLogs = async () => {
-    try {
-      setAuditError(null);
-      const res = await developerService.getAuditLogs(logPage, pageSize, search);
-      setAuditLogs(res.data);
-      setTotalLogs(res.totalCount);
-    } catch (err: any) {
-      const status = err?.status || err?.response?.status;
-      if (status === 404) {
-        setAuditError("Endpoint audit logs belum tersedia di backend saat ini.");
-      } else if (status === 401) {
-        setAuditError("Sesi login berakhir saat mengambil audit logs.");
-      } else if (status === 403) {
-        setAuditError("Anda tidak memiliki izin untuk melihat audit logs.");
-      } else {
-        setAuditError(err?.message || "Gagal mengambil audit logs.");
-      }
-      setAuditLogs([]);
-      setTotalLogs(0);
     }
   };
 

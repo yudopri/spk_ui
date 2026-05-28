@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useMemo } from "react";
-import { Table, Button, Badge, Select, Spinner, Alert, Modal, Label, Textarea } from "flowbite-react";
+import { Table, Button, Badge, Select, Spinner, Alert, Modal, Label, Textarea, TextInput, Pagination } from "flowbite-react";
 import CardBox from "@/app/components/shared/CardBox";
 import { Icon } from "@iconify/react";
 import dynamic from "next/dynamic";
@@ -29,7 +29,22 @@ const ReportHasil = () => {
 
   const [selectedPeriode, setSelectedPeriode] = useState<Periode | null>(null);
 
+  // Pagination & Search
+  const [reportPage, setReportPage] = useState(1);
+  const [reportPageSize, setReportPageSize] = useState(10);
+  const [totalReports, setTotalReports] = useState(0);
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
   const isFinal = selectedPeriode?.Status === 'Final';
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setReportPage(1);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   // Individual Report State
   const [showPrintModal, setShowPrintModal] = useState(false);
@@ -82,8 +97,10 @@ const ReportHasil = () => {
         const latestP = resP_Single.data.find((p: any) => (p.id || p.Id) === selectedPeriodeId);
         if (latestP) setSelectedPeriode(latestP);
 
-        const res = await spkService.getReport(selectedPeriodeId, 1, 100, selectedLokasi || undefined);
+        const res = await spkService.getReport(selectedPeriodeId, reportPage, reportPageSize, selectedLokasi || undefined, debouncedSearch);
         const rawReports = res.data || [];
+        setTotalReports(res.meta?.total || (res as any).totalCount || 0);
+        
         const isManagerUI_Local = isManagerRole(localStorage.getItem('userRole'));
         const scoped = rawReports.filter((item) => {
           if (isKaryawan) {
@@ -112,7 +129,7 @@ const ReportHasil = () => {
       }
     };
     fetchReport();
-  }, [selectedPeriodeId, selectedLokasi, isKaryawan, isAdminLike, isManager, user?.employee_id, user?.dept_id]);
+  }, [selectedPeriodeId, selectedLokasi, reportPage, debouncedSearch, isKaryawan, isAdminLike, isManager, user?.employee_id, user?.dept_id]);
 
   const handleFetchIndividual = async (karyawanId: number) => {
     try {
@@ -248,7 +265,7 @@ const ReportHasil = () => {
     },
     legend: { show: false },
     xaxis: {
-      categories: reports.map(r => r.Karyawan?.Nama || "Unknown"),
+      categories: reports.map(r => r.Karyawan?.name || r.Karyawan?.Nama || "Unknown"),
       axisBorder: { show: false },
       axisTicks: { show: false },
       labels: {
@@ -341,6 +358,15 @@ const ReportHasil = () => {
           <p className="text-sm text-gray-500">Hasil Ranking Kinerja Karyawan</p>
         </div>
         <div className="flex flex-wrap gap-3">
+             <div className="min-w-56">
+                <TextInput 
+                  placeholder="Cari Karyawan..." 
+                  icon={() => <Icon icon="solar:magnifer-linear" />}
+                  value={search}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
+                  sizing="sm"
+                />
+             </div>
              <div className="min-w-48">
                 <Select
                   value={selectedLokasi}
@@ -439,7 +465,7 @@ const ReportHasil = () => {
                   <div className="flex flex-col items-center justify-center space-y-4 py-6 text-center">
                       <div className="relative">
                           <img 
-                              src={`https://ui-avatars.com/api/?name=${bestEmployee.Karyawan?.Nama}&background=random&size=128`}
+                              src={`https://ui-avatars.com/api/?name=${bestEmployee.Karyawan?.name || bestEmployee.Karyawan?.Nama}&background=random&size=128`}
                               alt="Best Employee" 
                               className="w-24 h-24 rounded-full border-4 border-yellow-400 p-1"
                           />
@@ -448,7 +474,7 @@ const ReportHasil = () => {
                           </div>
                       </div>
                       <div>
-                          <h2 className="text-xl font-black text-primary uppercase">{bestEmployee.Karyawan?.Nama}</h2>
+                          <h2 className="text-xl font-black text-primary uppercase">{bestEmployee.Karyawan?.name || bestEmployee.Karyawan?.Nama}</h2>
                       </div>
                       <div className="bg-primary/10 px-6 py-2 rounded-full">
                           <span className="text-primary font-bold text-lg">Skor: {bestEmployee.NilaiSkala}</span>
@@ -481,15 +507,17 @@ const ReportHasil = () => {
                       <Table.Row key={report.Id} className="bg-white dark:border-gray-700 dark:bg-gray-800">
                         <Table.Cell className="font-bold text-lg text-primary">{report.Ranking}</Table.Cell>
                         <Table.Cell className="text-left font-bold text-gray-900 dark:text-white">
-                          {report.Karyawan?.Nama}
+                          {report.Karyawan?.name || report.Karyawan?.Nama}
                         </Table.Cell>
-                        <Table.Cell>{report.Karyawan?.Nik}</Table.Cell>
+                        <Table.Cell>{report.Karyawan?.nik || report.Karyawan?.Nik}</Table.Cell>
                         <Table.Cell className="font-bold text-secondary text-base">{report.NilaiSkala}</Table.Cell>
                         <Table.Cell>
-                          {getStatusBadge(isFinal ? "Final" : report.Status)}
+                          {getStatusBadge(isFinal ? "Final" : (report.status || report.Status))}
                         </Table.Cell>
                         <Table.Cell className="max-w-xs truncate text-xs italic text-gray-500">
-                          {report.Catatan || "-"}
+                          {typeof report.catatan === 'object' && report.catatan ? 
+                            (report.catatan.p || report.catatan.i || report.catatan.s || "-") : 
+                            (report.Catatan || (report as any).catatan || "-")}
                         </Table.Cell>
                         <Table.Cell>
                           <div className="flex justify-center gap-2">
@@ -501,23 +529,31 @@ const ReportHasil = () => {
                                 onClick={() => {
                                   setReviewReportId(report.Id);
                                   
-                                  // Inisialisasi form review
+                                  // Inisialisasi form review dari objek atau string
+                                  const c = report.catatan || (report as any).Catatan;
                                   let p = "", i = "", s = "";
-                                  try {
-                                    if (report.Catatan?.startsWith('{')) {
-                                      const parsed = JSON.parse(report.Catatan);
-                                      p = parsed.p || "";
-                                      i = parsed.i || "";
-                                      s = parsed.s || "";
-                                    } else {
-                                      p = report.Catatan || "";
+                                  
+                                  if (typeof c === 'object' && c !== null) {
+                                    p = c.p || "";
+                                    i = c.i || "";
+                                    s = c.s || "";
+                                  } else if (typeof c === 'string') {
+                                    try {
+                                      if (c.startsWith('{')) {
+                                        const parsed = JSON.parse(c);
+                                        p = parsed.p || "";
+                                        i = parsed.i || "";
+                                        s = parsed.s || "";
+                                      } else {
+                                        p = c;
+                                      }
+                                    } catch (e) {
+                                      p = c;
                                     }
-                                  } catch (e) {
-                                    p = report.Catatan || "";
                                   }
 
                                   setReviewForm({
-                                    status: (report.Status as any) || 'Reviewed',
+                                    status: (report.status as any) || (report.Status as any) || 'Reviewed',
                                     catatan_prestasi: p,
                                     catatan_indisipliner: i,
                                     catatan_saran: s
@@ -529,16 +565,16 @@ const ReportHasil = () => {
                                 <span className="ml-1">Review</span>
                               </Button>
                             )}
-                            <Button color="light" size="xs" pill onClick={() => handleFetchIndividual(report.Karyawan?.Id ?? 0)}>
-                              {printingId === (report.Karyawan?.Id ?? 0) ? <Spinner size="xs" /> : <Icon icon="solar:eye-bold" className="h-4 w-4" />}
+                            <Button color="light" size="xs" pill onClick={() => handleFetchIndividual(report.Karyawan?.id ?? report.Karyawan?.Id ?? 0)}>
+                              {printingId === (report.Karyawan?.id ?? report.Karyawan?.Id ?? 0) ? <Spinner size="xs" /> : <Icon icon="solar:eye-bold" className="h-4 w-4" />}
                               <span className="ml-1">Preview</span>
                             </Button>
                             <Button 
                               color="dark" 
                               size="xs" 
                               pill 
-                              disabled={!isFinal || (printingId === (report.Karyawan?.Id ?? 0))}
-                              onClick={() => handlePrintPdf(report.Karyawan?.Id ?? 0)}
+                              disabled={!isFinal || (printingId === (report.Karyawan?.id ?? report.Karyawan?.Id ?? 0))}
+                              onClick={() => handlePrintPdf(report.Karyawan?.id ?? report.Karyawan?.Id ?? 0)}
                             >
                               <Icon icon="solar:printer-bold" className="h-4 w-4" />
                               <span className="ml-1">PDF</span>
@@ -554,6 +590,17 @@ const ReportHasil = () => {
                   </Table.Body>
               </Table>
             </div>
+            
+            {totalReports > reportPageSize && (
+              <div className="flex justify-center mt-6">
+                 <Pagination
+                    currentPage={reportPage}
+                    totalPages={Math.ceil(totalReports / reportPageSize)}
+                    onPageChange={(page: number) => setReportPage(page)}
+                    showIcons
+                  />
+              </div>
+            )}
           </CardBox>
         </div>
       </div>
@@ -625,22 +672,22 @@ const ReportHasil = () => {
            {individualData && (
              <PerformanceEvaluationForm 
                 data={{
-                  employeeName: individualData.metadata.Nama,
-                  jabatan: individualData.metadata.Jabatan || "Karyawan",
-                  periode: individualData.metadata.Periode,
-                  lokasi: individualData.metadata.Lokasi || "JAKARTA",
-                  totalScore: individualData.kesimpulan.Skor,
-                  evaluator: individualData.metadata.DibuatOleh || user?.name || "SUPERVISOR",
-                  approver: individualData.metadata.DisetujuiOleh || "HR MANAGER",
+                  employeeName: individualData.metadata.name || individualData.metadata.Nama,
+                  jabatan: individualData.metadata.jabatan || individualData.metadata.Jabatan || "Karyawan",
+                  periode: individualData.metadata.periode || individualData.metadata.Periode,
+                  lokasi: individualData.metadata.lokasi || individualData.metadata.Lokasi || "JAKARTA",
+                  totalScore: individualData.kesimpulan.skor || individualData.kesimpulan.Skor,
+                  evaluator: individualData.metadata.dibuat_oleh || individualData.metadata.DibuatOleh || user?.name || "SUPERVISOR",
+                  approver: individualData.metadata.disetujui_oleh || individualData.metadata.DisetujuiOleh || "HR MANAGER",
                   scores: individualData.rincian.reduce((acc: any, item: any) => {
-                    // Mapping kriteria ke ID yang dikenal form
-                    acc[item.Kriteria.toLowerCase().replace(/\s/g, '_')] = item.Nilai;
+                    const key = (item.kriteria || item.Kriteria || "").toLowerCase().replace(/\s/g, '_');
+                    acc[key] = item.nilai !== undefined ? item.nilai : item.Nilai;
                     return acc;
                   }, {}),
                   notes: {
-                    prestasi: individualData.metadata.CatatanPrestasi || "-",
-                    indisipliner: individualData.metadata.CatatanIndisipliner || "-",
-                    saran: individualData.metadata.CatatanSaran || "-"
+                    prestasi: individualData.metadata.catatan?.p || individualData.metadata.CatatanPrestasi || "-",
+                    indisipliner: individualData.metadata.catatan?.i || individualData.metadata.CatatanIndisipliner || "-",
+                    saran: individualData.metadata.catatan?.s || individualData.metadata.CatatanSaran || "-"
                   }
                 }}
              />

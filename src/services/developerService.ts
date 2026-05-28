@@ -1,4 +1,5 @@
 import axiosServices from '@/utils/axios';
+import { ApiResponse } from './divisiService';
 
 export interface AhpDebugData {
   matrix: number[][];
@@ -59,15 +60,6 @@ export interface AuditLog {
   userAgent?: string;
 }
 
-export interface AuditLogResponse {
-  success: boolean;
-  message: string;
-  data: AuditLog[];
-  totalCount: number;
-  page: number;
-  pageSize: number;
-}
-
 export interface ApiBaseResponse<T = unknown> {
   success: boolean;
   message?: string;
@@ -85,11 +77,23 @@ const developerService = {
     return response.data;
   },
 
-  getAuditLogs: async (page = 1, pageSize = 10, search = '') => {
-    const response = await axiosServices.get<AuditLogResponse>('/auth/audit-logs', {
-      params: { page, pageSize, search }
+  getAuditLogs: async (page = 1, pageSize = 10, search = '', sort = '', filter = {}): Promise<ApiResponse<AuditLog>> => {
+    const response = await axiosServices.get<any>('/auth/audit-logs', {
+      params: { 
+        page, 
+        pageSize, 
+        search,
+        sort,
+        filter: JSON.stringify(filter)
+      }
     });
-    return response.data;
+    
+    return {
+      success: true,
+      message: 'Success',
+      data: response.data.data,
+      meta: response.data.meta
+    };
   }
 };
 

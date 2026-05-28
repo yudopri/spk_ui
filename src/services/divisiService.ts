@@ -22,10 +22,18 @@ export interface DivisiDetail extends Divisi {
   }[];
 }
 
+export interface ApiMeta {
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
 export interface ApiResponse<T> {
   success: boolean;
   message: string;
   data: T;
+  meta?: ApiMeta;
   totalCount?: number;
   page?: number;
   pageSize?: number;
