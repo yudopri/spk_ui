@@ -8,6 +8,10 @@ import divisiService, { Divisi } from "@/services/divisiService";
 import EmployeeFilters from "@/app/components/shared/EmployeeFilters";
 import { usePermission } from "@/hooks/usePermission";
 
+// Shared Components
+import DataTable, { Column } from "@/app/components/shared/DataTable";
+import DataPagination from "@/app/components/shared/DataPagination";
+
 const getFriendlyError = (err: any, fallback: string) => {
   const status = err?.status || err?.response?.status;
   if (status === 401) return "401 - Sesi login berakhir. Silakan login ulang.";
@@ -27,6 +31,51 @@ const DataKaryawan = () => {
   const [search, setSearch] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Pagination
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalItems, setTotalItems] = useState(0);
+
+  const columns: Column<Karyawan>[] = [
+    {
+      header: "ID",
+      cellClasses: "whitespace-nowrap font-bold text-primary",
+      render: (item: Karyawan) => `#${item.id}`
+    },
+    {
+      header: "Name",
+      cellClasses: "font-medium text-gray-900 dark:text-white",
+      render: (item: Karyawan) => item.name || item.nama || "-"
+    },
+    {
+      header: "NIK",
+      key: "nik"
+    },
+    {
+      header: "Email",
+      key: "email"
+    },
+    {
+      header: "Departemen",
+      render: (item: Karyawan) => (
+        <div className="flex flex-col">
+          <span className="text-xs text-gray-400">ID: {item.departemen_id ?? "-"}</span>
+          <span>{item.department_name || "-"}</span>
+        </div>
+      )
+    },
+    {
+      header: "Lokasi Kerja",
+      key: "lokasi_kerja"
+    },
+    {
+      header: "Role",
+      render: (item: Karyawan) => (
+        <Badge color="info" className="w-fit">{item.role || "-"}</Badge>
+      )
+    }
+  ];
 
   const fetchDepartments = async () => {
     try {
@@ -49,10 +98,14 @@ const DataKaryawan = () => {
         ...(selectedLokasi ? { lokasi_kerja: selectedLokasi } : {}),
         ...(roleGroup ? { role_group: roleGroup } : {}),
         include_management_roles: includeManagement,
+        page,
+        pageSize,
+        search
       });
 
       const scoped = filterEmployeesByScope(res.data || []) as Karyawan[];
       setEmployees(scoped);
+      setTotalItems(res.meta?.total || scoped.length);
       setError(null);
     } catch (err: any) {
       setError(getFriendlyError(err, "Gagal mengambil data karyawan"));
@@ -67,21 +120,12 @@ const DataKaryawan = () => {
 
   useEffect(() => {
     fetchEmployees();
-  }, [selectedDeptId, selectedLokasi, roleGroup, includeManagement, normalizedRole]);
+  }, [selectedDeptId, selectedLokasi, roleGroup, includeManagement, normalizedRole, page, pageSize]);
 
   const divisiOptions = divisiList.map((div) => ({ value: String(div.id), label: div.namaDivisi }));
 
   const uniqueLokasi = Array.from(new Set(employees.map((e) => e.lokasi_kerja).filter(Boolean))) as string[];
   const lokasiOptions = uniqueLokasi.map((value) => ({ value, label: value }));
-
-  const keyword = search.trim().toLowerCase();
-  const filteredEmployees = !keyword ? employees : employees.filter((emp) => {
-    const haystack = [emp.name, emp.nama, emp.nik, emp.department_name, emp.lokasi_kerja]
-      .filter(Boolean)
-      .join(" ")
-      .toLowerCase();
-    return haystack.includes(keyword);
-  });
 
   const selectedDeptName = !selectedDeptId 
     ? "Semua Departemen" 
@@ -124,55 +168,24 @@ const DataKaryawan = () => {
       <CardBox>
         <div className="mb-4 flex items-center justify-between">
           <h5 className="font-semibold text-primary">{selectedDeptName}</h5>
-          <Badge color="info">{filteredEmployees.length} Karyawan</Badge>
+          <Badge color="info">{totalItems} Karyawan</Badge>
         </div>
-        <div className="overflow-x-auto">
-          <Table hoverable>
-            <Table.Head>
-              <Table.HeadCell>ID</Table.HeadCell>
-              <Table.HeadCell>Name</Table.HeadCell>
-              <Table.HeadCell>NIK</Table.HeadCell>
-              <Table.HeadCell>Email</Table.HeadCell>
-              <Table.HeadCell>Departemen ID</Table.HeadCell>
-              <Table.HeadCell>Department Name</Table.HeadCell>
-              <Table.HeadCell>Lokasi Kerja</Table.HeadCell>
-              <Table.HeadCell>Role</Table.HeadCell>
-            </Table.Head>
-            <Table.Body className="divide-y">
-              {loading ? (
-                <Table.Row>
-                  <Table.Cell colSpan={8} className="text-center py-10">
-                    <Spinner size="xl" />
-                  </Table.Cell>
-                </Table.Row>
-              ) : filteredEmployees.length === 0 ? (
-                <Table.Row>
-                  <Table.Cell colSpan={8} className="text-center py-10">
-                    Tidak ada data karyawan
-                  </Table.Cell>
-                </Table.Row>
-              ) : (
-                filteredEmployees.map((emp, index) => (
-                  <Table.Row
-                    key={`${emp.id}-${emp.nik || "no-nik"}-${emp.departemen_id ?? "no-dept"}-${index}`}
-                    className="bg-white dark:border-gray-700 dark:bg-gray-800"
-                  >
-                    <Table.Cell className="whitespace-nowrap font-bold text-primary">#{emp.id}</Table.Cell>
-                    <Table.Cell className="font-medium text-gray-900 dark:text-white">{emp.name || emp.nama || "-"}</Table.Cell>
-                    <Table.Cell>{emp.nik || "-"}</Table.Cell>
-                    <Table.Cell>{emp.email || "-"}</Table.Cell>
-                    <Table.Cell>{emp.departemen_id ?? "-"}</Table.Cell>
-                    <Table.Cell>{emp.department_name || "-"}</Table.Cell>
-                    <Table.Cell>{emp.lokasi_kerja || "-"}</Table.Cell>
-                    <Table.Cell>
-                      <Badge color="info" className="w-fit">{emp.role || "-"}</Badge>
-                    </Table.Cell>
-                  </Table.Row>
-                ))
-              )}
-            </Table.Body>
-          </Table>
-        </div>
+        
+        <DataTable
+          columns={columns}
+          data={employees}
+          loading={loading}
+          striped
+          rowKey={(item: Karyawan) => item.id}
+        />
+
+        <DataPagination
+          currentPage={page}
+          totalItems={totalItems}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
       </CardBox>
     </div>
   );

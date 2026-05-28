@@ -1,6 +1,6 @@
 "use client";
-import React, { useEffect, useState } from "react";
-import { Table, Button, Select, TextInput, Badge, Alert, Spinner } from "flowbite-react";
+import React, { useEffect, useState, useMemo } from "react";
+import { Table, Button, Badge, Alert, Spinner, TextInput } from "flowbite-react";
 import CardBox from "@/app/components/shared/CardBox";
 import { Icon } from "@iconify/react";
 import periodeService, { Periode } from "@/services/periodeService";
@@ -10,6 +10,11 @@ import divisiService, { Divisi } from "@/services/divisiService";
 import spkService from "@/services/spkService";
 import { usePermission } from "@/hooks/usePermission";
 import { normalizeRole } from "@/utils/accessControl";
+
+// Shared Components
+import DataSearch from "@/app/components/shared/DataSearch";
+import DataFilter from "@/app/components/shared/DataFilter";
+import DataPagination from "@/app/components/shared/DataPagination";
 
 const PenilaianKaryawan = () => {
   const { hasPermission, filterEmployeesByScope, normalizedRole } = usePermission();
@@ -22,44 +27,49 @@ const PenilaianKaryawan = () => {
   const [departments, setDepartments] = useState<Divisi[]>([]);
   const [selectedDeptId, setSelectedDeptId] = useState<number | string>("all");
   const [selectedLocation, setSelectedLocation] = useState<string>("all");
+  
+  // Pagination & Search States
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalItems, setTotalItems] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+
   const [scores, setScores] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(searchTerm), 500);
-    return () => clearTimeout(timer);
-  }, [searchTerm]);
+  const selectedPeriode = useMemo(() => 
+    periodes.find(p => Number(p.Id || p.id) === Number(selectedPeriodeId)),
+    [periodes, selectedPeriodeId]
+  );
+
+  const filteredPeriodes = useMemo(() => {
+    if (selectedDeptId === "all") return periodes;
+    return periodes.filter(p => Number(p.DivisiId || p.divisiId) === Number(selectedDeptId));
+  }, [periodes, selectedDeptId]);
 
   const fetchInitialData = async () => {
     try {
       setLoading(true);
-      const [periodeRes, karyawanRes] = await Promise.all([
-        periodeService.getAll(),
+      const [periodeRes, divisiRes] = await Promise.all([
+        periodeService.getAll(1, 100),
         divisiService.getAll(),
       ]);
       const locationRes = await karyawanService.getWorkLocations();
 
-      const activeList = (periodeRes.data as any[]).map((p: any) => ({
-        ...p,
-        // Ensure status mapping consistency for filtering
-        isAktif: p.Status === 'Final' ? true : p.isAktif
-      }));
-      setPeriodes(activeList);
-      setDepartments(karyawanRes.data);
+      setPeriodes(periodeRes.data);
+      setDepartments(divisiRes.data);
       setWorkLocations(locationRes.data || []);
 
-      const firstActive = activeList.find(p => p.Status !== 'Final' && p.isAktif) || activeList[0];
+      const firstActive = periodeRes.data.find(p => p.Status !== 'Final' && (p as any).isAktif) || periodeRes.data[0];
       if (firstActive) {
         setSelectedPeriodeId(firstActive.Id || firstActive.id);
       }
 
-      if (karyawanRes.data.length > 0) {
-        setSelectedDeptId(karyawanRes.data[0].id);
+      if (divisiRes.data.length > 0) {
+        setSelectedDeptId(divisiRes.data[0].id);
       }
     } catch (err: any) {
       setError(err?.response?.data?.message || "Gagal mengambil data awal");
@@ -71,37 +81,33 @@ const PenilaianKaryawan = () => {
   useEffect(() => {
     const fetchEmployees = async () => {
       try {
-        const res = await karyawanService.getAll(
-          {
-            ...(selectedDeptId === "all" ? {} : { dept_id: Number(selectedDeptId) }),
-            ...(selectedLocation === "all" ? {} : { lokasi_kerja: selectedLocation }),
-            search: debouncedSearch,
-            pageSize: 100
-          }
-        );
+        setLoading(true);
+        const res = await karyawanService.getAll({
+          dept_id: selectedDeptId === "all" ? undefined : Number(selectedDeptId),
+          lokasi_kerja: selectedLocation === "all" ? undefined : selectedLocation,
+          search: searchTerm,
+          page,
+          pageSize
+        });
+        
         const scopedEmployees = (filterEmployeesByScope(res.data || []) as Karyawan[]).filter((employee) => {
           if (normalizedRole === "Kadiv") {
             return normalizeRole(employee.role) !== "Manager";
           }
           return true;
         });
+
         setAllEmployees(scopedEmployees);
+        setTotalItems(res.meta?.total || 0);
       } catch (err: any) {
         setError(err?.response?.data?.message || "Gagal mengambil data karyawan");
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchEmployees();
-  }, [selectedDeptId, selectedLocation, debouncedSearch]);
-
-  const filteredPeriodes = periodes.filter((periode: any) => {
-    if (selectedDeptId === "all") return true;
-    const currentDivisiId = periode.DivisiId ?? periode.divisiId ?? periode.divisi?.id;
-    if (currentDivisiId === null || currentDivisiId === undefined || currentDivisiId === 0) {
-      return true;
-    }
-    return Number(currentDivisiId) === Number(selectedDeptId);
-  });
+  }, [selectedDeptId, selectedLocation, searchTerm, page, pageSize]);
 
   useEffect(() => {
     if (selectedPeriodeId !== 0) {
@@ -172,8 +178,6 @@ const PenilaianKaryawan = () => {
     }
   };
 
-  const selectedPeriode = periodes.find(p => (p as any).Id === selectedPeriodeId || (p as any).id === selectedPeriodeId);
-
   return (
     <div className="flex flex-col gap-6">
       {/* Stepper Progress Tracker */}
@@ -206,68 +210,62 @@ const PenilaianKaryawan = () => {
         </div>
       </div>
 
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm gap-4">
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm gap-4">
         <div>
           <h1 className="text-2xl font-bold">Penilaian Karyawan</h1>
           <p className="text-sm text-gray-500">Pilih departemen dan periode untuk memulai penilaian</p>
         </div>
-        <div className="flex flex-wrap gap-4">
-            <div className="w-56">
-                <TextInput 
-                    icon={() => <Icon icon="solar:magnifer-linear" />}
-                    placeholder="Nama Karyawan..." 
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    sizing="sm"
-                />
-            </div>
-            <Select 
-              value={selectedDeptId} 
-              onChange={(e) => {
-                setSelectedDeptId(e.target.value);
+        <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
+            <DataSearch 
+                placeholder="Nama Karyawan..." 
+                onSearch={(val) => {
+                  setSearchTerm(val);
+                  setPage(1);
+                }}
+            />
+            <DataFilter
+              value={selectedDeptId}
+              onChange={(val) => {
+                setSelectedDeptId(val);
                 setSelectedPeriodeId(0);
+                setPage(1);
               }}
-              sizing="sm"
-              className="w-48"
-            >
-              <option value="all">Semua Departemen</option>
-              {departments.map((dept) => (
-                <option key={dept.id} value={dept.id}>{dept.namaDivisi}</option>
-              ))}
-            </Select>
-            <Select
+              options={departments.map(d => ({ value: d.id, label: d.namaDivisi }))}
+              placeholder="Semua Departemen"
+              className="w-full md:w-48"
+            />
+            <DataFilter
               value={selectedLocation}
-              onChange={(e) => setSelectedLocation(e.target.value)}
-              sizing="sm"
-              className="w-48"
-            >
-              <option value="all">Semua Lokasi</option>
-              {workLocations.map((loc) => (
-                <option key={loc.id} value={String(loc.name)}>{loc.name}</option>
-              ))}
-            </Select>
-            <Select
+              onChange={(val) => {
+                setSelectedLocation(val);
+                setPage(1);
+              }}
+              options={workLocations.map(l => ({ value: String(l.name), label: l.name }))}
+              placeholder="Semua Lokasi"
+              className="w-full md:w-48"
+            />
+            <DataFilter
               value={selectedPeriodeId}
-              onChange={(e) => setSelectedPeriodeId(Number(e.target.value))}
-              sizing="sm"
-              className="w-48"
-            >
-                <option value={0}>Pilih Periode</option>
-                {filteredPeriodes.map((p: any) => (
-                  <option key={p.Id || p.id} value={p.Id || p.id}>
-                    {(p.NamaPeriode || p.namaPeriode) + " - " + (p.NamaDivisi || p.divisi?.namaDivisi || "Divisi") + (p.Status === 'Final' ? ' (Final)' : '')}
-                  </option>
-                ))}
-            </Select>
+              onChange={(val) => {
+                setSelectedPeriodeId(Number(val));
+                setPage(1);
+              }}
+              options={filteredPeriodes.map(p => ({ 
+                value: p.Id || p.id, 
+                label: `${p.NamaPeriode || p.namaPeriode} - ${p.NamaDivisi || p.divisi?.namaDivisi || "Divisi"}${p.Status === 'Final' ? ' (Final)' : ''}`
+              }))}
+              placeholder="Pilih Periode"
+              className="w-full md:w-56"
+            />
             {hasPermission("score_input") && (
               <Button
                 color="primary"
-                size="sm"
                 onClick={handleSaveAll}
-                disabled={submitting || !selectedPeriodeId || kpis.length === 0 || employees.length === 0 || selectedPeriode?.Status === 'Final'}
+                disabled={submitting || !selectedPeriodeId || kpis.length === 0 || allEmployees.length === 0 || selectedPeriode?.Status === 'Final'}
+                className="w-full md:w-auto"
               >
                  <Icon icon="solar:diskette-bold-duotone" className="mr-2 h-5 w-5" />
-                 {submitting ? "Menyimpan..." : selectedPeriode?.Status === 'Final' ? "Terkunci (Final)" : "Simpan Semua"}
+                 {submitting ? "Menyimpan..." : selectedPeriode?.Status === 'Final' ? "Terkunci (Final)" : "Simpan Halaman Ini"}
               </Button>
             )}
         </div>
@@ -431,6 +429,13 @@ const PenilaianKaryawan = () => {
             </div>
           )}
         </div>
+        <DataPagination 
+          currentPage={page}
+          totalItems={totalItems}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
       </CardBox>
     </div>
   );

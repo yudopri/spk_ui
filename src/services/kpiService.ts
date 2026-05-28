@@ -24,7 +24,7 @@ export interface KPI {
   id_satuan?: number;
   nama_satuan?: string;
   BobotAhp?: number | null;
-  Bobot?: number;
+  Bobot: number;
   Deskripsi?: string;
   bobot?: number;
   deskripsi?: string;
@@ -34,6 +34,14 @@ export interface KPI {
   id: number;
   namaKpi: string;
   simbol?: string;
+  // Dynamic UI properties
+  IsBenefit?: boolean;
+  GrupKpi?: {
+    idGrup?: number;
+    namaGrup?: string;
+  };
+  Target?: string | number;
+  Satuan?: string;
 }
 
 export interface Attribute {
@@ -45,6 +53,7 @@ export interface Attribute {
 const normalizeKpi = (item: any): KPI => {
   const id = Number(item.Id ?? item.id ?? 0);
   const tipe = (item.Tipe ?? item.tipe ?? 'Benefit') as 'Benefit' | 'Cost';
+  const group = item.GrupKpi ?? item.group_kpi ?? item.GroupKpi ?? null;
   return {
     ...item,
     Id: id,
@@ -53,19 +62,26 @@ const normalizeKpi = (item: any): KPI => {
     namaKpi: item.namaKpi ?? item.NamaKpi ?? '',
     Tipe: tipe,
     tipe,
+    IsBenefit: tipe === 'Benefit',
     PeriodeId: Number(item.PeriodeId ?? item.periodeId ?? 0),
     periodeId: Number(item.periodeId ?? item.PeriodeId ?? 0),
     GroupId: Number(item.GroupId ?? item.groupId ?? item.group_id ?? 0),
     AttributeId: Number(item.AttributeId ?? item.attributeId ?? item.id_satuan ?? 0),
     attributeId: Number(item.attributeId ?? item.AttributeId ?? item.id_satuan ?? 0),
     id_satuan: Number(item.id_satuan ?? item.attributeId ?? item.AttributeId ?? 0),
-    nama_satuan: item.nama_satuan ?? item.namaSatuan ?? '',
+    nama_satuan: item.nama_satuan ?? item.namaSatuan ?? item.Satuan ?? '',
+    Satuan: item.nama_satuan ?? item.namaSatuan ?? item.Satuan ?? '',
+    Target: item.Target ?? item.target ?? '0',
     BobotAhp: item.BobotAhp ?? item.bobotAhp ?? null,
-    Bobot: item.Bobot ?? item.bobot ?? 0,
+    Bobot: item.Bobot ?? item.bobot ?? 1,
     bobot: item.bobot ?? item.Bobot ?? item.BobotAhp ?? 0,
     Deskripsi: item.Deskripsi ?? item.deskripsi ?? '',
     deskripsi: item.deskripsi ?? item.Deskripsi ?? '',
     simbol: item.simbol ?? '',
+    GrupKpi: group ? {
+      idGrup: group.idGrup ?? group.Id ?? group.id,
+      namaGrup: group.namaGrup ?? group.NamaGroup ?? group.nama_grup,
+    } : undefined
   };
 };
 

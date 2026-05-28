@@ -7,6 +7,10 @@ import roleService, { Role } from "@/services/roleService";
 import permissionService, { Permission } from "@/services/permissionService";
 import { usePermission } from "@/hooks/usePermission";
 
+// Shared Components
+import DataTable, { Column } from "@/app/components/shared/DataTable";
+import DataPagination from "@/app/components/shared/DataPagination";
+
 const RolePage = () => {
     const { hasPermission } = usePermission();
     const [roles, setRoles] = useState<Role[]>([]);
@@ -18,18 +22,57 @@ const RolePage = () => {
     const [formData, setFormData] = useState({ role_name: '' });
     const [saving, setSaving] = useState(false);
 
+    // Pagination
+    const [page, setPage] = useState(1);
+    const [pageSize, setPageSize] = useState(10);
+    const [totalItems, setTotalItems] = useState(0);
+
+    const columns: Column<Role>[] = [
+      {
+        header: "Role Name",
+        render: (item: Role) => (
+          <div className="flex items-center gap-2">
+            <Icon icon="solar:shield-user-bold" className="text-primary text-lg" />
+            <span className="font-bold">{item.role_name}</span>
+          </div>
+        )
+      },
+      {
+        header: "Permissions Count",
+        render: (item: Role) => (
+          <Badge color="gray">{(item as any).permissions?.length || 0} Permissions</Badge>
+        )
+      },
+      {
+        header: "Aksi",
+        headerClasses: "text-right",
+        cellClasses: "text-right",
+        render: (item: Role) => (
+          <div className="flex justify-end gap-2">
+            <Button color="primary" size="xs" onClick={() => handleOpenModal(item)}>
+              <Icon icon="solar:pen-new-square-bold" className="text-base" />
+            </Button>
+            <Button color="failure" size="xs" onClick={() => handleDelete(item.id)}>
+              <Icon icon="solar:trash-bin-trash-bold" className="text-base" />
+            </Button>
+          </div>
+        )
+      }
+    ];
+
     useEffect(() => {
         fetchData();
-    }, []);
+    }, [page, pageSize]);
 
     const fetchData = async () => {
         setLoading(true);
         try {
             const [roleRes, permRes] = await Promise.all([
-                roleService.getAll(),
+                roleService.getAll(page, pageSize),
                 permissionService.getAll()
             ]);
             setRoles(roleRes.data);
+            setTotalItems(roleRes.meta?.total || roleRes.data.length);
             setPermissions(permRes.data);
             setError(null);
         } catch (err: any) {
@@ -168,6 +211,14 @@ const RolePage = () => {
                         </Table.Body>
                     </Table>
                 </div>
+
+                <DataPagination 
+                    currentPage={page}
+                    totalItems={totalItems}
+                    pageSize={pageSize}
+                    onPageChange={setPage}
+                    onPageSizeChange={setPageSize}
+                />
             </CardBox>
         </div>
     );

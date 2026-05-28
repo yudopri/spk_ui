@@ -7,6 +7,12 @@ import kpiService, { KPI, KPIGroup } from "@/services/kpiService";
 import periodeService, { Periode } from "@/services/periodeService";
 import { usePermission } from "@/hooks/usePermission";
 
+// Shared Components
+import DataTable, { Column } from "@/app/components/shared/DataTable";
+import DataPagination from "@/app/components/shared/DataPagination";
+import DataSearch from "@/app/components/shared/DataSearch";
+import DataFilter from "@/app/components/shared/DataFilter";
+
 interface Attribute {
   id: number;
   nama: string;
@@ -29,8 +35,66 @@ const DataKPI = () => {
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(10);
   const [totalItems, setTotalItems] = useState(0);
+
+  const columns: Column<KPI>[] = [
+    {
+      header: "Nama KPI",
+      render: (item: KPI) => (
+        <div className="flex flex-col">
+          <span className="font-bold text-gray-900">{item.NamaKpi}</span>
+          <span className="text-[10px] text-gray-500 uppercase tracking-tighter">
+            {item.GrupKpi?.namaGrup || "Tanpa Grup"}
+          </span>
+        </div>
+      )
+    },
+    {
+      header: "Bobot",
+      render: (item: KPI) => (
+        <Badge color="info">{(item.Bobot * 100).toFixed(0)}%</Badge>
+      )
+    },
+    {
+      header: "Tipe",
+      render: (item: KPI) => (
+        <Badge color={item.IsBenefit ? "success" : "warning"}>
+          {item.IsBenefit ? "Benefit" : "Cost"}
+        </Badge>
+      )
+    },
+    {
+      header: "Target",
+      render: (item: KPI) => (
+        <span className="font-mono text-gray-600">
+          {item.Target} {item.Satuan}
+        </span>
+      )
+    },
+    {
+      header: "Aksi",
+      headerClasses: "text-center",
+      cellClasses: "text-center",
+      render: (item: KPI) => (
+        <div className="flex justify-center gap-2">
+           <Button color="light" size="xs" onClick={() => handleOpenModal("view", item)}>
+              <Icon icon="solar:eye-bold" className="text-base" />
+           </Button>
+           {!isReadOnly && (
+             <>
+               <Button color="primary" size="xs" onClick={() => handleOpenModal("edit", item)}>
+                  <Icon icon="solar:pen-new-square-bold" className="text-base" />
+               </Button>
+               <Button color="failure" size="xs" onClick={() => handleDelete(item.Id ?? item.id ?? 0)}>
+                  <Icon icon="solar:trash-bin-trash-bold" className="text-base" />
+               </Button>
+             </>
+           )}
+        </div>
+      )
+    }
+  ];
 
   useEffect(() => {
     fetchPeriodes();
@@ -208,21 +272,20 @@ const DataKPI = () => {
             {isLocked ? "Periode ini sudah Final dan terkunci" : "Kelola kriteria penilaian berdasarkan Periode & Divisi"}
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <div className="w-64">
-            <Select
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+          <DataFilter
               value={selectedPeriodeId}
-              onChange={(e) => setSelectedPeriodeId(parseInt(e.target.value))}
-              sizing="sm"
-            >
-              <option value={0}>Pilih Periode</option>
-              {periodes.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {(p.NamaPeriode || p.namaPeriode) + " - " + (p.NamaDivisi || p.divisi?.namaDivisi || "") +  (p.Status === 'Final' ? ' (Final)' : p.isAktif ? ' (Aktif)' : ' (Tidak Aktif)')}
-                </option>
-              ))}
-            </Select>
-          </div>
+              onChange={(val) => {
+                setSelectedPeriodeId(Number(val));
+                setCurrentPage(1);
+              }}
+              options={periodes.map(p => ({ 
+                value: p.id, 
+                label: (p.NamaPeriode || p.namaPeriode) + " - " + (p.NamaDivisi || p.divisi?.namaDivisi || "") +  (p.Status === 'Final' ? ' (Final)' : p.isAktif ? ' (Aktif)' : ' (Tidak Aktif)')
+              }))}
+              placeholder="Pilih Periode"
+              className="w-full md:w-64"
+          />
           <Button 
             color="primary" 
             size="sm" 
@@ -233,6 +296,7 @@ const DataKPI = () => {
               isLocked ||
               !currentPeriode?.isAktif
             }
+            className="w-full md:w-auto"
           >
             <Icon icon="solar:add-circle-linear" className="mr-2 h-5 w-5" />
             Tambah Kriteria
@@ -243,74 +307,24 @@ const DataKPI = () => {
       {error && <Alert color="failure">{error}</Alert>}
 
       <CardBox>
-        <div className="overflow-x-auto">
-          {loading ? (
-            <div className="flex justify-center p-10">
-              <Spinner size="xl" />
-            </div>
-          ) : (
-            <Table hoverable>
-              <Table.Head>
-                <Table.HeadCell>Nama Kriteria</Table.HeadCell>
-                <Table.HeadCell>Tipe</Table.HeadCell>
-                <Table.HeadCell>Satuan</Table.HeadCell>
-                <Table.HeadCell className="text-center">Aksi</Table.HeadCell>
-              </Table.Head>
-              <Table.Body className="divide-y">
-                {kpis.length === 0 ? (
-                  <Table.Row>
-                    <Table.Cell colSpan={5} className="text-center py-10 text-gray-500">
-                      Belum ada kriteria untuk periode ini
-                    </Table.Cell>
-                  </Table.Row>
-                ) : (
-                  kpis.map((kpi) => (
-                    <Table.Row key={kpi.id} className="bg-white dark:border-gray-700 dark:bg-gray-800">
-                      <Table.Cell className="font-medium text-gray-900 dark:text-white">
-                        {kpi.namaKpi}
-                      </Table.Cell>
-                      <Table.Cell>
-                        <Badge color={kpi.tipe === "Benefit" ? "success" : "warning"} size="sm" className="w-fit">
-                          {kpi.tipe}
-                        </Badge>
-                      </Table.Cell>
-                      <Table.Cell className="text-sm">
-                        {kpi.nama_satuan ? `${kpi.nama_satuan} (${kpi.simbol || '-'})` : (kpi.simbol || '-')}
-                      </Table.Cell>
-                      <Table.Cell>
-                        <div className="flex justify-center gap-2">
-                          <Button color="light" size="xs" onClick={() => handleOpenModal("view", kpi)}>
-                            <Icon icon="solar:eye-linear" className="h-4 w-4" />
-                          </Button>
-                          {!isReadOnly && (
-                            <>
-                              <Button 
-                                color="light" 
-                                size="xs" 
-                                onClick={() => handleOpenModal("edit", kpi)}
-                                disabled={isLocked || !currentPeriode?.isAktif}
-                              >
-                                <Icon icon="solar:pen-new-square-linear" className="h-4 w-4 text-primary" />
-                              </Button>
-                              <Button 
-                                color="light" 
-                                size="xs" 
-                                onClick={() => handleDelete(kpi.id)}
-                                disabled={isLocked || !currentPeriode?.isAktif}
-                              >
-                                <Icon icon="solar:trash-bin-trash-linear" className="h-4 w-4 text-red-500" />
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                      </Table.Cell>
-                    </Table.Row>
-                  ))
-                )}
-              </Table.Body>
-            </Table>
-          )}
-        </div>
+        <DataTable
+            loading={loading}
+            data={kpis}
+            columns={columns}
+            rowKey={(item) => item.Id ?? item.id ?? 0}
+        />
+
+        <DataPagination
+            currentPage={currentPage}
+            totalPages={Math.ceil(totalItems / pageSize)}
+            onPageChange={setCurrentPage}
+            pageSize={pageSize}
+            onPageSizeChange={(size) => {
+                setPageSize(size);
+                setCurrentPage(1);
+            }}
+            totalItems={totalItems}
+        />
       </CardBox>
 
       {/* Modal CRUD */}

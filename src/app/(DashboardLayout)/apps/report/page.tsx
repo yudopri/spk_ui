@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useMemo } from "react";
-import { Table, Button, Badge, Select, Spinner, Alert, Modal, Label, Textarea, TextInput, Pagination } from "flowbite-react";
+import { Table, Button, Badge, Spinner, Alert, Modal, Label, Textarea, TextInput, Select } from "flowbite-react";
 import CardBox from "@/app/components/shared/CardBox";
 import { Icon } from "@iconify/react";
 import dynamic from "next/dynamic";
@@ -12,6 +12,12 @@ import IndividualReportModal from "@/app/components/shared/IndividualReportModal
 import { isManagerRole } from "@/utils/accessControl";
 import { useEffect as useClientEffect } from "react";
 import PerformanceEvaluationForm from "@/app/components/shared/PerformanceEvaluationForm";
+
+// Shared Components
+import DataTable, { Column } from "@/app/components/shared/DataTable";
+import DataPagination from "@/app/components/shared/DataPagination";
+import DataSearch from "@/app/components/shared/DataSearch";
+import DataFilter from "@/app/components/shared/DataFilter";
 
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
@@ -34,17 +40,8 @@ const ReportHasil = () => {
   const [reportPageSize, setReportPageSize] = useState(10);
   const [totalReports, setTotalReports] = useState(0);
   const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
 
   const isFinal = selectedPeriode?.Status === 'Final';
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(search);
-      setReportPage(1);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [search]);
 
   // Individual Report State
   const [showPrintModal, setShowPrintModal] = useState(false);
@@ -66,6 +63,123 @@ const ReportHasil = () => {
     if (reports.length === 0) return false;
     return reports.every(r => r.Status === 'Reviewed');
   }, [reports]);
+
+  const columns: Column<SpkReport>[] = [
+    {
+      header: "Rank",
+      headerClasses: "text-center",
+      cellClasses: "text-center font-bold text-lg text-primary",
+      render: (item: SpkReport) => item.Ranking,
+    },
+    {
+      header: "Nama",
+      cellClasses: "text-left font-bold text-gray-900 dark:text-white",
+      render: (item: SpkReport) => item.Karyawan?.name || item.Karyawan?.Nama,
+    },
+    {
+      header: "NIK",
+      headerClasses: "text-center",
+      cellClasses: "text-center",
+      render: (item: SpkReport) => item.Karyawan?.nik || item.Karyawan?.Nik,
+    },
+    {
+      header: "Nilai Skala",
+      headerClasses: "text-center",
+      cellClasses: "text-center font-bold text-secondary text-base",
+      key: "NilaiSkala",
+    },
+    {
+      header: "Status",
+      headerClasses: "text-center",
+      cellClasses: "text-center",
+      render: (item: SpkReport) => getStatusBadge(isFinal ? "Final" : (item.status || item.Status)),
+    },
+    {
+      header: "Catatan",
+      headerClasses: "text-center",
+      cellClasses: "text-center max-w-xs truncate text-xs italic text-gray-500",
+      render: (item: SpkReport) => {
+        const c = item.catatan || (item as any).Catatan;
+        if (typeof c === 'object' && c) {
+          return (c as any).p || (c as any).i || (c as any).s || "-";
+        }
+        if (typeof c === 'string' && c.startsWith('{')) {
+           try {
+             const parsed = JSON.parse(c);
+             return parsed.p || parsed.i || parsed.s || "-";
+           } catch(e) {}
+        }
+        return c || "-";
+      }
+    },
+    {
+      header: "Aksi",
+      headerClasses: "text-center",
+      cellClasses: "text-center",
+      render: (item: SpkReport) => (
+        <div className="flex justify-center gap-2">
+          {isManagerUI && !isFinal && (
+            <Button 
+              color="info" 
+              size="xs" 
+              pill 
+              onClick={() => {
+                setReviewReportId(item.Id);
+                
+                // Inisialisasi form review dari objek atau string
+                const c = item.catatan || (item as any).Catatan;
+                let p = "", i = "", s = "";
+                
+                if (typeof c === 'object' && c !== null) {
+                  p = (c as any).p || "";
+                  i = (c as any).i || "";
+                  s = (c as any).s || "";
+                } else if (typeof c === 'string') {
+                  try {
+                    if (c.startsWith('{')) {
+                      const parsed = JSON.parse(c);
+                      p = parsed.p || "";
+                      i = parsed.i || "";
+                      s = parsed.s || "";
+                    } else {
+                      p = c;
+                    }
+                  } catch (e) {
+                    p = c;
+                  }
+                }
+
+                setReviewForm({
+                  status: (item.status as any) || (item.Status as any) || 'Reviewed',
+                  catatan_prestasi: p,
+                  catatan_indisipliner: i,
+                  catatan_saran: s
+                });
+                setShowReviewModal(true);
+              }}
+            >
+              <Icon icon="solar:notes-minimalistic-bold" className="h-4 w-4" />
+              <span className="ml-1">Review</span>
+            </Button>
+          )}
+          <Button color="light" size="xs" pill onClick={() => handleFetchIndividual(item.Karyawan?.id ?? item.Karyawan?.Id ?? 0)}>
+            {printingId === (item.Karyawan?.id ?? item.Karyawan?.Id ?? 0) ? <Spinner size="xs" /> : <Icon icon="solar:eye-bold" className="h-4 w-4" />}
+            <span className="ml-1">Preview</span>
+          </Button>
+          <Button 
+            color="dark" 
+            size="xs" 
+            pill 
+            disabled={!isFinal || (printingId === (item.Karyawan?.id ?? item.Karyawan?.Id ?? 0))}
+            onClick={() => handlePrintPdf(item.Karyawan?.id ?? item.Karyawan?.Id ?? 0)}
+          >
+            <Icon icon="solar:printer-bold" className="h-4 w-4" />
+            <span className="ml-1">PDF</span>
+          </Button>
+        </div>
+      ),
+    },
+  ];
 
   useEffect(() => {
     const fetchData = async () => {
@@ -97,7 +211,7 @@ const ReportHasil = () => {
         const latestP = resP_Single.data.find((p: any) => (p.id || p.Id) === selectedPeriodeId);
         if (latestP) setSelectedPeriode(latestP);
 
-        const res = await spkService.getReport(selectedPeriodeId, reportPage, reportPageSize, selectedLokasi || undefined, debouncedSearch);
+        const res = await spkService.getReport(selectedPeriodeId, reportPage, reportPageSize, selectedLokasi || undefined, search);
         const rawReports = res.data || [];
         setTotalReports(res.meta?.total || (res as any).totalCount || 0);
         
@@ -129,7 +243,7 @@ const ReportHasil = () => {
       }
     };
     fetchReport();
-  }, [selectedPeriodeId, selectedLokasi, reportPage, debouncedSearch, isKaryawan, isAdminLike, isManager, user?.employee_id, user?.dept_id]);
+  }, [selectedPeriodeId, selectedLokasi, reportPage, search, isKaryawan, isAdminLike, isManager, user?.employee_id, user?.dept_id]);
 
   const handleFetchIndividual = async (karyawanId: number) => {
     try {
@@ -357,44 +471,39 @@ const ReportHasil = () => {
           <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Laporan Hasil Penilaian</h1>
           <p className="text-sm text-gray-500">Hasil Ranking Kinerja Karyawan</p>
         </div>
-        <div className="flex flex-wrap gap-3">
-             <div className="min-w-56">
-                <TextInput 
-                  placeholder="Cari Karyawan..." 
-                  icon={() => <Icon icon="solar:magnifer-linear" />}
-                  value={search}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
-                  sizing="sm"
-                />
-             </div>
-             <div className="min-w-48">
-                <Select
-                  value={selectedLokasi}
-                  onChange={(e) => setSelectedLokasi(e.target.value)}
-                  sizing="sm"
-                >
-                    <option value="">Semua Lokasi</option>
-                    {lokasiOptions.map((lokasi) => (
-                      <option key={lokasi.id} value={lokasi.id}>{lokasi.name}</option>
-                    ))}
-                </Select>
-             </div>
-             <div className="min-w-48">
-                <Select 
-                  value={selectedPeriodeId} 
-                  onChange={(e) => setSelectedPeriodeId(Number(e.target.value))} 
-                  sizing="sm"
-                >
-                    <option value={0}>Pilih Periode</option>
-                    {periodes.map((p) => (
-                      <option key={p.id || p.Id} value={p.id || p.Id}>
-                        {(p.NamaPeriode || p.namaPeriode) + " - " + (p.NamaDivisi || p.divisi?.namaDivisi || "")}
-                      </option>
-                    ))}
-                </Select>
-             </div>
+        <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
+             <DataSearch 
+                placeholder="Cari Karyawan..." 
+                onSearch={(val) => {
+                  setSearch(val);
+                  setReportPage(1);
+                }}
+             />
+             <DataFilter
+                value={selectedLokasi}
+                onChange={(val) => {
+                  setSelectedLokasi(val);
+                  setReportPage(1);
+                }}
+                options={lokasiOptions.map(l => ({ value: l.id, label: l.name }))}
+                placeholder="Semua Lokasi"
+                className="w-full md:w-48"
+             />
+             <DataFilter
+                value={selectedPeriodeId}
+                onChange={(val) => {
+                  setSelectedPeriodeId(Number(val));
+                  setReportPage(1);
+                }}
+                options={periodes.map(p => ({ 
+                  value: p.id || p.Id, 
+                  label: `${p.NamaPeriode || p.namaPeriode} - ${p.NamaDivisi || p.divisi?.namaDivisi || ""}`
+                }))}
+                placeholder="Pilih Periode"
+                className="w-full md:w-56"
+             />
              
-             <div className="flex gap-2">
+             <div className="flex gap-2 w-full md:w-auto">
                 {!isFinal && (
                   <Button 
                     color="success" 
@@ -489,118 +598,25 @@ const ReportHasil = () => {
         <div className="col-span-12">
           <CardBox>
             <h4 className="text-lg font-bold mb-4 text-gray-800 dark:text-white">Detail Nilai</h4>
-            <div className="overflow-x-auto">
-              <Table hoverable striped>
-                  <Table.Head>
-                    <Table.HeadCell className="text-center">Rank</Table.HeadCell>
-                    <Table.HeadCell>Nama</Table.HeadCell>
-                    <Table.HeadCell className="text-center">NIK</Table.HeadCell>
-                    <Table.HeadCell className="text-center">Nilai Skala</Table.HeadCell>
-                    <Table.HeadCell className="text-center">Status</Table.HeadCell>
-                    <Table.HeadCell className="text-center">Catatan</Table.HeadCell>
-                    <Table.HeadCell className="text-center">Aksi</Table.HeadCell>
-                  </Table.Head>
-                  <Table.Body className="divide-y text-center">
-                    {loading ? (
-                      <Table.Row><Table.Cell colSpan={7} className="py-10"><Spinner /></Table.Cell></Table.Row>
-                    ) : reports.length > 0 ? reports.map((report) => (
-                      <Table.Row key={report.Id} className="bg-white dark:border-gray-700 dark:bg-gray-800">
-                        <Table.Cell className="font-bold text-lg text-primary">{report.Ranking}</Table.Cell>
-                        <Table.Cell className="text-left font-bold text-gray-900 dark:text-white">
-                          {report.Karyawan?.name || report.Karyawan?.Nama}
-                        </Table.Cell>
-                        <Table.Cell>{report.Karyawan?.nik || report.Karyawan?.Nik}</Table.Cell>
-                        <Table.Cell className="font-bold text-secondary text-base">{report.NilaiSkala}</Table.Cell>
-                        <Table.Cell>
-                          {getStatusBadge(isFinal ? "Final" : (report.status || report.Status))}
-                        </Table.Cell>
-                        <Table.Cell className="max-w-xs truncate text-xs italic text-gray-500">
-                          {typeof report.catatan === 'object' && report.catatan ? 
-                            (report.catatan.p || report.catatan.i || report.catatan.s || "-") : 
-                            (report.Catatan || (report as any).catatan || "-")}
-                        </Table.Cell>
-                        <Table.Cell>
-                          <div className="flex justify-center gap-2">
-                            {isManagerUI && !isFinal && (
-                              <Button 
-                                color="info" 
-                                size="xs" 
-                                pill 
-                                onClick={() => {
-                                  setReviewReportId(report.Id);
-                                  
-                                  // Inisialisasi form review dari objek atau string
-                                  const c = report.catatan || (report as any).Catatan;
-                                  let p = "", i = "", s = "";
-                                  
-                                  if (typeof c === 'object' && c !== null) {
-                                    p = c.p || "";
-                                    i = c.i || "";
-                                    s = c.s || "";
-                                  } else if (typeof c === 'string') {
-                                    try {
-                                      if (c.startsWith('{')) {
-                                        const parsed = JSON.parse(c);
-                                        p = parsed.p || "";
-                                        i = parsed.i || "";
-                                        s = parsed.s || "";
-                                      } else {
-                                        p = c;
-                                      }
-                                    } catch (e) {
-                                      p = c;
-                                    }
-                                  }
-
-                                  setReviewForm({
-                                    status: (report.status as any) || (report.Status as any) || 'Reviewed',
-                                    catatan_prestasi: p,
-                                    catatan_indisipliner: i,
-                                    catatan_saran: s
-                                  });
-                                  setShowReviewModal(true);
-                                }}
-                              >
-                                <Icon icon="solar:notes-minimalistic-bold" className="h-4 w-4" />
-                                <span className="ml-1">Review</span>
-                              </Button>
-                            )}
-                            <Button color="light" size="xs" pill onClick={() => handleFetchIndividual(report.Karyawan?.id ?? report.Karyawan?.Id ?? 0)}>
-                              {printingId === (report.Karyawan?.id ?? report.Karyawan?.Id ?? 0) ? <Spinner size="xs" /> : <Icon icon="solar:eye-bold" className="h-4 w-4" />}
-                              <span className="ml-1">Preview</span>
-                            </Button>
-                            <Button 
-                              color="dark" 
-                              size="xs" 
-                              pill 
-                              disabled={!isFinal || (printingId === (report.Karyawan?.id ?? report.Karyawan?.Id ?? 0))}
-                              onClick={() => handlePrintPdf(report.Karyawan?.id ?? report.Karyawan?.Id ?? 0)}
-                            >
-                              <Icon icon="solar:printer-bold" className="h-4 w-4" />
-                              <span className="ml-1">PDF</span>
-                            </Button>
-                          </div>
-                        </Table.Cell>
-                      </Table.Row>
-                    )) : (
-                      <Table.Row>
-                        <Table.Cell colSpan={7} className="py-10 text-gray-500 italic">Belum ada data penilaian pada periode ini.</Table.Cell>
-                      </Table.Row>
-                    )}
-                  </Table.Body>
-              </Table>
-            </div>
             
-            {totalReports > reportPageSize && (
-              <div className="flex justify-center mt-6">
-                 <Pagination
-                    currentPage={reportPage}
-                    totalPages={Math.ceil(totalReports / reportPageSize)}
-                    onPageChange={(page: number) => setReportPage(page)}
-                    showIcons
-                  />
-              </div>
-            )}
+            <DataTable
+              loading={loading}
+              data={reports}
+              columns={columns}
+              rowKey={(item) => item.Id}
+            />
+
+            <DataPagination
+              currentPage={reportPage}
+              totalPages={Math.ceil(totalReports / reportPageSize)}
+              onPageChange={setReportPage}
+              pageSize={reportPageSize}
+              onPageSizeChange={(size) => {
+                setReportPageSize(size);
+                setReportPage(1);
+              }}
+              totalItems={totalReports}
+            />
           </CardBox>
         </div>
       </div>

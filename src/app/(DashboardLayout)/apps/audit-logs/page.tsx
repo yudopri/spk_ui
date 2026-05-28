@@ -56,7 +56,7 @@ const AuditLogsPage = () => {
   };
 
   return (
-    <RoleGuard permissions={["user_manage"]}>
+    <RoleGuard allow={["Admin", "SuperAdmin"]}>
       <div className="flex flex-col gap-6">
         <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm">
           <h1 className="text-2xl font-bold flex items-center gap-2">
