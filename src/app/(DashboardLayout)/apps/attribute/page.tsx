@@ -6,6 +6,10 @@ import CardBox from "@/app/components/shared/CardBox";
 import kpiService, { Attribute } from "@/services/kpiService";
 import { usePermission } from "@/hooks/usePermission";
 
+// Shared Components
+import DataTable, { Column } from "@/app/components/shared/DataTable";
+import DataPagination from "@/app/components/shared/DataPagination";
+
 const AttributePage = () => {
   const { isReadOnly } = usePermission();
   const [items, setItems] = useState<Attribute[]>([]);
@@ -17,17 +21,58 @@ const AttributePage = () => {
   const [saving, setSaving] = useState(false);
   const [selected, setSelected] = useState<Attribute | null>(null);
 
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalItems, setTotalItems] = useState(0);
+
+  const columns: Column<Attribute>[] = [
+    {
+      header: "Nama Attribute",
+      key: "nama",
+      cellClasses: "font-semibold"
+    },
+    {
+      header: "Simbol",
+      key: "simbol",
+      cellClasses: "font-mono"
+    },
+    {
+      header: "Aksi",
+      headerClasses: "text-center",
+      cellClasses: "text-center",
+      render: (item: Attribute) => (
+        <div className="flex justify-center gap-2">
+            <Button color="light" size="xs" onClick={() => openAction("detail", item)}>
+              <Icon icon="solar:eye-linear" className="h-4 w-4" />
+            </Button>
+            {!isReadOnly && (
+              <>
+                <Button color="light" size="xs" onClick={() => openAction("edit", item)}>
+                  <Icon icon="solar:pen-new-square-linear" className="h-4 w-4 text-primary" />
+                </Button>
+                <Button color="light" size="xs" onClick={() => handleDelete(item.id)}>
+                  <Icon icon="solar:trash-bin-trash-linear" className="h-4 w-4 text-red-500" />
+                </Button>
+              </>
+            )}
+        </div>
+      )
+    }
+  ];
+
   const fetchData = async () => {
     try {
       setLoading(true);
       setError(null);
-      const res = await kpiService.getAttributes();
-      const normalized = (Array.isArray(res) ? res : res?.data || []).map((item: any) => ({
+      const res = await kpiService.getAttributes(currentPage, pageSize);
+      const normalized = (res.data || []).map((item: any) => ({
         id: Number(item.id ?? item.Id ?? 0),
         nama: String(item.nama ?? item.Nama ?? ""),
         simbol: String(item.simbol ?? item.Simbol ?? ""),
       }));
       setItems(normalized.filter((item: Attribute) => item.id > 0));
+      setTotalItems(res.meta?.total || 0);
     } catch (err: any) {
       setError(err?.response?.data?.message || "Gagal mengambil data attribute");
     } finally {
@@ -37,7 +82,7 @@ const AttributePage = () => {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [currentPage, pageSize]);
 
   const openAction = (nextMode: "create" | "edit" | "detail", item?: Attribute) => {
     setMode(nextMode);
@@ -104,54 +149,24 @@ const AttributePage = () => {
       {error && <Alert color="failure">{error}</Alert>}
 
       <CardBox>
-        <div className="overflow-x-auto">
-          {loading ? (
-            <div className="flex justify-center p-10">
-              <Spinner size="xl" />
-            </div>
-          ) : (
-            <Table hoverable>
-              <Table.Head>
-                <Table.HeadCell>Nama</Table.HeadCell>
-                <Table.HeadCell>Simbol</Table.HeadCell>
-                <Table.HeadCell className="text-center">Aksi</Table.HeadCell>
-              </Table.Head>
-              <Table.Body className="divide-y">
-                {items.length === 0 ? (
-                  <Table.Row>
-                    <Table.Cell colSpan={3} className="py-10 text-center text-gray-500">
-                      Belum ada data attribute
-                    </Table.Cell>
-                  </Table.Row>
-                ) : (
-                  items.map((item) => (
-                    <Table.Row key={item.id} className="bg-white dark:border-gray-700 dark:bg-gray-800">
-                      <Table.Cell className="font-medium text-gray-900 dark:text-white">{item.nama}</Table.Cell>
-                      <Table.Cell>{item.simbol}</Table.Cell>
-                      <Table.Cell>
-                        <div className="flex justify-center gap-2">
-                          <Button color="light" size="xs" onClick={() => openAction("detail", item)}>
-                            <Icon icon="solar:eye-linear" className="h-4 w-4" />
-                          </Button>
-                          {!isReadOnly && (
-                            <>
-                              <Button color="light" size="xs" onClick={() => openAction("edit", item)}>
-                                <Icon icon="solar:pen-new-square-linear" className="h-4 w-4 text-primary" />
-                              </Button>
-                              <Button color="light" size="xs" onClick={() => handleDelete(item.id)}>
-                                <Icon icon="solar:trash-bin-trash-linear" className="h-4 w-4 text-red-500" />
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                      </Table.Cell>
-                    </Table.Row>
-                  ))
-                )}
-              </Table.Body>
-            </Table>
-          )}
-        </div>
+        <DataTable
+            loading={loading}
+            data={items}
+            columns={columns}
+            rowKey={(item) => item.id}
+        />
+
+        <DataPagination
+            currentPage={currentPage}
+            totalPages={Math.ceil(totalItems / pageSize)}
+            onPageChange={setCurrentPage}
+            pageSize={pageSize}
+            onPageSizeChange={(size) => {
+                setPageSize(size);
+                setCurrentPage(1);
+            }}
+            totalItems={totalItems}
+        />
       </CardBox>
 
       <Modal show={openModal} onClose={() => setOpenModal(false)} size="md">

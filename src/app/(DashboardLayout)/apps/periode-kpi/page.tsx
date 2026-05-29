@@ -7,6 +7,9 @@ import periodeService, { Periode } from "@/services/periodeService";
 import divisiService from "@/services/divisiService";
 import { usePermission } from "@/hooks/usePermission";
 
+import DataTable, { Column } from "@/app/components/shared/DataTable";
+import DataPagination from "@/app/components/shared/DataPagination";
+
 const PeriodeKPI = () => {
   const { isReadOnly } = usePermission();
   const [openModal, setOpenModal] = useState(false);
@@ -20,12 +23,94 @@ const PeriodeKPI = () => {
 
   // Pagination & Search
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(10);
   const [totalItems, setTotalItems] = useState(0);
+
+  const columns: Column<Periode>[] = [
+    {
+      header: "Nama Periode",
+      cellClasses: "whitespace-nowrap font-bold text-gray-900 dark:text-white",
+      render: (item: Periode) => item.NamaPeriode || item.namaPeriode
+    },
+    {
+      header: "Tahun",
+      key: "Tahun"
+    },
+    {
+      header: "Target Divisi",
+      render: (item: Periode) => (
+        <Badge color="info">
+          {item.NamaDivisi || item.divisi?.namaDivisi || "N/A"}
+        </Badge>
+      )
+    },
+    {
+      header: "Mulai",
+      render: (item: Periode) => (
+        <span className="text-sm">{new Date(item.TanggalMulai || item.tanggalMulai).toLocaleDateString("id-ID")}</span>
+      )
+    },
+    {
+      header: "Selesai",
+      render: (item: Periode) => (
+        <span className="text-sm">{new Date(item.TanggalSelesai || item.tanggalSelesai).toLocaleDateString("id-ID")}</span>
+      )
+    },
+    {
+      header: "Status",
+      headerClasses: "text-center",
+      cellClasses: "text-center",
+      render: (item: Periode) => (
+        <Badge color={item.Status === 'Final' ? "success" : item.isAktif ? "info" : "failure"} className="w-fit mx-auto">
+          {item.Status === 'Final' ? 'Final' : item.isAktif ? "Aktif" : "Tidak Aktif"}
+        </Badge>
+      )
+    },
+    {
+      header: "Aksi",
+      headerClasses: "text-center",
+      cellClasses: "text-center",
+      render: (item: Periode) => (
+        <div className="flex justify-center gap-2">
+          <Tooltip content="Detail">
+            <Button color="light" size="xs" onClick={() => handleAction("detail", item)}>
+              <Icon icon="solar:eye-linear" className="h-4 w-4" />
+            </Button>
+          </Tooltip>
+          {!isReadOnly && (
+            <>
+              <Tooltip content={item.Status === 'Final' ? "Terkunci (Final)" : "Edit"}>
+                <Button 
+                  color="light" 
+                  size="xs" 
+                  onClick={() => handleAction("edit", item)}
+                  disabled={item.Status === 'Final'}
+                  className={item.Status === 'Final' ? 'opacity-50 cursor-not-allowed' : ''}
+                >
+                  <Icon icon="solar:pen-new-square-linear" className="h-4 w-4 text-primary" />
+                </Button>
+              </Tooltip>
+              <Tooltip content={item.Status === 'Final' ? "Terkunci (Final)" : "Hapus"}>
+                <Button 
+                  color="light" 
+                  size="xs" 
+                  onClick={() => handleDelete(item.Id ?? item.id ?? 0)}
+                  disabled={item.Status === 'Final'}
+                  className={item.Status === 'Final' ? 'opacity-50 cursor-not-allowed' : ''}
+                >
+                  <Icon icon="solar:trash-bin-trash-linear" className="h-4 w-4 text-red-500" />
+                </Button>
+              </Tooltip>
+            </>
+          )}
+        </div>
+      )
+    }
+  ];
 
   useEffect(() => {
     fetchData();
-  }, [currentPage]);
+  }, [currentPage, pageSize]);
 
   const fetchData = async () => {
     try {
@@ -35,7 +120,7 @@ const PeriodeKPI = () => {
         divisiService.getAll()
       ]);
       setPeriods(periodRes.data);
-      setTotalItems((periodRes as any).totalCount ?? periodRes.data.length ?? 0);
+      setTotalItems(periodRes.meta?.total || (periodRes as any).totalCount || periodRes.data.length || 0);
       setDivisis(divisiRes.data);
       setError(null);
     } catch (err: any) {
@@ -149,84 +234,24 @@ const PeriodeKPI = () => {
       {error && <Alert color="failure">{error}</Alert>}
 
       <CardBox>
-        <div className="overflow-x-auto">
-          {loading ? (
-            <div className="flex justify-center p-10">
-              <Spinner size="xl" />
-            </div>
-          ) : (
-            <Table hoverable>
-              <Table.Head>
-                <Table.HeadCell>Nama Periode</Table.HeadCell>
-                <Table.HeadCell>Tahun</Table.HeadCell>
-                <Table.HeadCell>Target Divisi</Table.HeadCell>
-                <Table.HeadCell>Mulai</Table.HeadCell>
-                <Table.HeadCell>Selesai</Table.HeadCell>
-                <Table.HeadCell className="text-center">Status</Table.HeadCell>
-                <Table.HeadCell className="text-center">Aksi</Table.HeadCell>
-              </Table.Head>
-              <Table.Body className="divide-y">
-                {periods.map((period) => (
-                  <Table.Row key={period.id} className="bg-white dark:border-gray-700 dark:bg-gray-800">
-                    <Table.Cell className="whitespace-nowrap font-bold text-gray-900 dark:text-white">
-                      {period.namaPeriode}
-                    </Table.Cell>
-                    <Table.Cell>{period.tahun}</Table.Cell>
-                    <Table.Cell>
-                      <Badge color="info">
-                        {period.NamaDivisi || period.divisi?.namaDivisi || "N/A"}
-                      </Badge>
-                    </Table.Cell>
-                    <Table.Cell className="text-sm">{new Date(period.tanggalMulai).toLocaleDateString("id-ID")}</Table.Cell>
-                    <Table.Cell className="text-sm">{new Date(period.tanggalSelesai).toLocaleDateString("id-ID")}</Table.Cell>
-                    <Table.Cell className="text-center">
-                      <div className="flex flex-col items-center gap-1">
-                        <Badge color={period.Status === 'Final' ? "success" : period.isAktif ? "info" : "failure"} className="w-fit mx-auto">
-                          {period.Status === 'Final' ? 'Final' : period.isAktif ? "Aktif" : "Tidak Aktif"}
-                        </Badge>
-                      </div>
-                    </Table.Cell>
-                    <Table.Cell>
-                      <div className="flex justify-center gap-2">
-                        <Tooltip content="Detail">
-                          <Button color="light" size="xs" onClick={() => handleAction("detail", period)}>
-                            <Icon icon="solar:eye-linear" className="h-4 w-4" />
-                          </Button>
-                        </Tooltip>
-                        {!isReadOnly && (
-                          <>
-                            <Tooltip content={period.Status === 'Final' ? "Tidak dapat mengedit periode yang sudah Final" : "Edit"}>
-                              <Button 
-                                color="light" 
-                                size="xs" 
-                                onClick={() => handleAction("edit", period)}
-                                disabled={period.Status === 'Final'}
-                                className={period.Status === 'Final' ? 'opacity-50 cursor-not-allowed' : ''}
-                              >
-                                <Icon icon="solar:pen-new-square-linear" className="h-4 w-4 text-primary" />
-                              </Button>
-                            </Tooltip>
-                            <Tooltip content={period.Status === 'Final' ? "Tidak dapat menghapus periode yang sudah Final" : "Hapus"}>
-                              <Button 
-                                color="light" 
-                                size="xs" 
-                                onClick={() => handleDelete(period.id)}
-                                disabled={period.Status === 'Final'}
-                                className={period.Status === 'Final' ? 'opacity-50 cursor-not-allowed' : ''}
-                              >
-                                <Icon icon="solar:trash-bin-trash-linear" className="h-4 w-4 text-red-500" />
-                              </Button>
-                            </Tooltip>
-                          </>
-                        )}
-                      </div>
-                    </Table.Cell>
-                  </Table.Row>
-                ))}
-              </Table.Body>
-            </Table>
-          )}
-        </div>
+        <DataTable
+            loading={loading}
+            data={periods}
+            columns={columns}
+            rowKey={(item) => item.Id ?? item.id ?? 0}
+        />
+
+        <DataPagination
+            currentPage={currentPage}
+            totalPages={Math.ceil(totalItems / pageSize)}
+            onPageChange={setCurrentPage}
+            pageSize={pageSize}
+            onPageSizeChange={(size) => {
+                setPageSize(size);
+                setCurrentPage(1);
+            }}
+            totalItems={totalItems}
+        />
       </CardBox>
 
       {/* Modal Create/Edit/Detail */}

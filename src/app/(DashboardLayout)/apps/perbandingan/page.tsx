@@ -27,16 +27,10 @@ const NilaiPerbandingan = () => {
       try {
         setLoading(true);
         const res = await periodeService.getAll(1, 100);
-        const aktif = res.data.filter((p: Periode) => {
-          if (!p.isAktif) return false;
-          if (isAdminLike && user?.dept_id) {
-            const currentDivisiId = p.DivisiId ?? p.divisiId ?? p.divisi?.id;
-            return currentDivisiId === null || currentDivisiId === undefined || currentDivisiId === 0 || Number(currentDivisiId) === Number(user.dept_id);
-          }
-          return true;
-        });
-        setPeriodes(aktif);
-        if (aktif.length > 0) setSelectedPeriodeId(aktif[0].Id || (aktif[0] as any).id);
+        // Show all periods but prefer active one as default
+        setPeriodes(res.data);
+        const firstActive = res.data.find((p: Periode) => (p as any).isAktif && p.Status !== 'Final') || res.data[0];
+        if (firstActive) setSelectedPeriodeId(firstActive.Id || firstActive.id);
       } catch (err: any) {
         setError("Gagal mengambil data periode");
       } finally {
@@ -45,6 +39,9 @@ const NilaiPerbandingan = () => {
     };
     fetchPeriodes();
   }, []);
+
+  const selectedPeriode = periodes.find(p => Number(p.Id || p.id) === Number(selectedPeriodeId));
+  const isLocked = selectedPeriode?.Status === 'Final';
 
   useEffect(() => {
     const fetchGroups = async () => {
@@ -248,7 +245,8 @@ const NilaiPerbandingan = () => {
                                                 type="range" min="1" max="9" step="1"
                                                 value={comparisonValues[p.key] || 1}
                                                 onChange={(e) => setComparisonValues({...comparisonValues, [p.key]: Number(e.target.value)})}
-                                                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary"
+                                                disabled={isLocked}
+                                                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary disabled:opacity-50 disabled:cursor-not-allowed"
                                             />
                                             <div className="mt-2 flex flex-col items-center">
                                                 <Badge color="info" size="sm" className="px-3 py-1">
@@ -267,9 +265,9 @@ const NilaiPerbandingan = () => {
                     </Table>
                 </div>
                 <div className="flex justify-end mt-6">
-                    <Button color="primary" onClick={handleSave} disabled={submitting}>
+                    <Button color="primary" onClick={handleSave} disabled={submitting || isLocked}>
                         {submitting ? <Spinner size="sm" /> : <Icon icon="solar:diskette-bold" className="mr-2 h-5 w-5" />}
-                        Simpan & Hitung Bobot {selectedGroupId === 0 ? "Grup" : "Detail"}
+                        {isLocked ? "Terkunci (Final)" : `Simpan & Hitung Bobot ${selectedGroupId === 0 ? "Grup" : "Detail"}`}
                     </Button>
                 </div>
             </>

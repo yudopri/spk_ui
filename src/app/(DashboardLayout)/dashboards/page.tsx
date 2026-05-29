@@ -1,6 +1,7 @@
 "use client";
 import React from "react";
 import WelcomeBox from "@/app/components/dashboards/Dashboard1/WelcomeBox";
+import AnalyticsChart from "@/app/components/dashboards/Dashboard1/AnalyticsChart";
 import CardBox from "@/app/components/shared/CardBox";
 import { Icon } from "@iconify/react";
 import Link from "next/link";
@@ -33,8 +34,8 @@ const DashboardPage = () => {
       <div className="grid grid-cols-12 gap-30">
         {stats.map((stat, index) => (
           <div key={index} className="lg:col-span-3 md:col-span-6 col-span-12">
-            <CardBox className="hover:shadow-lg transition-shadow duration-200">
-              <Link href={stat.href} className="flex items-center gap-4">
+            <CardBox className="hover:shadow-lg transition-shadow duration-200 h-full">
+              <Link href={stat.href} className="flex items-center gap-4 h-full">
                 <div className={`h-12 w-12 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center ${stat.color}`}>
                   <Icon icon={stat.icon} height={28} />
                 </div>
@@ -46,6 +47,12 @@ const DashboardPage = () => {
             </CardBox>
           </div>
         ))}
+      </div>
+
+      <div className="grid grid-cols-12 gap-30">
+        <div className="col-span-12">
+          <AnalyticsChart />
+        </div>
       </div>
 
       <div className="grid grid-cols-12 gap-30">

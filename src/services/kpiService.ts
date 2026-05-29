@@ -40,7 +40,6 @@ export interface KPI {
     idGrup?: number;
     namaGrup?: string;
   };
-  Target?: string | number;
   Satuan?: string;
 }
 
@@ -70,22 +69,40 @@ const normalizeKpi = (item: any): KPI => {
     id_satuan: Number(item.id_satuan ?? item.attributeId ?? item.AttributeId ?? 0),
     nama_satuan: item.nama_satuan ?? item.namaSatuan ?? item.Satuan ?? '',
     Satuan: item.nama_satuan ?? item.namaSatuan ?? item.Satuan ?? '',
-    Target: item.Target ?? item.target ?? '0',
     BobotAhp: item.BobotAhp ?? item.bobotAhp ?? null,
     Bobot: item.Bobot ?? item.bobot ?? 1,
     bobot: item.bobot ?? item.Bobot ?? item.BobotAhp ?? 0,
     Deskripsi: item.Deskripsi ?? item.deskripsi ?? '',
     deskripsi: item.deskripsi ?? item.Deskripsi ?? '',
     simbol: item.simbol ?? '',
-    idGrup: item.idGrup ?? item.Id ?? item.id,
-    namaGrup: item.namaGrup ?? item.NamaGroup ?? item.nama_grup,
+    GrupKpi: {
+      idGrup: Number(item.GrupKpi?.idGrup ?? item.group_id ?? item.GroupId ?? item.group?.id ?? 0),
+      namaGrup: item.GrupKpi?.namaGrup ?? item.NamaGroup ?? item.nama_grup ?? item.group?.nama_grup ?? item.Grup?.NamaGroup ?? '',
+    },
   };
 };
 
 const kpiService = {
-  getAttributes: async () => {
-    const response = await axiosServices.get('/attribute');
-    return response.data;
+  getAttributes: async (page = 1, pageSize = 100): Promise<ApiResponse<Attribute[]>> => {
+    const response = await axiosServices.get<any>('/attribute', {
+      params: { page, pageSize }
+    });
+    
+    // Check if wrapping required
+    const rawData = response.data?.data || response.data || [];
+    const meta = response.data?.meta || {
+      total: Array.isArray(rawData) ? rawData.length : 0,
+      page,
+      pageSize,
+      totalPages: 1
+    };
+
+    return {
+      success: true,
+      message: 'Success',
+      data: Array.isArray(rawData) ? rawData : [],
+      meta
+    };
   },
 
   createAttribute: async (data: { nama: string; simbol: string }) => {

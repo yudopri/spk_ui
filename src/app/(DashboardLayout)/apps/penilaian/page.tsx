@@ -16,6 +16,8 @@ import DataSearch from "@/app/components/shared/DataSearch";
 import DataFilter from "@/app/components/shared/DataFilter";
 import DataPagination from "@/app/components/shared/DataPagination";
 
+import { Checkbox, Label } from "flowbite-react";
+
 const PenilaianKaryawan = () => {
   const { hasPermission, filterEmployeesByScope, normalizedRole } = usePermission();
   const [selectedPeriodeId, setSelectedPeriodeId] = useState<number>(0);
@@ -27,6 +29,7 @@ const PenilaianKaryawan = () => {
   const [departments, setDepartments] = useState<Divisi[]>([]);
   const [selectedDeptId, setSelectedDeptId] = useState<number | string>("all");
   const [selectedLocation, setSelectedLocation] = useState<string>("all");
+  const [includeManagement, setIncludeManagement] = useState(false);
   
   // Pagination & Search States
   const [page, setPage] = useState(1);
@@ -44,6 +47,8 @@ const PenilaianKaryawan = () => {
     periodes.find(p => Number(p.Id || p.id) === Number(selectedPeriodeId)),
     [periodes, selectedPeriodeId]
   );
+
+  const isLocked = selectedPeriode?.Status === 'Final';
 
   const filteredPeriodes = useMemo(() => {
     if (selectedDeptId === "all") return periodes;
@@ -87,15 +92,17 @@ const PenilaianKaryawan = () => {
           lokasi_kerja: selectedLocation === "all" ? undefined : selectedLocation,
           search: searchTerm,
           page,
-          pageSize
+          pageSize,
+          // include_management: includeManagement
         });
         
-        const scopedEmployees = (filterEmployeesByScope(res.data || []) as Karyawan[]).filter((employee) => {
-          if (normalizedRole === "Kadiv") {
+        let scopedEmployees = (filterEmployeesByScope(res.data || []) as Karyawan[]);
+        
+        if (!includeManagement && normalizedRole === "Kadiv") {
+          scopedEmployees = scopedEmployees.filter((employee) => {
             return normalizeRole(employee.role) !== "Manager";
-          }
-          return true;
-        });
+          });
+        }
 
         setAllEmployees(scopedEmployees);
         setTotalItems(res.meta?.total || 0);
@@ -107,7 +114,7 @@ const PenilaianKaryawan = () => {
     };
 
     fetchEmployees();
-  }, [selectedDeptId, selectedLocation, searchTerm, page, pageSize]);
+  }, [selectedDeptId, selectedLocation, searchTerm, page, pageSize, includeManagement]);
 
   useEffect(() => {
     if (selectedPeriodeId !== 0) {
@@ -242,8 +249,16 @@ const PenilaianKaryawan = () => {
               }}
               options={workLocations.map(l => ({ value: String(l.name), label: l.name }))}
               placeholder="Semua Lokasi"
-              className="w-full md:w-48"
+              className="w-full md:w-36"
             />
+            <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-700/50 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 h-[42px]">
+              <Checkbox 
+                id="includeManagement" 
+                checked={includeManagement} 
+                onChange={(e) => setIncludeManagement(e.target.checked)}
+              />
+              <Label htmlFor="includeManagement" className="text-xs font-bold whitespace-nowrap cursor-pointer">Sertakan Manajemen</Label>
+            </div>
             <DataFilter
               value={selectedPeriodeId}
               onChange={(val) => {
@@ -261,11 +276,11 @@ const PenilaianKaryawan = () => {
               <Button
                 color="primary"
                 onClick={handleSaveAll}
-                disabled={submitting || !selectedPeriodeId || kpis.length === 0 || allEmployees.length === 0 || selectedPeriode?.Status === 'Final'}
+                disabled={submitting || !selectedPeriodeId || kpis.length === 0 || allEmployees.length === 0 || isLocked}
                 className="w-full md:w-auto"
               >
                  <Icon icon="solar:diskette-bold-duotone" className="mr-2 h-5 w-5" />
-                 {submitting ? "Menyimpan..." : selectedPeriode?.Status === 'Final' ? "Terkunci (Final)" : "Simpan Halaman Ini"}
+                 {submitting ? "Menyimpan..." : isLocked ? "Terkunci (Final)" : "Simpan Halaman Ini"}
               </Button>
             )}
         </div>
@@ -339,7 +354,7 @@ const PenilaianKaryawan = () => {
                                     rightIcon={() => <span className="text-[10px] font-bold text-gray-400 mr-2">{kpi.simbol || ''}</span>}
                                     value={scores[key] ?? ""}
                                     onChange={(e) => setScores({...scores, [key]: e.target.value})}
-                                    disabled={selectedPeriode?.Status === 'Final'}
+                                    disabled={isLocked}
                                   />
                                 </div>
                               </Table.Cell>

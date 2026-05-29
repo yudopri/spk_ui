@@ -65,14 +65,6 @@ const DataKPI = () => {
       )
     },
     {
-      header: "Target",
-      render: (item: KPI) => (
-        <span className="font-mono text-gray-600">
-          {item.Target} {item.Satuan}
-        </span>
-      )
-    },
-    {
       header: "Aksi",
       headerClasses: "text-center",
       cellClasses: "text-center",
@@ -140,8 +132,8 @@ const DataKPI = () => {
 
   const fetchAttributes = async () => {
     try {
-      const res = await kpiService.getAttributes();
-      const list = (Array.isArray(res) ? res : res?.data || []).map((item: any) => ({
+      const res = await kpiService.getAttributes(1, 100);
+      const list = (res.data || []).map((item: any) => ({
         id: Number(item.id ?? item.Id ?? 0),
         nama: String(item.nama ?? item.Nama ?? ""),
         simbol: String(item.simbol ?? item.Simbol ?? ""),
@@ -359,35 +351,33 @@ const DataKPI = () => {
                 disabled={modalType === "view"}
               />
             </div>
-            <div className="grid grid-cols-1 gap-4">
-              <div>
-                <Label htmlFor="tipe" value="Tipe" />
-                <Select 
-                  id="tipe" 
-                  value={selectedKpi?.tipe || selectedKpi?.Tipe} 
-                  onChange={(e) => setSelectedKpi({ ...selectedKpi!, tipe: e.target.value as "Benefit" | "Cost" })}
-                  disabled={modalType === "view"}
-                >
-                  <option value="Benefit">Benefit</option>
-                  <option value="Cost">Cost</option>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="attribute" value="Satuan / Attribute" />
-                <Select
-                  id="attribute"
-                  value={selectedKpi?.attributeId || ""}
-                  onChange={(e) => setSelectedKpi({ ...selectedKpi!, attributeId: e.target.value ? Number(e.target.value) : undefined })}
-                  disabled={modalType === "view"}
-                >
-                  <option value="">Pilih Satuan (Optional)</option>
-                  {attributes.map((attr) => (
-                    <option key={attr.id} value={attr.id}>
-                      {attr.nama} {attr.simbol ? `(${attr.simbol})` : ""}
-                    </option>
-                  ))}
-                </Select>
-              </div>
+            <div>
+              <Label htmlFor="tipe" value="Tipe" />
+              <Select 
+                id="tipe" 
+                value={selectedKpi?.tipe || selectedKpi?.Tipe} 
+                onChange={(e) => setSelectedKpi({ ...selectedKpi!, tipe: e.target.value as "Benefit" | "Cost" })}
+                disabled={modalType === "view"}
+              >
+                <option value="Benefit">Benefit</option>
+                <option value="Cost">Cost</option>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="attribute" value="Satuan / Attribute" />
+              <Select
+                id="attribute"
+                value={selectedKpi?.attributeId || ""}
+                onChange={(e) => setSelectedKpi({ ...selectedKpi!, attributeId: e.target.value ? Number(e.target.value) : undefined })}
+                disabled={modalType === "view"}
+              >
+                <option value="">Pilih Satuan (Optional)</option>
+                {attributes.map((attr) => (
+                  <option key={attr.id} value={attr.id}>
+                    {attr.nama} {attr.simbol ? `(${attr.simbol})` : ""}
+                  </option>
+                ))}
+              </Select>
             </div>
           </div>
         </Modal.Body>
