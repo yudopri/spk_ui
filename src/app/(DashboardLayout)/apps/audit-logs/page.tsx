@@ -4,7 +4,7 @@ import { Table, Badge, Spinner, Alert, Pagination, TextInput } from "flowbite-re
 import CardBox from "@/app/components/shared/CardBox";
 import { Icon } from "@iconify/react";
 import developerService, { AuditLog } from "@/services/developerService";
-import RoleGuard from "@/app/components/shared/RoleGuard";
+import PermissionGuard from "@/app/components/shared/PermissionGuard";
 
 const AuditLogsPage = () => {
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
@@ -56,7 +56,7 @@ const AuditLogsPage = () => {
   };
 
   return (
-    <RoleGuard allow={["Admin", "SuperAdmin"]}>
+    <PermissionGuard permission="user_manage">
       <div className="flex flex-col gap-6">
         <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm">
           <h1 className="text-2xl font-bold flex items-center gap-2">
@@ -140,7 +140,7 @@ const AuditLogsPage = () => {
           </div>
         </CardBox>
       </div>
-    </RoleGuard>
+    </PermissionGuard>
   );
 };
 

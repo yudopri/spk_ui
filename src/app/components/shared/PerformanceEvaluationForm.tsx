@@ -55,6 +55,8 @@ interface PerformanceEvaluationFormProps {
 }
 
 const PerformanceEvaluationForm = ({ data }: PerformanceEvaluationFormProps) => {
+  const normalizeKey = (str: string) => str.toLowerCase().replace(/[^a-z0-9]/g, "");
+
   const calculateTotal = () => {
     if (data) return data.totalScore;
     return 0;
@@ -64,10 +66,29 @@ const PerformanceEvaluationForm = ({ data }: PerformanceEvaluationFormProps) => 
     window.print();
   };
 
+  const getScoreByItem = (item: { id: string, label: string }) => {
+    if (!data?.scores) return 0;
+    
+    // 1. Try direct ID match
+    if (data.scores[item.id] !== undefined) return data.scores[item.id];
+    
+    // 2. Try label match (normalized)
+    const normLabel = normalizeKey(item.label);
+    for (const key in data.scores) {
+      if (normalizeKey(key) === normLabel) return data.scores[key];
+      // Also try if the key is parts of the label or vice versa
+      if (normLabel.includes(normalizeKey(key)) || normalizeKey(key).includes(normLabel)) {
+          return data.scores[key];
+      }
+    }
+    
+    return 0;
+  };
+
   return (
-    <div className="max-w-5xl mx-auto my-8 bg-white shadow-xl rounded-lg overflow-hidden border border-gray-200 print:shadow-none print:border-none print:m-0">
+    <div className="max-w-5xl mx-auto my-8 bg-white shadow-xl rounded-lg overflow-hidden border border-gray-200 print:shadow-none print:border-none print:m-0 print:w-full print-section">
       {/* Container for Print-Ready UI */}
-      <div className="p-10 print:p-0">
+      <div className="p-10 print:p-0 print:text-black">
         
         {/* HEADER */}
         <div className="text-center mb-10 space-y-1">
@@ -136,7 +157,7 @@ const PerformanceEvaluationForm = ({ data }: PerformanceEvaluationFormProps) => 
                     </td>
                   </tr>
                   {category.items.map((item, idx) => {
-                    const currentScore = data?.scores[item.id] || 0;
+                    const currentScore = getScoreByItem(item);
                     return (
                       <tr key={item.id} className="border-b border-gray-300 hover:bg-gray-50 transition-colors">
                         <td className="p-3 text-center font-mono text-xs text-gray-500">{idx + 1}</td>
@@ -254,6 +275,22 @@ const PerformanceEvaluationForm = ({ data }: PerformanceEvaluationFormProps) => 
 
       <style jsx global>{`
         @media print {
+          body * {
+            visibility: hidden;
+          }
+          .print-section, .print-section * {
+            visibility: visible;
+          }
+          .print-section {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: none !important;
+            box-shadow: none !important;
+          }
           body {
             background-color: white !important;
           }
@@ -266,10 +303,12 @@ const PerformanceEvaluationForm = ({ data }: PerformanceEvaluationFormProps) => 
           }
           table {
             border-color: #000 !important;
+            width: 100% !important;
           }
           .bg-primary {
             background-color: #000 !important;
             color: #fff !important;
+            -webkit-print-color-adjust: exact;
           }
           .text-primary {
             color: #000 !important;

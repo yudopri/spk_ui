@@ -145,13 +145,6 @@ const SidebarContent: MenuItem[] = [
             permission: "user_manage",
           },
           {
-            name: "Developer Tools",
-            icon: "solar:code-bold-linear",
-            id: uniqueId(),
-            url: "/apps/developer",
-            permission: "developer_view",
-          },
-          {
             name: "Audit Logs",
             icon: "solar:history-bold-duotone",
             id: uniqueId(),

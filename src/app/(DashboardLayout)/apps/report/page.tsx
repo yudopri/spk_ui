@@ -353,6 +353,19 @@ const ReportHasil = () => {
       fontFamily: 'Plus Jakarta Sans, sans-serif',
       toolbar: { show: false },
       background: 'transparent',
+      animations: {
+        enabled: true,
+        easing: 'easeinout',
+        speed: 800,
+        animateGradually: {
+            enabled: true,
+            delay: 150
+        },
+        dynamicAnimation: {
+            enabled: true,
+            speed: 350
+        }
+      }
     },
     colors: ['#5D87FF', '#49BEFF', '#FFAE1F', '#FA896B', '#39B69A'],
     plotOptions: {
