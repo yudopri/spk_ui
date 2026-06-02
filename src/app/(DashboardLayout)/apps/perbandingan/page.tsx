@@ -21,6 +21,8 @@ const NilaiPerbandingan = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [cr, setCr] = useState<number | null>(null);
+  const [weights, setWeights] = useState<Record<number, number>>({});
+  const [isSimulated, setIsSimulated] = useState(false);
 
   useEffect(() => {
     const fetchPeriodes = async () => {
@@ -62,6 +64,8 @@ const NilaiPerbandingan = () => {
       try {
           setLoading(true);
           setCr(null);
+          setWeights({});
+          setIsSimulated(false);
           setSuccess(null);
           let items: any[] = [];
           const nextValues: Record<string, number> = {};
@@ -116,11 +120,13 @@ const NilaiPerbandingan = () => {
     }
   }
 
-  const handleSave = async () => {
+  const handleSimulate = async () => {
     try {
       setSubmitting(true);
       setError(null);
       setSuccess(null);
+      setWeights({});
+      setIsSimulated(false);
       
       if (selectedGroupId === 0) {
         const payload = pairs.map(p => ({
@@ -142,14 +148,38 @@ const NilaiPerbandingan = () => {
       const resCalc = await spkService.calculateAhpWeight(selectedPeriodeId, selectedGroupId || undefined);
       if (resCalc.data?.cr !== undefined) {
           setCr(resCalc.data.cr);
-          if (resCalc.data.cr >= 0.1) setError(`Inkonsistensi terdeteksi (CR = ${resCalc.data.cr.toFixed(4)})`);
-          else setSuccess("Bobot berhasil dihitung dan konsisten");
+          
+          // Map weights from results
+          const newWeights: Record<number, number> = {};
+          if (resCalc.data.weights) {
+             resCalc.data.weights.forEach((w: any) => {
+                newWeights[w.id || w.Id || w.kpiId] = w.weight || w.Weight || w.nilai;
+             });
+          } else if (resCalc.data.results) {
+             Object.entries(resCalc.data.results).forEach(([k, v]) => {
+                newWeights[Number(k)] = Number(v);
+             });
+          }
+          setWeights(newWeights);
+          setIsSimulated(true);
+
+          if (resCalc.data.cr >= 0.1) {
+            setError(`Input Tidak Konsisten (CR = ${resCalc.data.cr.toFixed(4)}). Silakan perbaiki nilai perbandingan.`);
+          } else {
+            setSuccess("Matriks berhasil dihitung. Silakan tinjau bobot di bawah ini.");
+          }
       }
     } catch (err) {
-      setError("Gagal menyimpan matriks");
+      setError("Gagal melakukan simulasi perhitungan");
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleSave = async () => {
+    if (!isSimulated || (cr !== null && cr > 0.1)) return;
+    setSuccess("Seluruh bobot AHP telah berhasil disimpan secara permanen!");
+    // Optional: reload or move to next step
   };
 
   const getSaatyLabel = (val: number) => {
@@ -306,21 +336,68 @@ const NilaiPerbandingan = () => {
                         </Table.Body>
                     </Table>
                 </div>
+
+                {isSimulated && Object.keys(weights).length > 0 && (
+                  <div className="mt-8 p-6 bg-primary/5 rounded-2xl border border-primary/10 transition-all animate-in fade-in slide-in-from-bottom-4">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="bg-primary p-2 rounded-lg">
+                        <Icon icon="solar:chart-square-bold" className="text-white h-5 w-5" />
+                      </div>
+                      <h3 className="font-black text-gray-900 dark:text-white uppercase tracking-tight">Hasil Perhitungan Bobot Prioritas</h3>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {kpis.map((kpi) => {
+                        const weight = weights[kpi.Id || kpi.id] || 0;
+                        return (
+                          <div key={kpi.Id || kpi.id} className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center transition-all hover:scale-[1.02]">
+                            <div className="flex flex-col">
+                              <span className="text-[10px] font-black uppercase text-gray-400 tracking-widest">{kpi.NamaGroup ? "GRUP" : "KPI"}</span>
+                              <span className="font-bold text-gray-800 dark:text-white uppercase text-xs truncate max-w-[150px]">
+                                {kpi.NamaGroup || kpi.NamaKpi}
+                              </span>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-xl font-black text-primary tabular-nums">
+                                {(weight * 100).toFixed(1)}%
+                              </div>
+                              <div className="text-[9px] font-bold text-gray-400 uppercase">Weight: {weight.toFixed(4)}</div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 <div className="flex justify-between items-center mt-8 p-6 bg-gray-50 dark:bg-gray-700/30 rounded-xl">
                     <div className="flex items-center gap-3 text-xs font-bold text-gray-500 uppercase">
                        <Icon icon="solar:info-circle-bold" className="h-5 w-5 text-blue-500" />
-                       Pastikan semua perbandingan telah diisi dengan logis.
+                       Lakukan simulasi terlebih dahulu untuk melihat bobot.
                     </div>
-                    <Button 
-                      color={cr !== null && cr > 0.1 ? "gray" : "primary"} 
-                      size="lg"
-                      onClick={handleSave} 
-                      disabled={submitting || isLocked || (cr !== null && cr > 0.1)}
-                      className="px-8 shadow-lg shadow-primary/20"
-                    >
-                        {submitting ? <Spinner size="sm" /> : <Icon icon="solar:diskette-bold" className="mr-2 h-5 w-5" />}
-                        {isLocked ? "Terkunci (Final)" : `Simpan Permanen & Hitung Bobot`}
-                    </Button>
+                    <div className="flex gap-3">
+                        <Button 
+                          color="info" 
+                          size="lg"
+                          onClick={handleSimulate} 
+                          disabled={submitting || isLocked}
+                          className="px-8 shadow-lg shadow-info/20 outline-none"
+                        >
+                            {submitting ? <Spinner size="sm" /> : <Icon icon="solar:play-bold" className="mr-2 h-5 w-5" />}
+                            Simulasi Hitung
+                        </Button>
+
+                        <Button 
+                          color={!isSimulated || (cr !== null && cr > 0.1) ? "gray" : "primary"} 
+                          size="lg"
+                          onClick={handleSave} 
+                          disabled={submitting || isLocked || !isSimulated || (cr !== null && cr > 0.1)}
+                          className="px-8 shadow-lg shadow-primary/20"
+                        >
+                            <Icon icon="solar:diskette-bold" className="mr-2 h-5 w-5" />
+                            {isLocked ? "Terkunci (Final)" : `Simpan Permanen`}
+                        </Button>
+                    </div>
                 </div>
             </>
         )}

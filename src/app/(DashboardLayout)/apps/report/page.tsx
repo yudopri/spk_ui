@@ -61,7 +61,7 @@ const ReportHasil = () => {
 
   const allReviewed = useMemo(() => {
     if (reports.length === 0) return false;
-    return reports.every(r => r.Status === 'Reviewed');
+    return reports.every(r => r.status === 'Reviewed' || r.Status === 'Reviewed');
   }, [reports]);
 
   const columns: Column<SpkReport>[] = [
@@ -69,25 +69,25 @@ const ReportHasil = () => {
       header: "Rank",
       headerClasses: "text-center",
       cellClasses: "text-center font-bold text-lg text-primary",
-      render: (item: SpkReport) => item.Ranking,
+      render: (item: SpkReport) => item.rank ?? item.Ranking,
     },
     {
       header: "Nama",
       cellClasses: "text-left font-black text-gray-900 dark:text-white uppercase text-xs tracking-tight",
-      render: (item: SpkReport) => item.Karyawan?.name || item.Karyawan?.Nama,
+      render: (item: SpkReport) => item.nama || item.Karyawan?.name || item.Karyawan?.Nama,
     },
     {
       header: "NIK",
       headerClasses: "text-center",
       cellClasses: "text-center font-mono text-xs text-gray-500",
-      render: (item: SpkReport) => item.Karyawan?.nik || item.Karyawan?.Nik,
+      render: (item: SpkReport) => item.nik || item.Karyawan?.nik || item.Karyawan?.Nik || "-",
     },
     {
       header: "Skor Akhir",
       headerClasses: "text-center",
       cellClasses: "text-center font-black text-primary text-xl tabular-nums",
       render: (item: SpkReport) => {
-        const val = item.NilaiSkala || 0;
+        const val = item.nilai_akhir || item.totalScore || item.NilaiSkala || 0;
         // Jika nilai < 1, asumsikan ini bobot mentah dan perlu di-format ke 0-100 (jika backend belum melakukan)
         // Namun karena instruksi "gaboleh ada perhitungan", kita hanya melakukan formatting tampilan
         return val < 1 && val > 0 ? (val * 100).toFixed(0) : Math.round(val);
@@ -129,7 +129,7 @@ const ReportHasil = () => {
               size="xs" 
               pill 
               onClick={() => {
-                setReviewReportId(item.Id);
+                setReviewReportId(item.id || item.Id);
                 
                 // Inisialisasi form review dari objek atau string
                 const c = item.catatan || (item as any).Catatan;
@@ -167,16 +167,16 @@ const ReportHasil = () => {
               <span className="ml-1">Review</span>
             </Button>
           )}
-          <Button color="light" size="xs" pill onClick={() => handleFetchIndividual(item.Karyawan?.id ?? item.Karyawan?.Id ?? 0)}>
-            {printingId === (item.Karyawan?.id ?? item.Karyawan?.Id ?? 0) ? <Spinner size="xs" /> : <Icon icon="solar:eye-bold" className="h-4 w-4" />}
+          <Button color="light" size="xs" pill onClick={() => handleFetchIndividual(item.id || item.Karyawan?.id ?? item.Karyawan?.Id ?? 0)}>
+            {printingId === (item.id || item.Karyawan?.id ?? item.Karyawan?.Id ?? 0) ? <Spinner size="xs" /> : <Icon icon="solar:eye-bold" className="h-4 w-4" />}
             <span className="ml-1">Preview</span>
           </Button>
           <Button 
             color="dark" 
             size="xs" 
             pill 
-            disabled={!isFinal || (printingId === (item.Karyawan?.id ?? item.Karyawan?.Id ?? 0))}
-            onClick={() => handlePrintPdf(item.Karyawan?.id ?? item.Karyawan?.Id ?? 0)}
+            disabled={!isFinal || (printingId === (item.id || item.Karyawan?.id ?? item.Karyawan?.Id ?? 0))}
+            onClick={() => handlePrintPdf(item.id || item.Karyawan?.id ?? item.Karyawan?.Id ?? 0)}
           >
             <Icon icon="solar:printer-bold" className="h-4 w-4" />
             <span className="ml-1">PDF</span>
@@ -221,9 +221,9 @@ const ReportHasil = () => {
         setTotalReports(res.meta?.total || (res as any).totalCount || 0);
         
         const isManagerUI_Local = isManagerRole(localStorage.getItem('userRole'));
-        const scoped = rawReports.filter((item) => {
+        const scoped = rawReports.filter((item: SpkReport) => {
           if (isKaryawan) {
-            const employeeId = Number(item.Karyawan?.Id ?? 0);
+            const employeeId = Number((item.id || item.Karyawan?.Id) ?? 0);
             return employeeId === Number(user?.employee_id ?? 0);
           }
 
@@ -397,7 +397,7 @@ const ReportHasil = () => {
     },
     legend: { show: false },
     xaxis: {
-      categories: reports.map(r => r.Karyawan?.name || r.Karyawan?.Nama || "Unknown"),
+      categories: reports.map(r => r.nama || r.Karyawan?.name || r.Karyawan?.Nama || "Unknown"),
       axisBorder: { show: false },
       axisTicks: { show: false },
       labels: {
@@ -431,7 +431,7 @@ const ReportHasil = () => {
 
   const chartSeries = [{
     name: 'Nilai Skala',
-    data: reports.map(r => r.NilaiSkala)
+    data: reports.map(r => r.nilai_akhir || r.totalScore || r.NilaiSkala || 0)
   }];
 
   const bestEmployee = reports.length > 0 ? reports[0] : null;
@@ -592,7 +592,7 @@ const ReportHasil = () => {
                   <div className="flex flex-col items-center justify-center space-y-4 py-6 text-center">
                       <div className="relative">
                           <img 
-                              src={`https://ui-avatars.com/api/?name=${bestEmployee.Karyawan?.name || bestEmployee.Karyawan?.Nama}&background=random&size=128`}
+                              src={`https://ui-avatars.com/api/?name=${bestEmployee.nama || bestEmployee.Karyawan?.name || bestEmployee.Karyawan?.Nama}&background=random&size=128`}
                               alt="Best Employee" 
                               className="w-24 h-24 rounded-full border-4 border-yellow-400 p-1"
                           />
@@ -601,10 +601,10 @@ const ReportHasil = () => {
                           </div>
                       </div>
                       <div>
-                          <h2 className="text-xl font-black text-primary uppercase">{bestEmployee.Karyawan?.name || bestEmployee.Karyawan?.Nama}</h2>
+                          <h2 className="text-xl font-black text-primary uppercase">{bestEmployee.nama || bestEmployee.Karyawan?.name || bestEmployee.Karyawan?.Nama}</h2>
                       </div>
                       <div className="bg-primary/10 px-6 py-2 rounded-full">
-                          <span className="text-primary font-bold text-lg">Skor: {bestEmployee.NilaiSkala}</span>
+                          <span className="text-primary font-bold text-lg">Skor: {bestEmployee.nilai_akhir || bestEmployee.totalScore || bestEmployee.NilaiSkala}</span>
                       </div>
                   </div>
                 ) : (

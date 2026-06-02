@@ -45,6 +45,17 @@ export interface MooraPenilaian {
 }
 
 export interface SpkReport {
+  // New camelCase fields for flattened response
+  id?: number;
+  nama?: string;
+  totalScore?: number;
+  nilai_akhir?: number;
+  rank?: number;
+  nik?: string;
+  Status?: string;
+  status?: string;
+
+  // Existing PascalCase fields
   Id: number;
   PeriodeId: number;
   Periode: {
@@ -55,8 +66,6 @@ export interface SpkReport {
   NilaiSkala: number;
   NilaiOptimasi: number;
   Ranking: number;
-  Status?: string;
-  status?: string;
   Catatan?: any;
   catatan?: any;
   Karyawan: {
@@ -168,6 +177,14 @@ const spkService = {
     const meta = response.data.meta;
 
     const mapped: SpkReport[] = rawList.map((item: any): SpkReport => ({
+        // New top-level fields for flat response
+        id: Number(item.id ?? item.Id ?? item.karyawan_id ?? 0),
+        rank: Number(item.rank ?? item.Ranking ?? item.ranking ?? 0),
+        nama: item.nama || item.name || item.Karyawan?.Nama || item.Karyawan?.name || "Tanpa Nama",
+        totalScore: Number(item.totalScore ?? item.nilai_akhir ?? item.NilaiSkala ?? item.nilai ?? 0),
+        nilai_akhir: Number(item.nilai_akhir ?? item.totalScore ?? item.NilaiSkala ?? item.nilai ?? 0),
+        nik: item.nik ?? item.Karyawan?.nik ?? item.Karyawan?.Nik ?? "-",
+
         Id: Number(item.Id ?? item.id ?? item.karyawan_id ?? 0),
         PeriodeId: Number(item.PeriodeId ?? item.periodeId ?? periodeId),
         Periode: item.Periode ?? null,
@@ -190,8 +207,8 @@ const spkService = {
               jabatan: item.Karyawan.jabatan ?? item.Karyawan.role ?? '',
             }
           : {
-              Id: Number(item.karyawan_id ?? 0),
-              id: Number(item.karyawan_id ?? 0),
+              Id: Number(item.karyawan_id ?? item.id ?? 0),
+              id: Number(item.karyawan_id ?? item.id ?? 0),
               Nik: item.nik ?? '',
               nik: item.nik ?? '',
               Nama: item.name ?? item.nama ?? '',
