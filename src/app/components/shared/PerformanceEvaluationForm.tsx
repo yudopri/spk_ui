@@ -42,7 +42,8 @@ interface PerformanceEvaluationFormProps {
     jabatan: string;
     periode: string;
     lokasi: string;
-    scores: { [key: string]: number };
+    scores: { [key: string]: number | { Nilai: number, Kriteria: string } };
+    rincian?: Array<{ Kriteria: string, Nilai: number }>;
     totalScore: number;
     notes: {
       prestasi: string;
@@ -57,28 +58,52 @@ interface PerformanceEvaluationFormProps {
 const PerformanceEvaluationForm = ({ data }: PerformanceEvaluationFormProps) => {
   const normalizeKey = (str: string) => str.toLowerCase().replace(/[^a-z0-9]/g, "");
 
+  // Use dynamic criteria if provided, fallback to legacy structure
+  const dynamicSections = React.useMemo(() => {
+    if (data?.rincian && data.rincian.length > 0) {
+      return [{
+        title: "ASPEK PENILAIAN KINERJA (BERDASARKAN KPI)",
+        items: data.rincian.map((r, idx) => ({
+          id: `dyn-${idx}`,
+          label: r.Kriteria,
+          score: r.Nilai
+        }))
+      }];
+    }
+    return EVALUATION_STRUCTURE;
+  }, [data?.rincian]);
+
   const calculateTotal = () => {
-    if (data) return data.totalScore;
-    return 0;
+    if (!data) return "0";
+    const val = data.totalScore;
+    // Formatting tampilan agar bukan angka desimal mentah SPK
+    if (val < 1 && val > 0) return (val * 100).toFixed(0);
+    return Math.round(val).toString();
   };
 
   const handlePrint = () => {
     window.print();
   };
 
-  const getScoreByItem = (item: { id: string, label: string }) => {
+  const getScoreByItem = (item: any) => {
+    if (item.score !== undefined) return item.score;
     if (!data?.scores) return 0;
     
     // 1. Try direct ID match
-    if (data.scores[item.id] !== undefined) return data.scores[item.id];
+    if (data.scores[item.id] !== undefined) {
+      const val = data.scores[item.id];
+      return typeof val === 'object' ? val.Nilai : val;
+    }
     
     // 2. Try label match (normalized)
     const normLabel = normalizeKey(item.label);
     for (const key in data.scores) {
-      if (normalizeKey(key) === normLabel) return data.scores[key];
-      // Also try if the key is parts of the label or vice versa
+      const val = data.scores[key];
+      const scoreVal = typeof val === 'object' ? val.Nilai : val;
+      
+      if (normalizeKey(key) === normLabel) return scoreVal;
       if (normLabel.includes(normalizeKey(key)) || normalizeKey(key).includes(normLabel)) {
-          return data.scores[key];
+          return scoreVal;
       }
     }
     
@@ -143,13 +168,13 @@ const PerformanceEvaluationForm = ({ data }: PerformanceEvaluationFormProps) => 
                 <th colSpan={3} className="border border-white/20 p-2 text-center">Skor Penilaian</th>
               </tr>
               <tr className="bg-gray-800 text-white uppercase text-[9px] tracking-wider">
-                <th className="border border-white/10 p-2 w-24 text-center">A (9-10)</th>
-                <th className="border border-white/10 p-2 w-24 text-center">B (7-8)</th>
-                <th className="border border-white/10 p-2 w-24 text-center">C (5-6)</th>
+                <th className="border border-white/10 p-2 w-24 text-center">A (90-100)</th>
+                <th className="border border-white/10 p-2 w-24 text-center">B (70-89)</th>
+                <th className="border border-white/10 p-2 w-24 text-center">C (50-69)</th>
               </tr>
             </thead>
             <tbody>
-              {EVALUATION_STRUCTURE.map((category) => (
+              {dynamicSections.map((category) => (
                 <React.Fragment key={category.title}>
                   <tr className="bg-gray-100 border-b-2 border-gray-900">
                     <td colSpan={5} className="p-3 font-black text-gray-900 uppercase tracking-tight italic">
@@ -164,17 +189,17 @@ const PerformanceEvaluationForm = ({ data }: PerformanceEvaluationFormProps) => 
                         <td className="p-3 font-semibold text-gray-800 uppercase text-xs">{item.label}</td>
                         {/* Sub-Kolom Skor */}
                         <td className="p-3 text-center border-l border-gray-200">
-                          {currentScore >= 9 ? (
+                          {currentScore >= 90 || (currentScore >= 0.9 && currentScore < 1) ? (
                             <Icon icon="solar:check-circle-bold" className="mx-auto text-primary text-xl" />
                           ) : <div className="w-5 h-5 border border-gray-300 rounded-full mx-auto" />}
                         </td>
                         <td className="p-3 text-center border-l border-gray-200">
-                          {currentScore >= 7 && currentScore < 9 ? (
+                          {(currentScore >= 70 && currentScore < 90) || (currentScore >= 0.7 && currentScore < 0.9) ? (
                             <Icon icon="solar:check-circle-bold" className="mx-auto text-primary text-xl" />
                           ) : <div className="w-5 h-5 border border-gray-300 rounded-full mx-auto" />}
                         </td>
                         <td className="p-3 text-center border-l border-gray-200">
-                          {currentScore > 0 && currentScore < 7 ? (
+                          {(currentScore > 0 && currentScore < 70) || (currentScore > 0 && currentScore < 0.7) ? (
                             <Icon icon="solar:check-circle-bold" className="mx-auto text-primary text-xl" />
                           ) : <div className="w-5 h-5 border border-gray-300 rounded-full mx-auto" />}
                         </td>

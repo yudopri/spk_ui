@@ -61,25 +61,56 @@ const PeriodeKPI = () => {
       headerClasses: "text-center",
       cellClasses: "text-center",
       render: (item: Periode) => (
-        <Badge color={item.Status === 'Final' ? "success" : item.isAktif ? "info" : "failure"} className="w-fit mx-auto">
-          {item.Status === 'Final' ? 'Final' : item.isAktif ? "Aktif" : "Tidak Aktif"}
+        <Badge 
+          color={item.Status === 'Final' ? "dark" : item.isAktif ? "info" : "failure"} 
+          className={`w-fit mx-auto px-3 py-1 font-black uppercase tracking-tighter ${item.Status === 'Final' ? 'bg-gray-800 text-gray-200 border-2 border-gray-600' : ''}`}
+        >
+          {item.Status === 'Final' ? 'TERKUNCI / FINALIZED' : item.isAktif ? "Aktif / Open" : "Non-Aktif / Closed"}
         </Badge>
       )
     },
     {
-      header: "Aksi",
+      header: "Manajemen & Aksi",
       headerClasses: "text-center",
       cellClasses: "text-center",
       render: (item: Periode) => (
         <div className="flex justify-center gap-2">
-          <Tooltip content="Detail">
-            <Button color="light" size="xs" onClick={() => handleAction("detail", item)}>
-              <Icon icon="solar:eye-linear" className="h-4 w-4" />
+          <Tooltip content="Edit KPI (Kriteria)">
+            <Button 
+                color="light" 
+                size="xs" 
+                className="hover:bg-primary/10"
+                onClick={() => window.location.href=`/apps/data-kpi?periodeId=${item.Id}`}
+                disabled={item.Status === 'Final'}
+            >
+              <Icon icon="solar:filters-bold" className={`h-4 w-4 ${item.Status === 'Final' ? 'text-gray-400' : 'text-primary'}`} />
             </Button>
           </Tooltip>
+          <Tooltip content="Input Nilai Karyawan">
+            <Button 
+                color="light" 
+                size="xs" 
+                className="hover:bg-success/10"
+                onClick={() => window.location.href=`/apps/penilaian?periodeId=${item.Id}`}
+                disabled={item.Status === 'Final'}
+            >
+              <Icon icon="solar:user-hand-up-bold" className={`h-4 w-4 ${item.Status === 'Final' ? 'text-gray-400' : 'text-green-600'}`} />
+            </Button>
+          </Tooltip>
+          <Tooltip content="Hasil & Finalisasi">
+            <Button 
+                color="light" 
+                size="xs" 
+                className="hover:bg-secondary/10"
+                onClick={() => window.location.href=`/apps/report?periodeId=${item.Id}`}
+            >
+              <Icon icon="solar:chart-square-bold" className="h-4 w-4 text-secondary" />
+            </Button>
+          </Tooltip>
+          <div className="w-px h-6 bg-gray-200 mx-1" />
           {!isReadOnly && (
             <>
-              <Tooltip content={item.Status === 'Final' ? "Terkunci (Final)" : "Edit"}>
+              <Tooltip content={item.Status === 'Final' ? "Terkunci (Final)" : "Edit Periode"}>
                 <Button 
                   color="light" 
                   size="xs" 
@@ -87,7 +118,7 @@ const PeriodeKPI = () => {
                   disabled={item.Status === 'Final'}
                   className={item.Status === 'Final' ? 'opacity-50 cursor-not-allowed' : ''}
                 >
-                  <Icon icon="solar:pen-new-square-linear" className="h-4 w-4 text-primary" />
+                  <Icon icon="solar:pen-new-square-linear" className="h-4 w-4" />
                 </Button>
               </Tooltip>
               <Tooltip content={item.Status === 'Final' ? "Terkunci (Final)" : "Hapus"}>
@@ -256,26 +287,38 @@ const PeriodeKPI = () => {
 
       {/* Modal Create/Edit/Detail */}
       <Modal show={openModal} onClose={() => setOpenModal(false)} size="lg">
-        <Modal.Header>
-          {modalMode === "create" ? "Tambah Periode" : modalMode === "edit" ? "Edit Periode" : "Detail Periode"}
+        <Modal.Header className={`${selectedItem?.Status === 'Final' ? 'bg-gray-100' : ''}`}>
+          <div className="flex items-center gap-2">
+            {modalMode === "create" ? "Tambah Periode Baru" : modalMode === "edit" ? "Modifikasi Periode" : "Rincian Periode"}
+            {selectedItem?.Status === 'Final' && (
+              <Badge color="dark" className="ml-2 font-black uppercase text-[10px] tracking-widest border border-gray-400">TERKUNCI / FINALIZED</Badge>
+            )}
+          </div>
         </Modal.Header>
         <Modal.Body className="max-h-[80vh] overflow-y-auto">
-          <div className="space-y-4">
+          {selectedItem?.Status === 'Final' && (
+            <Alert color="dark" className="mb-4 border-2 border-gray-300" icon={() => <Icon icon="solar:lock-bold" className="h-5 w-5" />}>
+              <span className="font-black uppercase text-xs">Informasi:</span> Data periode ini telah difinalisasi dan berada dalam mode <b>Baca-Saja (Read-Only)</b>. Seluruh perubahan telah dikunci secara permanen.
+            </Alert>
+          )}
+          <div className={`space-y-4 ${selectedItem?.Status === 'Final' ? 'opacity-70 grayscale-[0.5]' : ''}`}>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="namaPeriode" value="Nama Periode" />
+                <Label htmlFor="namaPeriode" value="Nama Periode" className="text-[10px] font-black uppercase text-gray-500" />
                 <TextInput
                   id="namaPeriode"
+                  className="font-bold"
                   value={selectedItem?.namaPeriode ?? selectedItem?.NamaPeriode ?? ""}
                   onChange={(e) => setSelectedItem({ ...selectedItem!, namaPeriode: e.target.value, NamaPeriode: e.target.value })}
-                  disabled={modalMode === "detail"}
+                  disabled={modalMode === "detail" || selectedItem?.Status === 'Final'}
                 />
               </div>
               <div>
-                <Label htmlFor="tahun" value="Tahun" />
+                <Label htmlFor="tahun" value="Tahun" className="text-[10px] font-black uppercase text-gray-500" />
                 <TextInput
                   id="tahun"
                   type="number"
+                  className="font-mono font-bold"
                   value={
                     selectedItem?.tahun === null ||
                       selectedItem?.tahun === undefined ||
@@ -284,20 +327,21 @@ const PeriodeKPI = () => {
                       : selectedItem.tahun
                   }
                   onChange={(e) => setSelectedItem({ ...selectedItem!, tahun: e.target.value === "" ? null : Number(e.target.value) })}
-                  disabled={modalMode === "detail"}
+                  disabled={modalMode === "detail" || selectedItem?.Status === 'Final'}
                 />
               </div>
             </div>
             <div>
-              <Label htmlFor="divisi" value="Target Divisi" />
+              <Label htmlFor="divisi" value="Target Divisi (Cakupan Penilaian)" className="text-[10px] font-black uppercase text-gray-500" />
               <Select
                 id="divisi"
+                className="font-bold"
                 value={(selectedItem?.divisiId ?? selectedItem?.DivisiId) === null ? "all" : (selectedItem?.divisiId ?? selectedItem?.DivisiId ?? 0)}
                 onChange={(e) => {
                   const val = e.target.value === "all" ? null : (e.target.value === "0" ? 0 : Number(e.target.value));
                   setSelectedItem({ ...selectedItem!, divisiId: val, DivisiId: val });
                 }}
-                disabled={modalMode === "detail"}
+                disabled={modalMode === "detail" || selectedItem?.Status === 'Final'}
               >
                 <option value={0}>Pilih Divisi</option>
                 <option value="all">Semua Divisi (Lintas Divisi)</option>
@@ -308,7 +352,7 @@ const PeriodeKPI = () => {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label value="Tanggal Mulai" />
+                <Label value="Tanggal Mulai" className="text-[10px] font-black uppercase text-gray-500" />
                 <TextInput
                   type="date"
                   value={selectedItem?.tanggalMulai
@@ -317,11 +361,11 @@ const PeriodeKPI = () => {
                       ? selectedItem.TanggalMulai.split('T')[0]
                       : ""}
                   onChange={(e) => setSelectedItem({ ...selectedItem!, tanggalMulai: e.target.value, TanggalMulai: e.target.value })}
-                  disabled={modalMode === "detail"}
+                  disabled={modalMode === "detail" || selectedItem?.Status === 'Final'}
                 />
               </div>
               <div>
-                <Label value="Tanggal Selesai" />
+                <Label value="Tanggal Selesai" className="text-[10px] font-black uppercase text-gray-500" />
                 <TextInput
                   type="date"
                   value={selectedItem?.tanggalSelesai
@@ -330,20 +374,22 @@ const PeriodeKPI = () => {
                       ? selectedItem.TanggalSelesai.split('T')[0]
                       : ""}
                   onChange={(e) => setSelectedItem({ ...selectedItem!, tanggalSelesai: e.target.value, TanggalSelesai: e.target.value })}
-                  disabled={modalMode === "detail"}
+                  disabled={modalMode === "detail" || selectedItem?.Status === 'Final'}
                 />
               </div>
             </div>
           </div>
         </Modal.Body>
-        <Modal.Footer>
-          {modalMode !== "detail" && !isReadOnly && (
-            <Button color="primary" onClick={handleSubmit} disabled={btnLoading}>
-              {btnLoading ? <Spinner size="sm" className="mr-2" /> : null}
-              Simpan
+        <Modal.Footer className="flex justify-between">
+          <Button color="gray" onClick={() => setOpenModal(false)} size="sm" className="font-bold uppercase text-[10px]">
+            Tutup
+          </Button>
+          {(modalMode !== "detail" && !isReadOnly && selectedItem?.Status !== 'Final') && (
+            <Button color="primary" onClick={handleSubmit} disabled={btnLoading} size="sm" className="px-6 shadow-lg shadow-primary/20">
+              {btnLoading ? <Spinner size="sm" className="mr-2" /> : <Icon icon="solar:diskette-bold" className="mr-2 h-4 w-4" />}
+              <span className="font-black uppercase text-[10px] tracking-widest">Simpan Perubahan</span>
             </Button>
           )}
-          <Button color="gray" onClick={() => setOpenModal(false)}>Close</Button>
         </Modal.Footer>
       </Modal>
     </div>

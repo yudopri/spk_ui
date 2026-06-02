@@ -73,20 +73,25 @@ const ReportHasil = () => {
     },
     {
       header: "Nama",
-      cellClasses: "text-left font-bold text-gray-900 dark:text-white",
+      cellClasses: "text-left font-black text-gray-900 dark:text-white uppercase text-xs tracking-tight",
       render: (item: SpkReport) => item.Karyawan?.name || item.Karyawan?.Nama,
     },
     {
       header: "NIK",
       headerClasses: "text-center",
-      cellClasses: "text-center",
+      cellClasses: "text-center font-mono text-xs text-gray-500",
       render: (item: SpkReport) => item.Karyawan?.nik || item.Karyawan?.Nik,
     },
     {
-      header: "Nilai Skala",
+      header: "Skor Akhir",
       headerClasses: "text-center",
-      cellClasses: "text-center font-bold text-secondary text-base",
-      key: "NilaiSkala",
+      cellClasses: "text-center font-black text-primary text-xl tabular-nums",
+      render: (item: SpkReport) => {
+        const val = item.NilaiSkala || 0;
+        // Jika nilai < 1, asumsikan ini bobot mentah dan perlu di-format ke 0-100 (jika backend belum melakukan)
+        // Namun karena instruksi "gaboleh ada perhitungan", kita hanya melakukan formatting tampilan
+        return val < 1 && val > 0 ? (val * 100).toFixed(0) : Math.round(val);
+      }
     },
     {
       header: "Status",
@@ -708,11 +713,11 @@ const ReportHasil = () => {
                   totalScore: individualData.kesimpulan.skor || individualData.kesimpulan.Skor,
                   evaluator: individualData.metadata.dibuat_oleh || individualData.metadata.DibuatOleh || user?.name || "SUPERVISOR",
                   approver: individualData.metadata.disetujui_oleh || individualData.metadata.DisetujuiOleh || "HR MANAGER",
-                  scores: individualData.rincian.reduce((acc: any, item: any) => {
-                    const key = (item.kriteria || item.Kriteria || "").toLowerCase().replace(/\s/g, '_');
-                    acc[key] = item.nilai !== undefined ? item.nilai : item.Nilai;
-                    return acc;
-                  }, {}),
+                  rincian: individualData.rincian.map((r: any) => ({
+                    Kriteria: r.kriteria || r.Kriteria,
+                    Nilai: r.nilai !== undefined ? r.nilai : r.Nilai
+                  })),
+                  scores: {}, // Fallback scores empty since we use rincian
                   notes: {
                     prestasi: individualData.metadata.catatan?.p || individualData.metadata.CatatanPrestasi || "-",
                     indisipliner: individualData.metadata.catatan?.i || individualData.metadata.CatatanIndisipliner || "-",

@@ -156,12 +156,12 @@ const NilaiPerbandingan = () => {
     if (val === 1) return "Sama Penting";
     if (val === 3) return "Sedikit Lebih Penting";
     if (val === 5) return "Lebih Penting";
-    if (val === 7) return "Sangat Kuat Lebih Penting";
+    if (val === 7) return "Sangat Kuat Penting";
     if (val === 9) return "Mutlak Lebih Penting";
-    if (val > 1 && val < 3) return "Di antara Sama & Sedikit";
-    if (val > 3 && val < 5) return "Di antara Sedikit & Lebih";
-    if (val > 5 && val < 7) return "Di antara Lebih & Sangat Kuat";
-    if (val > 7 && val < 9) return "Di antara Sangat Kuat & Mutlak";
+    if (val === 2) return "Di antara 1 & 3";
+    if (val === 4) return "Di antara 3 & 5";
+    if (val === 6) return "Di antara 5 & 7";
+    if (val === 8) return "Di antara 7 & 9";
     return val;
   };
 
@@ -214,60 +214,112 @@ const NilaiPerbandingan = () => {
       </div>
 
       {cr !== null && (
-        <Alert color={cr < 0.1 ? "success" : "failure"} icon={() => <Icon icon="solar:chart-square-bold" className="h-5 w-5" />}>
-           Consistency Ratio (CR): <b>{cr.toFixed(4)}</b> 
-           {cr >= 0.1 ? " - Matriks TIDAK KONSISTEN! Mohon diperbaiki." : " - Matriks Konsisten."}
-        </Alert>
+        <div className={`p-4 rounded-xl border-l-4 shadow-sm flex items-center gap-4 transition-all duration-300 ${
+          cr <= 0.1 
+            ? "bg-green-50 border-green-500 text-green-800" 
+            : "bg-red-50 border-red-500 text-red-800 animate-pulse"
+        }`}>
+          <div className={`p-2 rounded-full ${cr <= 0.1 ? "bg-green-100" : "bg-red-100"}`}>
+            <Icon 
+              icon={cr <= 0.1 ? "solar:check-circle-bold" : "solar:danger-triangle-bold"} 
+              className={`h-6 w-6 ${cr <= 0.1 ? "text-green-600" : "text-red-600"}`} 
+            />
+          </div>
+          <div className="flex-1">
+            <h4 className="font-black text-sm uppercase tracking-wider">
+              Status Konsistensi Matriks
+            </h4>
+            <div className="flex items-center gap-2 mt-0.5">
+              <span className="text-2xl font-black tabular-nums">CR: {cr.toFixed(2)}</span>
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${
+                cr <= 0.1 ? "bg-green-200 text-green-700" : "bg-red-200 text-red-700"
+              }`}>
+                {cr <= 0.1 ? "Input Konsisten. Siap Disimpan" : "Input Tidak Konsisten! Pilihan Simpan Dikunci"}
+              </span>
+            </div>
+          </div>
+          {cr > 0.1 && (
+            <div className="text-[10px] font-bold italic opacity-70 max-w-[200px] text-right">
+              * Nilai CR harus ≤ 0.1 untuk memastikan logika perbandingan logis.
+            </div>
+          )}
+        </div>
       )}
 
       {error && <Alert color="failure" onDismiss={() => setError(null)}>{error}</Alert>}
       {success && <Alert color="success" onDismiss={() => setSuccess(null)}>{success}</Alert>}
 
-      <CardBox>
+      <CardBox className="overflow-hidden border-none shadow-xl bg-white dark:bg-gray-800">
         {loading ? <div className="flex justify-center p-10"><Spinner size="xl" /></div> : pairs.length === 0 ? (
             <div className="text-center py-20 text-gray-400 italic">Dibutuhkan minimal 2 kriteria untuk dibandingkan.</div>
         ) : (
             <>
                 <div className="overflow-x-auto">
-                    <Table hoverable striped>
+                    <Table hoverable>
                         <Table.Head>
-                            <Table.HeadCell>Kriteria A</Table.HeadCell>
-                            <Table.HeadCell className="text-center">Skala Saaty (1-9)</Table.HeadCell>
-                            <Table.HeadCell>Kriteria B</Table.HeadCell>
+                            <Table.HeadCell className="bg-gray-900 text-white uppercase tracking-widest text-[10px]">Kriteria Utama (A)</Table.HeadCell>
+                            <Table.HeadCell className="bg-gray-900 text-white text-center uppercase tracking-widest text-[10px]">Perbandingan Skala Prioritas (Saaty)</Table.HeadCell>
+                            <Table.HeadCell className="bg-gray-900 text-white text-right uppercase tracking-widest text-[10px]">Kriteria Pembanding (B)</Table.HeadCell>
                         </Table.Head>
                         <Table.Body className="divide-y">
                             {pairs.map(p => (
-                                <Table.Row key={p.key}>
-                                    <Table.Cell className="font-bold">{p.itemA.NamaGroup || p.itemA.NamaKpi}</Table.Cell>
-                                    <Table.Cell>
-                                        <div className="flex flex-col items-center">
+                                <Table.Row key={p.key} className="group hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                                    <Table.Cell className="font-black text-gray-900 dark:text-gray-100 uppercase text-xs w-1/4">
+                                      {p.itemA.NamaGroup || p.itemA.NamaKpi}
+                                    </Table.Cell>
+                                    <Table.Cell className="w-2/4">
+                                        <div className="flex flex-col items-center py-4">
                                             <input 
                                                 type="range" min="1" max="9" step="1"
                                                 value={comparisonValues[p.key] || 1}
                                                 onChange={(e) => setComparisonValues({...comparisonValues, [p.key]: Number(e.target.value)})}
                                                 disabled={isLocked}
-                                                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                                                className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary disabled:opacity-30"
                                             />
-                                            <div className="mt-2 flex flex-col items-center">
-                                                <Badge color="info" size="sm" className="px-3 py-1">
-                                                    {comparisonValues[p.key] || 1} : {getSaatyLabel(comparisonValues[p.key] || 1)}
-                                                </Badge>
-                                                <span className="text-[10px] text-gray-400 mt-1 italic">
-                                                    (Otomatis: {p.itemB.NamaGroup || p.itemB.NamaKpi} vs {p.itemA.NamaGroup || p.itemA.NamaKpi} = 1/{comparisonValues[p.key] || 1})
-                                                </span>
+                                            <div className="mt-4 flex flex-col items-center w-full">
+                                                <div className="flex items-center gap-4 w-full justify-between px-2 mb-2">
+                                                   <span className="text-[10px] font-bold text-gray-400">SAMA PENTING (1)</span>
+                                                   <span className="text-[10px] font-bold text-primary">SANGAT PENTING (9)</span>
+                                                </div>
+                                                <div className={`px-6 py-2 rounded-full border-2 transition-all flex flex-col items-center shadow-sm ${
+                                                  comparisonValues[p.key] > 1 ? "border-primary bg-primary/5" : "border-gray-200 bg-gray-50"
+                                                }`}>
+                                                    <span className="text-xl font-black text-primary leading-none">
+                                                      {comparisonValues[p.key] || 1}
+                                                    </span>
+                                                    <span className="text-[9px] font-black uppercase tracking-tighter text-gray-500 mt-1">
+                                                      {getSaatyLabel(comparisonValues[p.key] || 1)}
+                                                    </span>
+                                                </div>
+                                                <div className="mt-4 flex items-center gap-2 bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded text-[9px] font-bold text-gray-500 uppercase tracking-tighter">
+                                                    <Icon icon="solar:reorder-bold" className="h-3 w-3" />
+                                                    Resiprokal Otomatis: {p.itemB.NamaGroup || p.itemB.NamaKpi} = 1/{comparisonValues[p.key] || 1}
+                                                </div>
                                             </div>
                                         </div>
                                     </Table.Cell>
-                                    <Table.Cell className="font-bold">{p.itemB.NamaGroup || p.itemB.NamaKpi}</Table.Cell>
+                                    <Table.Cell className="font-black text-gray-900 dark:text-gray-100 uppercase text-xs text-right w-1/4">
+                                      {p.itemB.NamaGroup || p.itemB.NamaKpi}
+                                    </Table.Cell>
                                 </Table.Row>
                             ))}
                         </Table.Body>
                     </Table>
                 </div>
-                <div className="flex justify-end mt-6">
-                    <Button color="primary" onClick={handleSave} disabled={submitting || isLocked}>
+                <div className="flex justify-between items-center mt-8 p-6 bg-gray-50 dark:bg-gray-700/30 rounded-xl">
+                    <div className="flex items-center gap-3 text-xs font-bold text-gray-500 uppercase">
+                       <Icon icon="solar:info-circle-bold" className="h-5 w-5 text-blue-500" />
+                       Pastikan semua perbandingan telah diisi dengan logis.
+                    </div>
+                    <Button 
+                      color={cr !== null && cr > 0.1 ? "gray" : "primary"} 
+                      size="lg"
+                      onClick={handleSave} 
+                      disabled={submitting || isLocked || (cr !== null && cr > 0.1)}
+                      className="px-8 shadow-lg shadow-primary/20"
+                    >
                         {submitting ? <Spinner size="sm" /> : <Icon icon="solar:diskette-bold" className="mr-2 h-5 w-5" />}
-                        {isLocked ? "Terkunci (Final)" : `Simpan & Hitung Bobot ${selectedGroupId === 0 ? "Grup" : "Detail"}`}
+                        {isLocked ? "Terkunci (Final)" : `Simpan Permanen & Hitung Bobot`}
                     </Button>
                 </div>
             </>
