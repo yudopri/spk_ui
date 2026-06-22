@@ -121,17 +121,24 @@ const spkService = {
     return response.data;
   },
 
-  saveAhpGroupPerbandingan: async (periodeId: number, comparisons: { id_a: number; id_b: number; nilai: number }[]) => {
-    const response = await axiosServices.post<{ message: string; success: boolean }>(`/spk/ahp-group/perbandingan/${periodeId}`, {
-      comparisons: comparisons.map(c => ({
-        group_a_id: c.id_a,
-        group_b_id: c.id_b,
-        nilai: c.nilai
+  saveAhpGroupPerbandingan: async (payload: {
+    periodeId: number;
+    comparisons: { GroupIdA: number; GroupIdB: number; Nilai: number }[];
+  }) => {
+    const response = await axiosServices.post<{
+      message: string;
+      success: boolean;
+    }>(`/spk/ahp-group/perbandingan`, {
+      periodeId: payload.periodeId,
+      comparisons: payload.comparisons.map(c => ({
+        group_a_id: c.GroupIdA,
+        group_b_id: c.GroupIdB,
+        nilai: c.Nilai
       }))
     });
+
     return response.data;
   },
-
   getAhpPerbandingan: async (periodeId: number, groupId?: number) => {
     const response = await axiosServices.get<any>(`/spk/ahp/perbandingan/${periodeId}`, {
       params: { group_id: groupId }
@@ -161,7 +168,7 @@ const spkService = {
     const response = await axiosServices.post<{ message: string; success: boolean }>('/spk/ahp/perbandingan', payload);
     return response.data;
   },
-  
+
   calculateAhpWeight: async (periodeId: number, groupId?: number) => {
     const response = await axiosServices.post<{ data: any; success: boolean }>(`/spk/ahp/calculate-weight/${periodeId}`, {
       group_id: groupId
@@ -201,46 +208,46 @@ const spkService = {
     const meta = response.data.meta;
 
     const mapped: SpkReport[] = rawList.map((item: any): SpkReport => ({
-        // New top-level fields for flat response
-        id: Number(item.id ?? item.Id ?? item.karyawan_id ?? 0),
-        rank: Number(item.rank ?? item.Ranking ?? item.ranking ?? 0),
-        nama: item.nama || item.name || item.Karyawan?.Nama || item.Karyawan?.name || "Tanpa Nama",
-        totalScore: Number(item.totalScore ?? item.nilai_akhir ?? item.NilaiSkala ?? item.nilai ?? 0),
-        nilai_akhir: Number(item.nilai_akhir ?? item.totalScore ?? item.NilaiSkala ?? item.nilai ?? 0),
-        nik: item.nik ?? item.Karyawan?.nik ?? item.Karyawan?.Nik ?? "-",
+      // New top-level fields for flat response
+      id: Number(item.id ?? item.Id ?? item.karyawan_id ?? 0),
+      rank: Number(item.rank ?? item.Ranking ?? item.ranking ?? 0),
+      nama: item.nama || item.name || item.Karyawan?.Nama || item.Karyawan?.name || "Tanpa Nama",
+      totalScore: Number(item.totalScore ?? item.nilai_akhir ?? item.NilaiSkala ?? item.nilai ?? 0),
+      nilai_akhir: Number(item.nilai_akhir ?? item.totalScore ?? item.NilaiSkala ?? item.nilai ?? 0),
+      nik: item.nik ?? item.Karyawan?.nik ?? item.Karyawan?.Nik ?? "-",
 
-        Id: Number(item.Id ?? item.id ?? item.karyawan_id ?? 0),
-        PeriodeId: Number(item.PeriodeId ?? item.periodeId ?? periodeId),
-        Periode: item.Periode ?? null,
-        NilaiSkala: Number(item.NilaiSkala ?? item.nilai_skala ?? item.nilai ?? 0),
-        NilaiOptimasi: Number(item.NilaiOptimasi ?? item.nilai_optimasi ?? 0),
-        Ranking: Number(item.Ranking ?? item.ranking ?? 0),
-        Status: item.Status ?? item.status ?? 'Draft',
-        status: item.status ?? item.Status ?? 'Draft',
-        Catatan: item.Catatan ?? item.catatan ?? '',
-        catatan: item.catatan ?? item.Catatan ?? '',
-        Karyawan: item.Karyawan
-          ? {
-              Id: Number(item.Karyawan.Id ?? item.Karyawan.id ?? 0),
-              id: Number(item.Karyawan.id ?? item.Karyawan.Id ?? 0),
-              Nik: item.Karyawan.Nik ?? item.Karyawan.nik ?? '',
-              nik: item.Karyawan.nik ?? item.Karyawan.Nik ?? '',
-              Nama: item.Karyawan.Nama ?? item.Karyawan.name ?? '',
-              name: item.Karyawan.name ?? item.Karyawan.Nama ?? '',
-              Jabatan: item.Karyawan.Jabatan ?? item.Karyawan.role ?? '',
-              jabatan: item.Karyawan.jabatan ?? item.Karyawan.role ?? '',
-            }
-          : {
-              Id: Number(item.karyawan_id ?? item.id ?? 0),
-              id: Number(item.karyawan_id ?? item.id ?? 0),
-              Nik: item.nik ?? '',
-              nik: item.nik ?? '',
-              Nama: item.name ?? item.nama ?? '',
-              name: item.name ?? item.nama ?? '',
-              Jabatan: item.role ?? '',
-              jabatan: item.role ?? '',
-            },
-      }));
+      Id: Number(item.Id ?? item.id ?? item.karyawan_id ?? 0),
+      PeriodeId: Number(item.PeriodeId ?? item.periodeId ?? periodeId),
+      Periode: item.Periode ?? null,
+      NilaiSkala: Number(item.NilaiSkala ?? item.nilai_skala ?? item.nilai ?? 0),
+      NilaiOptimasi: Number(item.NilaiOptimasi ?? item.nilai_optimasi ?? 0),
+      Ranking: Number(item.Ranking ?? item.ranking ?? 0),
+      Status: item.Status ?? item.status ?? 'Draft',
+      status: item.status ?? item.Status ?? 'Draft',
+      Catatan: item.Catatan ?? item.catatan ?? '',
+      catatan: item.catatan ?? item.Catatan ?? '',
+      Karyawan: item.Karyawan
+        ? {
+          Id: Number(item.Karyawan.Id ?? item.Karyawan.id ?? 0),
+          id: Number(item.Karyawan.id ?? item.Karyawan.Id ?? 0),
+          Nik: item.Karyawan.Nik ?? item.Karyawan.nik ?? '',
+          nik: item.Karyawan.nik ?? item.Karyawan.Nik ?? '',
+          Nama: item.Karyawan.Nama ?? item.Karyawan.name ?? '',
+          name: item.Karyawan.name ?? item.Karyawan.Nama ?? '',
+          Jabatan: item.Karyawan.Jabatan ?? item.Karyawan.role ?? '',
+          jabatan: item.Karyawan.jabatan ?? item.Karyawan.role ?? '',
+        }
+        : {
+          Id: Number(item.karyawan_id ?? item.id ?? 0),
+          id: Number(item.karyawan_id ?? item.id ?? 0),
+          Nik: item.nik ?? '',
+          nik: item.nik ?? '',
+          Nama: item.name ?? item.nama ?? '',
+          name: item.name ?? item.nama ?? '',
+          Jabatan: item.role ?? '',
+          jabatan: item.role ?? '',
+        },
+    }));
 
     return {
       success: true,
@@ -303,17 +310,17 @@ const spkService = {
         throw new Error(errorData.message || 'Gagal mengunduh file');
       }
 
-      const blob = new Blob([response.data], { 
-        type: contentType || (filename.endsWith('.pdf') ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') 
+      const blob = new Blob([response.data], {
+        type: contentType || (filename.endsWith('.pdf') ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
       });
-      
+
       // Verification: If PDF is too small (e.g. < 500 bytes), it might be a corrupted text response
       if (filename.endsWith('.pdf') && blob.size < 500) {
         console.warn('Warning: Downloaded PDF is unusually small:', blob.size, 'bytes');
       }
 
       const blobUrl = window.URL.createObjectURL(blob);
-      
+
       // If it's a PDF, we can try to open in new tab instead of just forced download
       if (filename.endsWith('.pdf')) {
         const newWindow = window.open(blobUrl, '_blank');
@@ -334,7 +341,7 @@ const spkService = {
         link.click();
         document.body.removeChild(link);
       }
-      
+
       setTimeout(() => {
         window.URL.revokeObjectURL(blobUrl);
       }, 5000); // Increased timeout to ensure browser finishes loading
