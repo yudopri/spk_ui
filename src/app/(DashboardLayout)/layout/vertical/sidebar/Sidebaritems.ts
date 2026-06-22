@@ -92,14 +92,14 @@ const SidebarContent: MenuItem[] = [
         permission: "kpi_manage",
         children: [
           {
-            name: "AHP Pairwise Comparison",
+            name: "Perbandingan KPI",
             icon: "solar:transfer-horizontal-linear",
             id: uniqueId(),
             url: "/apps/perbandingan",
             permission: "kpi_manage",
           },
           {
-            name: "Input Penilaian",
+            name: "Input Penilaian Karyawan",
             icon: "solar:star-line-duotone",
             id: uniqueId(),
             url: "/apps/penilaian",

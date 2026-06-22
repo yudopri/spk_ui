@@ -55,6 +55,8 @@ const ReportHasil = () => {
   const [showPrintModal, setShowPrintModal] = useState(false);
   const [individualData, setIndividualData] = useState<any>(null);
   const [printingId, setPrintingId] = useState<number | null>(null);
+  const [reportLoading, setReportLoading] = useState(false);
+  const [reportError, setReportError] = useState<string | null>(null);
 
   // Review Modal State
   const [showReviewModal, setShowReviewModal] = useState(false);
@@ -268,14 +270,21 @@ const formatScore = (value?: number) => {
   const handleFetchIndividual = async (karyawanId: number) => {
     try {
       setPrintingId(karyawanId);
+      setReportLoading(true);
+      setReportError(null);
       const res = await spkService.getIndividualReport(selectedPeriodeId, karyawanId);
       if (res.success) {
         setIndividualData(res);
         setShowPrintModal(true);
+      } else {
+        setReportError(res.message || "Gagal mengambil data laporan individual");
       }
     } catch (err: any) {
-      setError("Gagal mengambil data laporan individual");
+      const msg = err?.response?.data?.message || err?.message || "Gagal mengambil data laporan individual";
+      setReportError(msg);
+      setIndividualData(null);
     } finally {
+      setReportLoading(false);
       setPrintingId(null);
     }
   };
@@ -726,42 +735,14 @@ const formatScore = (value?: number) => {
         </Modal.Footer>
       </Modal>
 
-      {/* Individual Report - WBA Official Style */}
-      <Modal show={showPrintModal} onClose={() => setShowPrintModal(false)} size="5xl">
-  <Modal.Header className="print:hidden">Pratinjau Laporan Resmi</Modal.Header>
-  <Modal.Body className="p-0 bg-gray-100">
-    {individualData && (
-      <PerformanceEvaluationForm 
-        data={{
-          employeeName: individualData.metadata.name || individualData.metadata.Nama,
-          jabatan: individualData.metadata.jabatan || individualData.metadata.Jabatan || "Karyawan",
-          periode: individualData.metadata.periode || individualData.metadata.Periode,
-          lokasi: individualData.metadata.lokasi || individualData.metadata.Lokasi || "JAKARTA",
-          totalScore: individualData.kesimpulan.skor || individualData.kesimpulan.Skor || individualData.kesimpulan.totalScore || individualData.kesimpulan.nilai_akhir || 0,
-          evaluator: individualData.metadata.dibuat_oleh || individualData.metadata.DibuatOleh || user?.name || "SUPERVISOR",
-          approver: individualData.metadata.disetujui_oleh || individualData.metadata.DisetujuiOleh || "HR MANAGER",
-          
-          // Rincian dengan grouped data - include nilai score langsung di setiap KPI
-          rincian: individualData.rincian.map((group: any) => ({
-            kpi_group_title: group.kpi_group_title || group.nama_grup || group.GroupKriteria || group.nama_group || group.namaGroup || "KPI Group", 
-            kpis: (group.kpis || group.items || group.Kpis || []).map((kpi: any) => ({
-              id: kpi.id || kpi.kpi_id || kpi.kpiId,
-              kpi_name: kpi.kpi_name || kpi.kriteria || kpi.NamaKpi || kpi.nama_kpi || kpi.nama || kpi.name || `KPI #${kpi.id || kpi.kpi_id}`,
-              nilai: kpi.nilai || kpi.Nilai || kpi.score || kpi.Score || kpi.nilai_akhir || kpi.nilaiAkhir || 0,
-            }))
-          })),
-
-          scores: {}, // Scores tidak diperlukan karena nilai sudah di-include langsung di setiap KPI
-          notes: {
-            prestasi: individualData.metadata.catatan?.p || individualData.metadata.CatatanPrestasi || "-",
-            indisipliner: individualData.metadata.catatan?.i || individualData.metadata.CatatanIndisipliner || "-",
-            saran: individualData.metadata.catatan?.s || individualData.metadata.CatatanSaran || "-"
-          }
-        }}
-      />
-    )}
-  </Modal.Body>
-</Modal>
+      {/* Individual Report Modal */}
+      {individualData && (
+        <IndividualReportModal
+          show={showPrintModal}
+          onClose={() => setShowPrintModal(false)}
+          data={individualData}
+        />
+      )}
     </div>
   );
 };
