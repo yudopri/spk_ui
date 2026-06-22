@@ -89,10 +89,9 @@ export default function Layout({
             <div
               className={` ${
                 isLayout == "full"
-                  ? "w-full py-30 md:px-30 px-5"
-                  : "container mx-auto  py-30"
-              } ${activeLayout == "horizontal" ? "xl:mt-3" : ""}
-              `}
+                  ? "w-full py-5 px-3 sm:py-8 sm:px-5 md:py-30 md:px-30"
+                  : "container mx-auto py-5 px-3 sm:py-8 md:py-30"
+              } ${activeLayout == "horizontal" ? "xl:mt-3" : ""}`}
             >
               {children}
             </div>

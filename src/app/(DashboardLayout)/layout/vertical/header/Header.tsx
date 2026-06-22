@@ -64,20 +64,21 @@ const Header = ({ layoutType }: HeaderPropsType) => {
       <header
         className={`top-0 z-[5]  ${
           isSticky
-            ? "bg-white dark:bg-darkgray sticky"
+            ? "bg-white dark:bg-darkgray sticky shadow-sm"
             : "bg-transparent"
         }`}
       >
         <Navbar
           fluid
-          className={`rounded-none bg-transparent dark:bg-transparent py-4 sm:px-[15px] px-2 ${
-            layoutType == "horizontal" ? "container mx-auto !px-6" : ""
+          className={`rounded-none bg-transparent dark:bg-transparent py-3 sm:py-4 sm:px-[15px] px-2 ${
+            layoutType == "horizontal" ? "container mx-auto !px-4 sm:!px-6" : ""
           }  ${isLayout == "full" ? "!max-w-full " : ""}`}
         >
           {/* Mobile Toggle Icon */}
           <span
             onClick={() => setIsMobileSidebar(true)}
-            className="h-10 w-10 flex text-black dark:text-white text-opacity-65 xl:hidden hover:text-primary hover:bg-lightprimary rounded-full justify-center items-center cursor-pointer"
+            className="h-10 w-10 flex text-black dark:text-white text-opacity-65 xl:hidden hover:text-primary hover:bg-lightprimary rounded-full justify-center items-center cursor-pointer touch-target no-select"
+            aria-label="Open menu"
           >
             <Icon icon="solar:hamburger-menu-line-duotone" height={21} />
           </span>
@@ -97,8 +98,24 @@ const Header = ({ layoutType }: HeaderPropsType) => {
           </Navbar.Collapse>
 
           {/* mobile-logo */}
-          <div className="block xl:hidden">
+          <div className="block xl:hidden flex-1 flex justify-center">
             <FullLogo />
+          </div>
+
+          {/* Mobile right side actions */}
+          <div className="flex xl:hidden items-center gap-1">
+            {/* Theme Toggle - Mobile */}
+            <span
+              className="h-10 w-10 flex hover:text-primary hover:bg-lightprimary dark:hover:bg-darkminisidebar dark:hover:text-primary focus:ring-0 rounded-full justify-center items-center cursor-pointer text-darklink dark:text-white touch-target no-select"
+              onClick={toggleMode}
+              aria-label="Toggle theme"
+            >
+              <span className="flex items-center">
+                <Icon icon={activeMode === "light" ? "solar:moon-line-duotone" : "solar:sun-bold-duotone"} width="20" />
+              </span>
+            </span>
+            {/* Profile - Mobile */}
+            <Profile />
           </div>
 
           <Navbar.Collapse className="xl:block hidden">
@@ -139,16 +156,9 @@ const Header = ({ layoutType }: HeaderPropsType) => {
               <Profile />
             </div>
           </Navbar.Collapse>
-          {/* Mobile Toggle Icon */}
-          <span
-            className="h-10 w-10 flex xl:hidden hover:text-primary hover:bg-lightprimary rounded-full justify-center items-center cursor-pointer"
-            onClick={handleMobileMenu}
-          >
-            <Icon icon="tabler:dots" height={21} />
-          </span>
         </Navbar>
         <div
-          className={`w-full  xl:hidden block mobile-header-menu ${mobileMenu}`}
+          className={`w-full xl:hidden hidden mobile-header-menu ${mobileMenu}`}
         >
           {/* <MobileHeaderItems /> */}
         </div>

@@ -428,32 +428,32 @@ const NilaiPerbandingan = () => {
                   </div>
                 )}
 
-                <div className="flex justify-between items-center mt-8 p-6 bg-gray-50 dark:bg-gray-700/30 rounded-xl">
-                    <div className="flex items-center gap-3 text-xs font-bold text-gray-500 uppercase">
-                       <Icon icon="solar:info-circle-bold" className="h-5 w-5 text-blue-500" />
-                       Lakukan simulasi terlebih dahulu untuk melihat bobot.
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mt-6 sm:mt-8 p-4 sm:p-6 bg-gray-50 dark:bg-gray-700/30 rounded-xl">
+                    <div className="flex items-center gap-3 text-xs sm:text-sm font-bold text-gray-500 uppercase">
+                       <Icon icon="solar:info-circle-bold" className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500 shrink-0" />
+                       <span className="leading-tight">Lakukan simulasi terlebih dahulu untuk melihat bobot.</span>
                     </div>
-                    <div className="flex gap-3">
+                    <div className="flex flex-col xs:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
                         <Button 
                           color="info" 
-                          size="lg"
+                          size="sm"
                           onClick={handleSimulate} 
                           disabled={submitting || isLocked}
-                          className="px-8 shadow-lg shadow-info/20 outline-none"
+                          className="w-full xs:w-auto shadow-md outline-none touch-target"
                         >
-                            {submitting ? <Spinner size="sm" /> : <Icon icon="solar:play-bold" className="mr-2 h-5 w-5" />}
-                            Simulasi Hitung
+                            {submitting ? <Spinner size="sm" /> : <Icon icon="solar:play-bold" className="mr-1 sm:mr-2 h-4 w-4 sm:h-5 sm:w-5" />}
+                            <span className="whitespace-nowrap">Simulasi Hitung</span>
                         </Button>
 
                         <Button 
                           color={!isSimulated || (cr !== null && cr > 0.1) ? "gray" : "primary"} 
-                          size="lg"
+                          size="sm"
                           onClick={handleSave} 
                           disabled={submitting || isLocked || !isSimulated || (cr !== null && cr > 0.1)}
-                          className="px-8 shadow-lg shadow-primary/20"
+                          className="w-full xs:w-auto shadow-md shadow-primary/20"
                         >
-                            <Icon icon="solar:diskette-bold" className="mr-2 h-5 w-5" />
-                            {isLocked ? "Terkunci" : `Simpan Bobot`}
+                            <Icon icon="solar:diskette-bold" className="mr-1 sm:mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+                            <span className="whitespace-nowrap">{isLocked ? "Terkunci" : `Simpan Bobot`}</span>
                         </Button>
                     </div>
                 </div>

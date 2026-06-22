@@ -26,16 +26,21 @@ const DataPagination: React.FC<DataPaginationProps> = ({
 
   if (totalItems === 0) return null;
 
+  // Calculate visible range
+  const startItem = (currentPage - 1) * pageSize + 1;
+  const endItem = Math.min(currentPage * pageSize, totalItems);
+
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-4 px-2">
-      <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-400">
-        <span>Menampilkan</span>
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-4 px-2">
+      {/* Items info - compact on mobile */}
+      <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-700 dark:text-gray-400 order-2 sm:order-1">
+        <span className="hidden sm:inline">Menampilkan</span>
         {onPageSizeChange ? (
           <Select
             sizing="sm"
             value={pageSize}
             onChange={(e) => onPageSizeChange(Number(e.target.value))}
-            className="w-20"
+            className="w-16 sm:w-20"
           >
             {pageSizeOptions.map((opt) => (
               <option key={opt} value={opt}>
@@ -46,19 +51,24 @@ const DataPagination: React.FC<DataPaginationProps> = ({
         ) : (
           <span className="font-semibold">{pageSize}</span>
         )}
-        <span>
+        <span className="hidden sm:inline">
           dari <span className="font-semibold">{totalItems}</span> data
+        </span>
+        {/* Mobile: show range */}
+        <span className="sm:hidden">
+          <span className="font-semibold">{startItem}-{endItem}</span> / {totalItems}
         </span>
       </div>
 
-      <div className="flex overflow-x-auto sm:justify-center">
+      {/* Pagination - scrollable on mobile */}
+      <div className="flex overflow-x-auto hide-scrollbar sm:justify-center order-1 sm:order-2 max-w-full">
         <Pagination
           currentPage={currentPage}
           totalPages={totalPages > 0 ? totalPages : 1}
           onPageChange={onPageChange}
           showIcons
-          previousLabel="Kembali"
-          nextLabel="Lanjut"
+          previousLabel=""
+          nextLabel=""
         />
       </div>
     </div>
