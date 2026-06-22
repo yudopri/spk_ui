@@ -96,6 +96,9 @@ export function canSeeMenuItem(role: string | null | undefined, permissions: str
       "/apps/karyawan",
       "/apps/periode-kpi",
       "/apps/data-kpi",
+      "/apps/attribute",
+      "/apps/perbandingan",
+      "/apps/penilaian",
       "/apps/report",
     ];
     return Boolean(path && allowed.some((item) => path.startsWith(item)));
@@ -122,7 +125,7 @@ export function canAccessRoute(pathname: string, role: string | null | undefined
   }
 
   if (isAdminLikeRole(role)) {
-    return ["/apps/divisi", "/apps/karyawan", "/apps/periode-kpi", "/apps/data-kpi", "/apps/report"].some((path) => pathname.startsWith(path));
+    return ["/apps/divisi", "/apps/karyawan", "/apps/periode-kpi", "/apps/data-kpi", "/apps/attribute", "/apps/perbandingan", "/apps/penilaian", "/apps/report"].some((path) => pathname.startsWith(path));
   }
 
   if (isKaryawanRole(role)) {
@@ -140,6 +143,7 @@ export function canAccessRoute(pathname: string, role: string | null | undefined
     { prefix: "/apps/divisi", anyOf: ["divisi_view", "department_view"] },
     { prefix: "/apps/periode-kpi", anyOf: ["periode_view", "periode_manage"] },
     { prefix: "/apps/data-kpi", anyOf: ["kpi_view", "kpi_manage", "spk_calculate"] },
+    { prefix: "/apps/attribute", anyOf: ["kpi_manage"] },
     { prefix: "/apps/perbandingan", anyOf: ["kpi_manage", "spk_view", "spk_manage", "spk_calculate"] },
     { prefix: "/apps/penilaian", anyOf: ["score_view", "score_input", "spk_view", "spk_manage"] },
     { prefix: "/apps/report", anyOf: ["report_view", "report_personal", "spk_view", "spk_calculate"] },

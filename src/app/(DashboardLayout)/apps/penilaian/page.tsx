@@ -48,7 +48,7 @@ const PenilaianKaryawan = () => {
     [periodes, selectedPeriodeId]
   );
 
-  const isLocked = selectedPeriode?.Status === 'Final';
+  const isLocked = selectedPeriode?.Status === 'locked';
 
   const filteredPeriodes = useMemo(() => {
     if (selectedDeptId === "all") return periodes;
@@ -68,7 +68,7 @@ const PenilaianKaryawan = () => {
       setDepartments(divisiRes.data);
       setWorkLocations(locationRes.data || []);
 
-      const firstActive = periodeRes.data.find(p => p.Status !== 'Final' && (p as any).isAktif) || periodeRes.data[0];
+      const firstActive = periodeRes.data.find(p => p.Status !== 'locked' && (p as any).isAktif) || periodeRes.data[0];
       if (firstActive) {
         setSelectedPeriodeId(firstActive.Id || firstActive.id);
       }
@@ -162,7 +162,7 @@ const PenilaianKaryawan = () => {
             KaryawanId: emp.id,
             KpiId: kpi.Id || (kpi as any).id,
             PeriodeId: selectedPeriodeId,
-            Nilai: raw === "" || raw === undefined ? 0 : Number(raw),
+            Realisasi: raw === "" || raw === undefined ? 0 : Number(raw),
           });
         }
       }
@@ -172,7 +172,7 @@ const PenilaianKaryawan = () => {
         return;
       }
 
-      const res = await spkService.saveMooraPenilaian(payload as any);
+      const res = await spkService.saveMooraRealisasi(payload as any);
       
       // Hitung otomatis MOORA setelah simpan penilaian
       await spkService.calculateMoora(selectedPeriodeId);
@@ -194,7 +194,7 @@ const PenilaianKaryawan = () => {
             { step: 1, label: "Master KPI", icon: "solar:settings-bold" },
             { step: 2, label: "Bandingkan Grup", icon: "solar:folder-2-bold" },
             { step: 3, label: "Bandingkan KPI", icon: "solar:documents-bold" },
-            { step: 4, label: "Input Nilai", icon: "solar:pen-new-square-bold" },
+            { step: 4, label: "Input Realisasi", icon: "solar:pen-new-square-bold" },
             { step: 5, label: "Hasil & Review", icon: "solar:chart-square-bold" }
           ].map((s, idx) => {
             const isCurrent = s.step === 4;
@@ -267,7 +267,7 @@ const PenilaianKaryawan = () => {
               }}
               options={filteredPeriodes.map(p => ({ 
                 value: p.Id || p.id, 
-                label: `${p.NamaPeriode || p.namaPeriode} - ${p.NamaDivisi || p.divisi?.namaDivisi || "Divisi"}${p.Status === 'Final' ? ' (Final)' : ''}`
+                label: `${p.NamaPeriode || p.namaPeriode} - ${p.NamaDivisi || p.divisi?.namaDivisi || "Divisi"}${p.Status ? ` (${p.Status})` : ''}`
               }))}
               placeholder="Pilih Periode"
               className="w-full md:w-56"
@@ -280,7 +280,7 @@ const PenilaianKaryawan = () => {
                 className="w-full md:w-auto"
               >
                  <Icon icon="solar:diskette-bold-duotone" className="mr-2 h-5 w-5" />
-                 {submitting ? "Menyimpan..." : isLocked ? "Terkunci (Final)" : "Simpan Halaman Ini"}
+                 {submitting ? "Menyimpan..." : isLocked ? "Terkunci" : "Simpan Realisasi"}
               </Button>
             )}
         </div>
@@ -322,7 +322,7 @@ const PenilaianKaryawan = () => {
                         <Table.HeadCell key={kpi.Id || kpi.id} className="text-center py-5">
                            <div className="flex flex-col items-center gap-1">
                               <span className="text-gray-700 font-black uppercase text-[10px] tracking-widest">{kpi.NamaKpi}</span>
-                              <Badge color="gray" size="xs" className="font-normal">{kpi.nama_satuan || kpi.simbol || 'Nilai'}</Badge>
+                              <Badge color="gray" size="xs" className="font-normal">{kpi.Attribute || kpi.nama_satuan || kpi.simbol || 'Satuan'}</Badge>
                            </div>
                         </Table.HeadCell>
                       ))}
@@ -351,7 +351,7 @@ const PenilaianKaryawan = () => {
                                     type="number"
                                     className="w-28 text-center"
                                     placeholder="0"
-                                    rightIcon={() => <span className="text-[10px] font-bold text-gray-400 mr-2">{kpi.simbol || ''}</span>}
+                                    rightIcon={() => <span className="text-[10px] font-bold text-gray-400 mr-2">{kpi.Attribute || kpi.simbol || ''}</span>}
                                     value={scores[key] ?? ""}
                                     onChange={(e) => setScores({...scores, [key]: e.target.value})}
                                     disabled={isLocked}
@@ -393,7 +393,7 @@ const PenilaianKaryawan = () => {
                                 <div className="flex flex-col items-center gap-1">
                                   <span>{k.NamaKpi}</span>
                                   <Badge color="gray" size="xs" className="font-normal italic">
-                                    {k.nama_satuan || k.simbol || 'Nilai'}
+                                    {k.Attribute || k.nama_satuan || k.simbol || 'Satuan'}
                                   </Badge>
                                 </div>
                               </Table.HeadCell>
@@ -423,10 +423,10 @@ const PenilaianKaryawan = () => {
                                           type="number"
                                           className="w-28 text-center"
                                           placeholder="0"
-                                          rightIcon={() => <span className="text-[9px] font-black text-gray-400 mr-2">{k.simbol || ''}</span>}
+                                          rightIcon={() => <span className="text-[9px] font-black text-gray-400 mr-2">{k.Attribute || k.simbol || ''}</span>}
                                           value={scores[key] ?? ""}
                                           onChange={(e) => setScores({...scores, [key]: e.target.value})}
-                                          disabled={selectedPeriode?.Status === 'Final'}
+                                          disabled={selectedPeriode?.Status === 'locked'}
                                         />
                                       </div>
                                     </Table.Cell>

@@ -31,7 +31,7 @@ const NilaiPerbandingan = () => {
         const res = await periodeService.getAll(1, 100);
         // Show all periods but prefer active one as default
         setPeriodes(res.data);
-        const firstActive = res.data.find((p: Periode) => (p as any).isAktif && p.Status !== 'Final') || res.data[0];
+        const firstActive = res.data.find((p: Periode) => (p as any).isAktif && p.Status !== 'locked') || res.data[0];
         if (firstActive) setSelectedPeriodeId(firstActive.Id || firstActive.id);
       } catch (err: any) {
         setError("Gagal mengambil data periode");
@@ -43,7 +43,7 @@ const NilaiPerbandingan = () => {
   }, []);
 
   const selectedPeriode = periodes.find(p => Number(p.Id || p.id) === Number(selectedPeriodeId));
-  const isLocked = selectedPeriode?.Status === 'Final';
+  const isLocked = selectedPeriode?.Status === 'locked';
 
   useEffect(() => {
     const fetchGroups = async () => {
@@ -164,7 +164,7 @@ const NilaiPerbandingan = () => {
           setIsSimulated(true);
 
           if (resCalc.data.cr >= 0.1) {
-            setError(`Input Tidak Konsisten (CR = ${resCalc.data.cr.toFixed(4)}). Silakan perbaiki nilai perbandingan.`);
+        setError(`Input tidak konsisten. CR = ${resCalc.data.cr.toFixed(4)}. Perbaiki pairwise comparison sebelum menyimpan.`);
           } else {
             setSuccess("Matriks berhasil dihitung. Silakan tinjau bobot di bawah ini.");
           }
@@ -204,7 +204,7 @@ const NilaiPerbandingan = () => {
             { step: 1, label: "Master KPI", icon: "solar:settings-bold" },
             { step: 2, label: "Bandingkan Grup", icon: "solar:folder-2-bold" },
             { step: 3, label: "Bandingkan KPI", icon: "solar:documents-bold" },
-            { step: 4, label: "Input Nilai", icon: "solar:pen-new-square-bold" },
+            { step: 4, label: "Input Realisasi", icon: "solar:pen-new-square-bold" },
             { step: 5, label: "Hasil & Review", icon: "solar:chart-square-bold" }
           ].map((s, idx) => {
             const isCurrent = (selectedGroupId === 0 && s.step === 2) || (selectedGroupId !== 0 && s.step === 3);
@@ -229,16 +229,16 @@ const NilaiPerbandingan = () => {
 
       <div className="flex flex-col md:flex-row justify-between items-center bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm gap-4">
         <div>
-           <h1 className="text-2xl font-bold">Matriks AHP Berjenjang</h1>
-           <p className="text-sm text-gray-500">Bandingkan prioritas kriteria tiap tingkatan hierarki</p>
+           <h1 className="text-2xl font-bold">AHP Pairwise Comparison</h1>
+           <p className="text-sm text-gray-500">Bandingkan prioritas antar KPI sebelum bobot dipakai ke MOORA</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Select sizing="sm" value={selectedPeriodeId} onChange={(e) => setSelectedPeriodeId(Number(e.target.value))}>
             {periodes.map(p => <option key={p.Id} value={p.Id}>{p.NamaPeriode}</option>)}
           </Select>
           <Select sizing="sm" value={selectedGroupId} onChange={(e) => setSelectedGroupId(Number(e.target.value))}>
-            <option value={0}>Mode Grosir (Group Level 1)</option>
-            {groups.map(g => <option key={g.Id} value={g.Id}>Detail: {g.NamaGroup} (Level 2)</option>)}
+            <option value={0}>Level Grup KPI</option>
+            {groups.map(g => <option key={g.Id} value={g.Id}>Detail KPI: {g.NamaGroup}</option>)}
           </Select>
         </div>
       </div>
@@ -270,7 +270,7 @@ const NilaiPerbandingan = () => {
           </div>
           {cr > 0.1 && (
             <div className="text-[10px] font-bold italic opacity-70 max-w-[200px] text-right">
-              * Nilai CR harus ≤ 0.1 untuk memastikan logika perbandingan logis.
+              <span className="italic">Nilai CR harus {"<= 0.1"} agar perbandingan dinilai konsisten.</span>
             </div>
           )}
         </div>
@@ -343,7 +343,7 @@ const NilaiPerbandingan = () => {
                       <div className="bg-primary p-2 rounded-lg">
                         <Icon icon="solar:chart-square-bold" className="text-white h-5 w-5" />
                       </div>
-                      <h3 className="font-black text-gray-900 dark:text-white uppercase tracking-tight">Hasil Perhitungan Bobot Prioritas</h3>
+                      <h3 className="font-black text-gray-900 dark:text-white uppercase tracking-tight">Hasil Bobot AHP</h3>
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -395,7 +395,7 @@ const NilaiPerbandingan = () => {
                           className="px-8 shadow-lg shadow-primary/20"
                         >
                             <Icon icon="solar:diskette-bold" className="mr-2 h-5 w-5" />
-                            {isLocked ? "Terkunci (Final)" : `Simpan Permanen`}
+                            {isLocked ? "Terkunci" : `Simpan Bobot`}
                         </Button>
                     </div>
                 </div>

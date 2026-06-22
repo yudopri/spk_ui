@@ -62,10 +62,10 @@ const PeriodeKPI = () => {
       cellClasses: "text-center",
       render: (item: Periode) => (
         <Badge 
-          color={item.Status === 'Final' ? "dark" : item.isAktif ? "info" : "failure"} 
-          className={`w-fit mx-auto px-3 py-1 font-black uppercase tracking-tighter ${item.Status === 'Final' ? 'bg-gray-800 text-gray-200 border-2 border-gray-600' : ''}`}
+          color={item.Status === 'locked' ? "dark" : item.Status === 'open' ? "info" : item.Status === 'processed' ? "success" : "gray"} 
+          className={`w-fit mx-auto px-3 py-1 font-black uppercase tracking-tighter ${item.Status === 'locked' ? 'bg-gray-800 text-gray-200 border-2 border-gray-600' : ''}`}
         >
-          {item.Status === 'Final' ? 'TERKUNCI / FINALIZED' : item.isAktif ? "Aktif / Open" : "Non-Aktif / Closed"}
+          {String(item.Status || 'draft').toUpperCase()}
         </Badge>
       )
     },
@@ -81,9 +81,9 @@ const PeriodeKPI = () => {
                 size="xs" 
                 className="hover:bg-primary/10"
                 onClick={() => window.location.href=`/apps/data-kpi?periodeId=${item.Id}`}
-                disabled={item.Status === 'Final'}
-            >
-              <Icon icon="solar:filters-bold" className={`h-4 w-4 ${item.Status === 'Final' ? 'text-gray-400' : 'text-primary'}`} />
+                disabled={item.Status === 'locked'}
+              >
+              <Icon icon="solar:filters-bold" className={`h-4 w-4 ${item.Status === 'locked' ? 'text-gray-400' : 'text-primary'}`} />
             </Button>
           </Tooltip>
           <Tooltip content="Input Nilai Karyawan">
@@ -92,9 +92,9 @@ const PeriodeKPI = () => {
                 size="xs" 
                 className="hover:bg-success/10"
                 onClick={() => window.location.href=`/apps/penilaian?periodeId=${item.Id}`}
-                disabled={item.Status === 'Final'}
-            >
-              <Icon icon="solar:user-hand-up-bold" className={`h-4 w-4 ${item.Status === 'Final' ? 'text-gray-400' : 'text-green-600'}`} />
+                disabled={item.Status === 'locked'}
+              >
+              <Icon icon="solar:user-hand-up-bold" className={`h-4 w-4 ${item.Status === 'locked' ? 'text-gray-400' : 'text-green-600'}`} />
             </Button>
           </Tooltip>
           <Tooltip content="Hasil & Finalisasi">
@@ -110,24 +110,24 @@ const PeriodeKPI = () => {
           <div className="w-px h-6 bg-gray-200 mx-1" />
           {!isReadOnly && (
             <>
-              <Tooltip content={item.Status === 'Final' ? "Terkunci (Final)" : "Edit Periode"}>
+              <Tooltip content={item.Status === 'locked' ? "Terkunci" : "Edit Periode"}>
                 <Button 
                   color="light" 
                   size="xs" 
                   onClick={() => handleAction("edit", item)}
-                  disabled={item.Status === 'Final'}
-                  className={item.Status === 'Final' ? 'opacity-50 cursor-not-allowed' : ''}
+                  disabled={item.Status === 'locked'}
+                  className={item.Status === 'locked' ? 'opacity-50 cursor-not-allowed' : ''}
                 >
                   <Icon icon="solar:pen-new-square-linear" className="h-4 w-4" />
                 </Button>
               </Tooltip>
-              <Tooltip content={item.Status === 'Final' ? "Terkunci (Final)" : "Hapus"}>
+              <Tooltip content={item.Status === 'locked' ? "Terkunci" : "Hapus"}>
                 <Button 
                   color="light" 
                   size="xs" 
                   onClick={() => handleDelete(item.Id ?? item.id ?? 0)}
-                  disabled={item.Status === 'Final'}
-                  className={item.Status === 'Final' ? 'opacity-50 cursor-not-allowed' : ''}
+                  disabled={item.Status === 'locked'}
+                  className={item.Status === 'locked' ? 'opacity-50 cursor-not-allowed' : ''}
                 >
                   <Icon icon="solar:trash-bin-trash-linear" className="h-4 w-4 text-red-500" />
                 </Button>
@@ -168,7 +168,7 @@ const PeriodeKPI = () => {
       setSelectedItem({
         Id: 0,
         NamaPeriode: "",
-        Status: "Aktif",
+        Status: "draft",
         TanggalMulai: now,
         TanggalSelesai: now,
         namaPeriode: "",
@@ -200,7 +200,7 @@ const PeriodeKPI = () => {
       const namaPeriode = payload.namaPeriode || payload.NamaPeriode || "";
       const tanggalMulaiRaw = payload.tanggalMulai || payload.TanggalMulai || "";
       const tanggalSelesaiRaw = payload.tanggalSelesai || payload.TanggalSelesai || "";
-      const status = payload.Status || (payload.isAktif ? "Aktif" : "Nonaktif");
+      const status = String(payload.Status || payload.status || "draft").toLowerCase();
 
       const body = {
         ...payload,
@@ -287,21 +287,21 @@ const PeriodeKPI = () => {
 
       {/* Modal Create/Edit/Detail */}
       <Modal show={openModal} onClose={() => setOpenModal(false)} size="lg">
-        <Modal.Header className={`${selectedItem?.Status === 'Final' ? 'bg-gray-100' : ''}`}>
+        <Modal.Header className={`${selectedItem?.Status === 'locked' ? 'bg-gray-100' : ''}`}>
           <div className="flex items-center gap-2">
             {modalMode === "create" ? "Tambah Periode Baru" : modalMode === "edit" ? "Modifikasi Periode" : "Rincian Periode"}
-            {selectedItem?.Status === 'Final' && (
-              <Badge color="dark" className="ml-2 font-black uppercase text-[10px] tracking-widest border border-gray-400">TERKUNCI / FINALIZED</Badge>
+            {selectedItem?.Status === 'locked' && (
+              <Badge color="dark" className="ml-2 font-black uppercase text-[10px] tracking-widest border border-gray-400">LOCKED</Badge>
             )}
           </div>
         </Modal.Header>
         <Modal.Body className="max-h-[80vh] overflow-y-auto">
-          {selectedItem?.Status === 'Final' && (
+          {selectedItem?.Status === 'locked' && (
             <Alert color="dark" className="mb-4 border-2 border-gray-300" icon={() => <Icon icon="solar:lock-bold" className="h-5 w-5" />}>
-              <span className="font-black uppercase text-xs">Informasi:</span> Data periode ini telah difinalisasi dan berada dalam mode <b>Baca-Saja (Read-Only)</b>. Seluruh perubahan telah dikunci secara permanen.
+              <span className="font-black uppercase text-xs">Informasi:</span> Periode ini terkunci dan seluruh data terkait tidak bisa diubah.
             </Alert>
           )}
-          <div className={`space-y-4 ${selectedItem?.Status === 'Final' ? 'opacity-70 grayscale-[0.5]' : ''}`}>
+          <div className={`space-y-4 ${selectedItem?.Status === 'locked' ? 'opacity-70 grayscale-[0.5]' : ''}`}>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="namaPeriode" value="Nama Periode" className="text-[10px] font-black uppercase text-gray-500" />
@@ -310,7 +310,7 @@ const PeriodeKPI = () => {
                   className="font-bold"
                   value={selectedItem?.namaPeriode ?? selectedItem?.NamaPeriode ?? ""}
                   onChange={(e) => setSelectedItem({ ...selectedItem!, namaPeriode: e.target.value, NamaPeriode: e.target.value })}
-                  disabled={modalMode === "detail" || selectedItem?.Status === 'Final'}
+                  disabled={modalMode === "detail" || selectedItem?.Status === 'locked'}
                 />
               </div>
               <div>
@@ -327,7 +327,7 @@ const PeriodeKPI = () => {
                       : selectedItem.tahun
                   }
                   onChange={(e) => setSelectedItem({ ...selectedItem!, tahun: e.target.value === "" ? null : Number(e.target.value) })}
-                  disabled={modalMode === "detail" || selectedItem?.Status === 'Final'}
+                  disabled={modalMode === "detail" || selectedItem?.Status === 'locked'}
                 />
               </div>
             </div>
@@ -341,7 +341,7 @@ const PeriodeKPI = () => {
                   const val = e.target.value === "all" ? null : (e.target.value === "0" ? 0 : Number(e.target.value));
                   setSelectedItem({ ...selectedItem!, divisiId: val, DivisiId: val });
                 }}
-                disabled={modalMode === "detail" || selectedItem?.Status === 'Final'}
+                disabled={modalMode === "detail" || selectedItem?.Status === 'locked'}
               >
                 <option value={0}>Pilih Divisi</option>
                 <option value="all">Semua Divisi (Lintas Divisi)</option>
@@ -361,7 +361,7 @@ const PeriodeKPI = () => {
                       ? selectedItem.TanggalMulai.split('T')[0]
                       : ""}
                   onChange={(e) => setSelectedItem({ ...selectedItem!, tanggalMulai: e.target.value, TanggalMulai: e.target.value })}
-                  disabled={modalMode === "detail" || selectedItem?.Status === 'Final'}
+                  disabled={modalMode === "detail" || selectedItem?.Status === 'locked'}
                 />
               </div>
               <div>
@@ -374,7 +374,7 @@ const PeriodeKPI = () => {
                       ? selectedItem.TanggalSelesai.split('T')[0]
                       : ""}
                   onChange={(e) => setSelectedItem({ ...selectedItem!, tanggalSelesai: e.target.value, TanggalSelesai: e.target.value })}
-                  disabled={modalMode === "detail" || selectedItem?.Status === 'Final'}
+                  disabled={modalMode === "detail" || selectedItem?.Status === 'locked'}
                 />
               </div>
             </div>
@@ -384,7 +384,7 @@ const PeriodeKPI = () => {
           <Button color="gray" onClick={() => setOpenModal(false)} size="sm" className="font-bold uppercase text-[10px]">
             Tutup
           </Button>
-          {(modalMode !== "detail" && !isReadOnly && selectedItem?.Status !== 'Final') && (
+          {(modalMode !== "detail" && !isReadOnly && selectedItem?.Status !== 'locked') && (
             <Button color="primary" onClick={handleSubmit} disabled={btnLoading} size="sm" className="px-6 shadow-lg shadow-primary/20">
               {btnLoading ? <Spinner size="sm" className="mr-2" /> : <Icon icon="solar:diskette-bold" className="mr-2 h-4 w-4" />}
               <span className="font-black uppercase text-[10px] tracking-widest">Simpan Perubahan</span>

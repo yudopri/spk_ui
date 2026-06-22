@@ -31,10 +31,10 @@ const DataFilter: React.FC<DataFilterProps> = ({
           <Label value={label} />
         </div>
       )}
-      <Select value={value} onChange={(e) => onChange(e.target.value)} sizing="md">
+      <Select value={String(value ?? "")} onChange={(e) => onChange(e.target.value)} sizing="md">
         <option value="">{placeholder}</option>
-        {options.map((opt, idx) => (
-          <option key={idx} value={opt.value}>
+        {options.map((opt) => (
+          <option key={String(opt.value)} value={opt.value}>
             {opt.label}
           </option>
         ))}

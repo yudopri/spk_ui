@@ -18,14 +18,17 @@ export interface KPI {
   NamaKpi: string;
   Tipe: 'Benefit' | 'Cost';
   PeriodeId: number;
+  Target?: number;
   GroupId?: number;
   AttributeId?: number;
   attributeId?: number;
   id_satuan?: number;
   nama_satuan?: string;
+  Attribute?: string;
   BobotAhp?: number | null;
   Bobot: number;
   Deskripsi?: string;
+  IsActive?: boolean;
   bobot?: number;
   deskripsi?: string;
   periodeId?: number;
@@ -63,17 +66,20 @@ const normalizeKpi = (item: any): KPI => {
     IsBenefit: tipe === 'Benefit',
     PeriodeId: Number(item.PeriodeId ?? item.periodeId ?? 0),
     periodeId: Number(item.periodeId ?? item.PeriodeId ?? 0),
+    Target: Number(item.Target ?? item.target ?? 0),
     GroupId: Number(item.GroupId ?? item.groupId ?? item.group_id ?? 0),
     AttributeId: Number(item.AttributeId ?? item.attributeId ?? item.id_satuan ?? 0),
     attributeId: Number(item.attributeId ?? item.AttributeId ?? item.id_satuan ?? 0),
     id_satuan: Number(item.id_satuan ?? item.attributeId ?? item.AttributeId ?? 0),
     nama_satuan: item.nama_satuan ?? item.namaSatuan ?? item.Satuan ?? '',
     Satuan: item.nama_satuan ?? item.namaSatuan ?? item.Satuan ?? '',
+    Attribute: item.Attribute ?? item.attribute ?? item.nama_satuan ?? item.simbol ?? '',
     BobotAhp: item.BobotAhp ?? item.bobotAhp ?? null,
     Bobot: item.Bobot ?? item.bobot ?? 1,
     bobot: item.bobot ?? item.Bobot ?? item.BobotAhp ?? 0,
     Deskripsi: item.Deskripsi ?? item.deskripsi ?? '',
     deskripsi: item.deskripsi ?? item.Deskripsi ?? '',
+    IsActive: Boolean(item.IsActive ?? item.isActive ?? item.is_active ?? true),
     simbol: item.simbol ?? '',
     GrupKpi: {
       idGrup: Number(item.GrupKpi?.idGrup ?? item.group_id ?? item.GroupId ?? item.group?.id ?? 0),
@@ -154,9 +160,12 @@ const kpiService = {
       NamaKpi: data.NamaKpi ?? data.namaKpi,
       Tipe: data.Tipe ?? data.tipe ?? 'Benefit',
       PeriodeId: Number(data.PeriodeId ?? data.periodeId),
+      Target: Number((data as any).Target ?? (data as any).target ?? 0),
       group_id: Number(data.group_id ?? data.GroupId ?? 0) || null,
       Deskripsi: data.Deskripsi ?? '',
       attributeId: data.attributeId ?? data.id_satuan ?? null,
+      Attribute: (data as any).Attribute ?? (data as any).attribute ?? data.nama_satuan ?? data.simbol ?? '',
+      IsActive: Boolean((data as any).IsActive ?? (data as any).isActive ?? true),
       BobotAhp: Number(data.BobotAhp ?? data.bobot ?? 0),
     });
     return response.data;
@@ -170,9 +179,12 @@ const kpiService = {
       NamaKpi: data.NamaKpi ?? data.namaKpi,
       Tipe: data.Tipe ?? data.tipe,
       PeriodeId: Number(data.PeriodeId ?? data.periodeId),
+      Target: Number((data as any).Target ?? (data as any).target ?? 0),
       group_id: Number(data.GroupId ?? (data as any).group_id ?? 0) || null,
       Deskripsi: data.Deskripsi  ?? '',
       attributeId: data.attributeId ?? data.id_satuan ?? data.AttributeId ?? null,
+      Attribute: (data as any).Attribute ?? (data as any).attribute ?? data.nama_satuan ?? data.simbol ?? '',
+      IsActive: Boolean((data as any).IsActive ?? (data as any).isActive ?? true),
       BobotAhp: Number(data.BobotAhp ?? data.bobot ?? data.Bobot ?? 0),
     });
     return response.data;

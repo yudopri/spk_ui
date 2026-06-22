@@ -41,7 +41,7 @@ const ReportHasil = () => {
   const [totalReports, setTotalReports] = useState(0);
   const [search, setSearch] = useState("");
 
-  const isFinal = selectedPeriode?.Status === 'Final';
+  const isFinal = selectedPeriode?.Status === 'locked';
 
   // Individual Report State
   const [showPrintModal, setShowPrintModal] = useState(false);
@@ -88,8 +88,6 @@ const ReportHasil = () => {
       cellClasses: "text-center font-black text-primary text-xl tabular-nums",
       render: (item: SpkReport) => {
         const val = item.nilai_akhir || item.totalScore || item.NilaiSkala || 0;
-        // Jika nilai < 1, asumsikan ini bobot mentah dan perlu di-format ke 0-100 (jika backend belum melakukan)
-        // Namun karena instruksi "gaboleh ada perhitungan", kita hanya melakukan formatting tampilan
         return val < 1 && val > 0 ? (val * 100).toFixed(0) : Math.round(val);
       }
     },
@@ -97,7 +95,7 @@ const ReportHasil = () => {
       header: "Status",
       headerClasses: "text-center",
       cellClasses: "text-center",
-      render: (item: SpkReport) => getStatusBadge(isFinal ? "Final" : (item.status || item.Status)),
+      render: (item: SpkReport) => getStatusBadge(isFinal ? "locked" : (item.status || item.Status)),
     },
     {
       header: "Catatan",
@@ -167,16 +165,16 @@ const ReportHasil = () => {
               <span className="ml-1">Review</span>
             </Button>
           )}
-          <Button color="light" size="xs" pill onClick={() => handleFetchIndividual(item.id || item.Karyawan?.id ?? item.Karyawan?.Id ?? 0)}>
-            {printingId === (item.id || item.Karyawan?.id ?? item.Karyawan?.Id ?? 0) ? <Spinner size="xs" /> : <Icon icon="solar:eye-bold" className="h-4 w-4" />}
+          <Button color="light" size="xs" pill onClick={() => handleFetchIndividual(getReportRowId(item))}>
+            {printingId === getReportRowId(item) ? <Spinner size="xs" /> : <Icon icon="solar:eye-bold" className="h-4 w-4" />}
             <span className="ml-1">Preview</span>
           </Button>
           <Button 
             color="dark" 
             size="xs" 
             pill 
-            disabled={!isFinal || (printingId === (item.id || item.Karyawan?.id ?? item.Karyawan?.Id ?? 0))}
-            onClick={() => handlePrintPdf(item.id || item.Karyawan?.id ?? item.Karyawan?.Id ?? 0)}
+            disabled={!isFinal || (printingId === getReportRowId(item))}
+            onClick={() => handlePrintPdf(getReportRowId(item))}
           >
             <Icon icon="solar:printer-bold" className="h-4 w-4" />
             <span className="ml-1">PDF</span>
@@ -185,6 +183,8 @@ const ReportHasil = () => {
       ),
     },
   ];
+
+  const getReportRowId = (item: SpkReport) => Number(item.id || item.Id || item.Karyawan?.id || item.Karyawan?.Id || 0);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -220,7 +220,7 @@ const ReportHasil = () => {
         const rawReports = res.data || [];
         setTotalReports(res.meta?.total || (res as any).totalCount || 0);
         
-        const isManagerUI_Local = isManagerRole(localStorage.getItem('userRole'));
+          const isManagerUI_Local = isManagerRole(localStorage.getItem('userRole'));
         const scoped = rawReports.filter((item: SpkReport) => {
           if (isKaryawan) {
             const employeeId = Number((item.id || item.Karyawan?.Id) ?? 0);
@@ -324,10 +324,10 @@ const ReportHasil = () => {
     }
   };
 
-  const handleUpdateStatus = async (status: 'Final' | 'Draft') => {
+  const handleUpdateStatus = async (status: 'locked' | 'draft') => {
     if (!selectedPeriodeId) return;
     if (!confirm(`Apakah Anda yakin ingin mengubah status periode ini menjadi ${status}?` + 
-      (status === 'Final' ? '\n\nStatus Final akan membubuhkan tanda tangan digital Anda pada semua laporan.' : ''))) return;
+      (status === 'locked' ? '\n\nSnapshot akan dikunci untuk periode ini.' : ''))) return;
 
     try {
       setUpdating(true);
@@ -461,7 +461,7 @@ const ReportHasil = () => {
             { step: 1, label: "Master KPI", icon: "solar:settings-bold" },
             { step: 2, label: "Bandingkan Grup", icon: "solar:folder-2-bold" },
             { step: 3, label: "Bandingkan KPI", icon: "solar:documents-bold" },
-            { step: 4, label: "Input Nilai", icon: "solar:pen-new-square-bold" },
+            { step: 4, label: "Input Realisasi", icon: "solar:pen-new-square-bold" },
             { step: 5, label: "Hasil & Review", icon: "solar:chart-square-bold" }
           ].map((s, idx) => {
             const isCurrent = s.step === 5;
@@ -486,8 +486,8 @@ const ReportHasil = () => {
 
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Laporan Hasil Penilaian</h1>
-          <p className="text-sm text-gray-500">Hasil Ranking Kinerja Karyawan</p>
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Ranking Karyawan</h1>
+          <p className="text-sm text-gray-500">Snapshot hasil per periode, bukan hanya hasil terbaru</p>
         </div>
         <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
              <DataSearch 
@@ -526,23 +526,23 @@ const ReportHasil = () => {
                   <Button 
                     color="success" 
                     size="sm" 
-                    onClick={() => handleUpdateStatus('Final')} 
+                    onClick={() => handleUpdateStatus('locked')} 
                     disabled={updating || !isManagerUI || !allReviewed}
-                    title={!isManagerUI ? "Hanya Manager yang dapat melakukan finalisasi" : !allReviewed ? "Semua karyawan harus direview secara individual terlebih dahulu" : ""}
+                    title={!isManagerUI ? "Hanya Manager yang dapat mengunci snapshot" : !allReviewed ? "Semua karyawan harus direview terlebih dahulu" : ""}
                   >
                     {updating ? <Spinner size="sm" /> : <Icon icon="solar:check-read-linear" className="mr-2 h-4 w-4" />}
-                    Finalkan Laporan
+                    Locked Snapshot
                   </Button>
                 )}
                 {isFinal && isManagerUI && (
                   <Button 
                     color="warning" 
                     size="sm" 
-                    onClick={() => handleUpdateStatus('Draft')} 
+                    onClick={() => handleUpdateStatus('draft')} 
                     disabled={updating}
                   >
                     {updating ? <Spinner size="sm" /> : <Icon icon="solar:undo-left-round-linear" className="mr-2 h-4 w-4" />}
-                    Kembalikan ke Draft
+                    Buka Kembali
                   </Button>
                 )}
                 <Button color="dark" size="sm" className="flex items-center" onClick={handleExportSummary} disabled={Boolean(canExport)}>
@@ -556,7 +556,7 @@ const ReportHasil = () => {
       {!isFinal && !loading && (
         <Alert color="warning" className="mb-4" icon={() => <Icon icon="solar:info-circle-bold" className="h-5 w-5" />}>
           Laporan ini masih berstatus <b>DRAFT</b>. 
-          {isManagerUI ? " Silakan klik 'Finalkan Laporan' untuk memberikan persetujuan." : " Menunggu persetujuan dari Manager untuk status Final."}
+          {isManagerUI ? " Silakan lock snapshot setelah review selesai." : " Menunggu persetujuan Manager."}
         </Alert>
       )}
 
@@ -566,8 +566,8 @@ const ReportHasil = () => {
         <div className="col-span-12 lg:col-span-8">
            <CardBox>
               <div className="flex justify-between items-center mb-6">
-                  <h4 className="text-lg font-bold text-gray-800 dark:text-white">Visualisasi Ranking Karyawan</h4>
-                  <Badge color="info">Skor Skala</Badge>
+                <h4 className="text-lg font-bold text-gray-800 dark:text-white">Visualisasi Ranking Karyawan</h4>
+                  <Badge color="info">Yi / Skor Akhir</Badge>
               </div>
               {loading ? (
                 <div className="flex justify-center p-20"><Spinner size="xl" /></div>
@@ -615,7 +615,7 @@ const ReportHasil = () => {
         
         <div className="col-span-12">
           <CardBox>
-            <h4 className="text-lg font-bold mb-4 text-gray-800 dark:text-white">Detail Nilai</h4>
+          <h4 className="text-lg font-bold mb-4 text-gray-800 dark:text-white">Detail Snapshot</h4>
             
             <DataTable
               loading={loading}

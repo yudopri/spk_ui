@@ -65,7 +65,7 @@ const SidebarContent: MenuItem[] = [
             permission: "periode_manage",
           },
           {
-            name: "Attribute KPI",
+            name: "Attribute / Satuan",
             icon: "solar:tag-horizontal-line-duotone",
             id: uniqueId(),
             url: "/apps/attribute",
@@ -92,27 +92,22 @@ const SidebarContent: MenuItem[] = [
         permission: "kpi_manage",
         children: [
           {
-            name: "Nilai Perbandingan",
+            name: "AHP Pairwise Comparison",
             icon: "solar:transfer-horizontal-linear",
             id: uniqueId(),
             url: "/apps/perbandingan",
             permission: "kpi_manage",
           },
           {
-            name: "Penilaian Karyawan",
+            name: "Input Penilaian",
             icon: "solar:star-line-duotone",
             id: uniqueId(),
             url: "/apps/penilaian",
             permission: "score_input",
           },
-        ],
-      },
-      {
-        heading: "Laporan",
-        children: [
           {
-            name: "Report Hasil",
-            icon: "solar:printer-minimalistic-linear",
+            name: "Ranking Karyawan",
+            icon: "solar:chart-square-bold-duotone",
             id: uniqueId(),
             url: "/apps/report",
             permission: "report_view",

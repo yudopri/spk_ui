@@ -51,9 +51,9 @@ const DataKPI = () => {
       )
     },
     {
-      header: "Bobot",
+      header: "Target",
       render: (item: KPI) => (
-        <Badge color="info">{(item.Bobot * 100).toFixed(0)}%</Badge>
+        <Badge color="info">{Number(item.Target ?? 0).toLocaleString("id-ID")}</Badge>
       )
     },
     {
@@ -61,6 +61,20 @@ const DataKPI = () => {
       render: (item: KPI) => (
         <Badge color={item.IsBenefit ? "success" : "warning"}>
           {item.IsBenefit ? "Benefit" : "Cost"}
+        </Badge>
+      )
+    },
+    {
+      header: "Attribute",
+      render: (item: KPI) => (
+        <span className="text-sm text-gray-600 dark:text-gray-300">{item.Attribute || item.nama_satuan || item.Satuan || "-"}</span>
+      )
+    },
+    {
+      header: "Aktif",
+      render: (item: KPI) => (
+        <Badge color={item.IsActive === false ? "failure" : "success"}>
+          {item.IsActive === false ? "Nonaktif" : "Aktif"}
         </Badge>
       )
     },
@@ -166,9 +180,11 @@ const DataKPI = () => {
         namaKpi: "",
         deskripsi: "",
         tipe: "Benefit",
+        Target: 1,
         attributeId: attributes[0]?.id,
         GroupId: groups[0]?.Id || groups[0]?.id,
-        bobot: 0
+        bobot: 0,
+        IsActive: true
       });
     } else {
       setSelectedKpi(kpi || null);
@@ -186,8 +202,11 @@ const DataKPI = () => {
         NamaKpi: selectedKpi.namaKpi || selectedKpi.NamaKpi,
         Tipe: selectedKpi.tipe || selectedKpi.Tipe,
         PeriodeId: Number(selectedKpi.periodeId || selectedKpi.PeriodeId),
+        Target: Number(selectedKpi.Target ?? 1),
         GroupId: Number(selectedKpi.GroupId || 0) || null,
         attributeId: selectedKpi.attributeId || null,
+        Attribute: selectedKpi.Attribute || selectedKpi.nama_satuan || selectedKpi.Satuan || "",
+        IsActive: Boolean(selectedKpi.IsActive ?? true),
         BobotAhp: Number(selectedKpi.bobot || selectedKpi.BobotAhp || selectedKpi.Bobot || 0),
       };
 
@@ -223,7 +242,7 @@ const DataKPI = () => {
   };
 
   const currentPeriode = periodes.find(p => p.id === selectedPeriodeId);
-  const isLocked = currentPeriode?.Status === 'Final';
+  const isLocked = currentPeriode?.Status === 'locked';
 
   return (
     <div className="flex flex-col gap-6">
@@ -261,7 +280,7 @@ const DataKPI = () => {
         <div>
           <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Master Kriteria KPI</h1>
           <p className="text-sm text-gray-500">
-            {isLocked ? "Periode ini sudah Final dan terkunci" : "Kelola kriteria penilaian berdasarkan Periode & Divisi"}
+            {isLocked ? "Periode ini terkunci. KPI tidak bisa diubah." : "Kelola kriteria KPI untuk periode aktif"}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
@@ -273,7 +292,7 @@ const DataKPI = () => {
               }}
               options={periodes.map(p => ({ 
                 value: p.id, 
-                label: (p.NamaPeriode || p.namaPeriode) + " - " + (p.NamaDivisi || p.divisi?.namaDivisi || "") +  (p.Status === 'Final' ? ' (Final)' : p.isAktif ? ' (Aktif)' : ' (Tidak Aktif)')
+              label: `${p.NamaPeriode || p.namaPeriode} - ${p.NamaDivisi || p.divisi?.namaDivisi || ""} (${p.Status || 'draft'})`
               }))}
               placeholder="Pilih Periode"
               className="w-full md:w-64"
@@ -282,12 +301,7 @@ const DataKPI = () => {
             color="primary" 
             size="sm" 
             onClick={() => handleOpenModal("add")} 
-            disabled={
-              isReadOnly ||
-              selectedPeriodeId === 0 ||
-              isLocked ||
-              !currentPeriode?.isAktif
-            }
+            disabled={isReadOnly || selectedPeriodeId === 0 || isLocked}
             className="w-full md:w-auto"
           >
             <Icon icon="solar:add-circle-linear" className="mr-2 h-5 w-5" />
@@ -344,7 +358,7 @@ const DataKPI = () => {
               <Label htmlFor="nama" value="Nama Kriteria" />
               <TextInput
                 id="nama"
-                placeholder="Contoh: Kualitas Kerja"
+                placeholder="Contoh: Ketepatan Waktu"
                 required
                 value={selectedKpi?.namaKpi || selectedKpi?.NamaKpi || ""}
                 onChange={(e) => setSelectedKpi({...selectedKpi!, namaKpi: e.target.value})}
@@ -364,6 +378,18 @@ const DataKPI = () => {
               </Select>
             </div>
             <div>
+              <Label htmlFor="target" value="Target" />
+              <TextInput
+                id="target"
+                type="number"
+                min={1}
+                placeholder="Contoh: 100"
+                value={selectedKpi?.Target ?? 1}
+                onChange={(e) => setSelectedKpi({ ...selectedKpi!, Target: Number(e.target.value) })}
+                disabled={modalType === "view"}
+              />
+            </div>
+            <div>
               <Label htmlFor="attribute" value="Satuan / Attribute" />
               <Select
                 id="attribute"
@@ -377,6 +403,18 @@ const DataKPI = () => {
                     {attr.nama} {attr.simbol ? `(${attr.simbol})` : ""}
                   </option>
                 ))}
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="aktif" value="Status KPI" />
+              <Select
+                id="aktif"
+                value={String(selectedKpi?.IsActive === false ? "0" : "1")}
+                onChange={(e) => setSelectedKpi({ ...selectedKpi!, IsActive: e.target.value === "1" })}
+                disabled={modalType === "view"}
+              >
+                <option value="1">Aktif</option>
+                <option value="0">Nonaktif</option>
               </Select>
             </div>
           </div>

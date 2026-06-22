@@ -17,6 +17,7 @@ export interface Periode {
   status: string;
   Status: string;
   isAktif: boolean;
+  lockStatus?: 'draft' | 'open' | 'processed' | 'locked';
   NamaDivisi?: string;
   divisi?: {
     id: number;
@@ -26,8 +27,9 @@ export interface Periode {
 
 const normalizePeriode = (item: any): Periode => {
   const id = Number(item.Id ?? item.id ?? 0);
-  const status = item.Status ?? item.status ?? 'Nonaktif';
-  const isAktif = status === 'Aktif';
+  const status = String(item.Status ?? item.status ?? 'draft').toLowerCase();
+  const lockStatus = ['draft', 'open', 'processed', 'locked'].includes(status) ? status as any : 'draft';
+  const isAktif = lockStatus === 'open';
   
   return {
     ...item,
@@ -43,9 +45,10 @@ const normalizePeriode = (item: any): Periode => {
     TanggalMulai: item.TanggalMulai ?? item.tanggalMulai ?? '',
     tanggalSelesai: item.TanggalSelesai ?? item.tanggalSelesai ?? '',
     TanggalSelesai: item.TanggalSelesai ?? item.tanggalSelesai ?? '',
-    status,
-    Status: status,
+    status: lockStatus,
+    Status: lockStatus,
     isAktif,
+    lockStatus,
     NamaDivisi: item.NamaDivisi ?? item.namaDivisi ?? item.divisi?.namaDivisi ?? '',
     divisi: item.divisi || null
   };
@@ -100,9 +103,9 @@ const periodeService = {
     if (startDate) startDate.setHours(0, 0, 0, 0);
     if (endDate) endDate.setHours(0, 0, 0, 0);
 
-    let calculatedStatus = data.Status || (data.isAktif ? 'Aktif' : 'Nonaktif');
-    if (startDate && endDate) {
-      calculatedStatus = (now >= startDate && now <= endDate) ? 'Aktif' : 'Nonaktif';
+    let calculatedStatus = String(data.Status || data.status || (data.isAktif ? 'open' : 'draft')).toLowerCase();
+    if (startDate && endDate && calculatedStatus !== 'locked') {
+      calculatedStatus = (now >= startDate && now <= endDate) ? 'open' : 'draft';
     }
 
     const response = await axiosServices.post<{ Id?: number; success?: boolean; message?: string }>('/spk/periode', {
@@ -132,9 +135,9 @@ const periodeService = {
     if (startDate) startDate.setHours(0, 0, 0, 0);
     if (endDate) endDate.setHours(0, 0, 0, 0);
 
-    let calculatedStatus = data.Status || (data.isAktif ? 'Aktif' : 'Nonaktif');
-    if (startDate && endDate) {
-      calculatedStatus = (now >= startDate && now <= endDate) ? 'Aktif' : 'Nonaktif';
+    let calculatedStatus = String(data.Status || data.status || (data.isAktif ? 'open' : 'draft')).toLowerCase();
+    if (startDate && endDate && calculatedStatus !== 'locked') {
+      calculatedStatus = (now >= startDate && now <= endDate) ? 'open' : 'draft';
     }
 
     const response = await axiosServices.put<{ success?: boolean; message?: string }>(`/spk/periode/${targetId}`, {

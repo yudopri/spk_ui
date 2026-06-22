@@ -19,6 +19,25 @@ export interface AhpPerbandingan {
     namaKpi: string;
   } | null;
   nilai: number;
+  cr?: number;
+}
+
+export interface AhpWeightResult {
+  id: number;
+  weight: number;
+  nama?: string;
+}
+
+export interface MooraDetailRow {
+  kpiId: number;
+  kpiNama?: string;
+  nilaiAsli?: number;
+  nilai_normalisasi?: number;
+  nilai_terbobot?: number;
+  bobot_ahp?: number;
+  tipe?: string;
+  yi?: number;
+  rank?: number;
 }
 
 export interface MooraPenilaian {
@@ -156,6 +175,11 @@ const spkService = {
     return response.data;
   },
 
+  saveMooraRealisasi: async (payload: { KaryawanId: number; KpiId: number; PeriodeId: number; Realisasi: number }[]) => {
+    const response = await axiosServices.post<{ message: string; success: boolean }>('/spk/moora/penilaian', payload);
+    return response.data;
+  },
+
   calculateMoora: async (periodeId: number) => {
     const response = await axiosServices.post<{ message: string; success: boolean }>(`/spk/moora/calculate/${periodeId}`);
     return response.data;
@@ -245,10 +269,17 @@ const spkService = {
     return response.data;
   },
 
-  updateStatus: async (periodeId: number, status: 'Final' | 'Draft') => {
-    // Sesuai instruksi backend spkController.js:198-203, kirim field "Status" ke endpoint periode
+  updateStatus: async (periodeId: number, status: 'locked' | 'draft' | 'open' | 'processed' | 'Final' | 'Draft') => {
+    const normalized = String(status).toLowerCase();
     const response = await axiosServices.put<{ message: string; success: boolean }>(`/spk/periode/${periodeId}`, {
-      Status: status
+      Status: normalized === 'final' ? 'locked' : normalized
+    });
+    return response.data;
+  },
+
+  lockPeriode: async (periodeId: number) => {
+    const response = await axiosServices.put<{ message: string; success: boolean }>(`/spk/periode/${periodeId}`, {
+      Status: 'locked'
     });
     return response.data;
   },
