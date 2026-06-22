@@ -182,10 +182,45 @@ const NilaiPerbandingan = () => {
   };
 
   const handleSave = async () => {
-    if (!isSimulated || (cr !== null && cr > 0.1)) return;
-    setSuccess("Seluruh bobot AHP telah berhasil disimpan secara permanen!");
-    // Optional: reload or move to next step
-  };
+  try {
+    if (!isSimulated) {
+      setError("Silakan lakukan simulasi terlebih dahulu");
+      return;
+    }
+
+    if (cr !== null && cr > 0.1) {
+      setError("CR tidak konsisten, tidak bisa disimpan");
+      return;
+    }
+
+    setSubmitting(true);
+    setError(null);
+    setSuccess(null);
+
+    const payload = pairs.map((p) => ({
+      PeriodeId: selectedPeriodeId,
+      KpiAId: selectedGroupId === 0 ? undefined : (p.itemA.Id || p.itemA.id),
+      KpiBId: selectedGroupId === 0 ? undefined : (p.itemB.Id || p.itemB.id),
+      GroupIdA: selectedGroupId === 0 ? (p.itemA.Id || p.itemA.id) : undefined,
+      GroupIdB: selectedGroupId === 0 ? (p.itemB.Id || p.itemB.id) : undefined,
+      Nilai: comparisonValues[p.key] || 1,
+    }));
+
+    const res = await spkService.saveAhpPerbandingan(payload);
+
+    if (res.success) {
+      setSuccess(res.message || "Bobot AHP berhasil disimpan");
+    } else {
+      setError(res.message || "Gagal menyimpan bobot");
+    }
+
+  } catch (err: any) {
+    console.error(err);
+    setError(err?.response?.data?.message || "Terjadi kesalahan saat menyimpan");
+  } finally {
+    setSubmitting(false);
+  }
+};
 
   const getSaatyLabel = (val: number) => {
     if (val === 1) return "Sama Penting";
