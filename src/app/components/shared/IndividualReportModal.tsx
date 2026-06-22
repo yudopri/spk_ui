@@ -34,7 +34,12 @@ const IndividualReportModal = ({ show, onClose, data }: IndividualReportProps) =
   const handlePrint = () => {
     window.print();
   };
+const finalScore =
+  data.kesimpulan.Skor <= 1
+    ? data.kesimpulan.Skor * 100
+    : data.kesimpulan.Skor;
 
+const score = Number(finalScore.toFixed(2));
   return (
     <Modal show={show} onClose={onClose} size="4xl" className="print-modal">
       <Modal.Header className="print:hidden">Laporan Hasil Penilaian Individual</Modal.Header>
@@ -134,7 +139,7 @@ const IndividualReportModal = ({ show, onClose, data }: IndividualReportProps) =
 
              <div className="w-48 text-center border-4 border-gray-900 p-4 bg-gray-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
                 <span className="block text-[8px] font-black uppercase text-gray-500 tracking-[0.2em] mb-1">Final Score Index</span>
-                <span className="block text-4xl font-black text-gray-900 leading-none mb-1 tracking-tighter">{data.kesimpulan.Skor.toFixed(2)}</span>
+                <span className="block text-4xl font-black text-gray-900 leading-none mb-1 tracking-tighter">{score}</span>
              </div>
 
              <div className="w-48 text-center border-4 border-gray-900 p-4 bg-yellow-400 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">

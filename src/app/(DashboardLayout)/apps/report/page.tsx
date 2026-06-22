@@ -35,6 +35,14 @@ const ReportHasil = () => {
 
   const [selectedPeriode, setSelectedPeriode] = useState<Periode | null>(null);
 
+  // Manager UI state - must be declared early since columns use it
+  const [isManagerUI, setIsManagerUI] = useState(false);
+  
+  useClientEffect(() => {
+    const role = localStorage.getItem('userRole');
+    setIsManagerUI(isManagerRole(role));
+  }, []);
+
   // Pagination & Search
   const [reportPage, setReportPage] = useState(1);
   const [reportPageSize, setReportPageSize] = useState(10);
@@ -58,6 +66,13 @@ const ReportHasil = () => {
     catatan_indisipliner: '',
     catatan_saran: ''
   });
+const formatScore = (value?: number) => {
+  if (!value) return 0;
+
+  const score = value <= 1 ? value * 100 : value;
+
+  return Number(score.toFixed(2));
+};
 
   const allReviewed = useMemo(() => {
     if (reports.length === 0) return false;
@@ -314,8 +329,21 @@ const ReportHasil = () => {
             catatan_saran: ''
         });
         setReviewReportId(null);
-        // Refresh data
-        window.location.reload(); 
+        
+        // Refresh data tanpa reload halaman - update status di reports array
+        setReports(prev => prev.map(r => {
+          const rId = r.id || r.Id;
+          if (rId === reviewReportId) {
+            return {
+              ...r,
+              status: reviewForm.status,
+              Status: reviewForm.status,
+              catatan: combinedNote,
+              Catatan: combinedNote,
+            };
+          }
+          return r;
+        }));
       }
     } catch (err: any) {
       setError(err?.response?.data?.message || "Gagal menyimpan review");
@@ -430,20 +458,19 @@ const ReportHasil = () => {
   };
 
   const chartSeries = [{
-    name: 'Nilai Skala',
-    data: reports.map(r => r.nilai_akhir || r.totalScore || r.NilaiSkala || 0)
-  }];
+  name: 'Nilai Akhir',
+  data: reports.map(r =>
+    formatScore(
+      r.nilai_akhir ||
+      r.totalScore ||
+      r.NilaiSkala
+    )
+  )
+}];
 
   const bestEmployee = reports.length > 0 ? reports[0] : null;
 
-  const [isManagerUI, setIsManagerUI] = useState(false);
-  
-  useClientEffect(() => {
-    const role = localStorage.getItem('userRole');
-    setIsManagerUI(isManagerRole(role));
-  }, []);
-
-  const canExport = exporting || !selectedPeriodeId || (!isFinal && !isManagerUI);
+  const canExport = !selectedPeriodeId || (!isFinal && !isManagerUI);
 
   const getStatusBadge = (status?: string) => {
     const s = (status || 'Draft').toLowerCase();
@@ -604,7 +631,7 @@ const ReportHasil = () => {
                           <h2 className="text-xl font-black text-primary uppercase">{bestEmployee.nama || bestEmployee.Karyawan?.name || bestEmployee.Karyawan?.Nama}</h2>
                       </div>
                       <div className="bg-primary/10 px-6 py-2 rounded-full">
-                          <span className="text-primary font-bold text-lg">Skor: {bestEmployee.nilai_akhir || bestEmployee.totalScore || bestEmployee.NilaiSkala}</span>
+                          <span className="text-primary font-bold text-lg">Skor: {formatScore(bestEmployee.nilai_akhir || bestEmployee.totalScore || bestEmployee.NilaiSkala)}</span>
                       </div>
                   </div>
                 ) : (
@@ -701,33 +728,40 @@ const ReportHasil = () => {
 
       {/* Individual Report - WBA Official Style */}
       <Modal show={showPrintModal} onClose={() => setShowPrintModal(false)} size="5xl">
-        <Modal.Header className="print:hidden">Pratinjau Laporan Resmi</Modal.Header>
-        <Modal.Body className="p-0 bg-gray-100">
-           {individualData && (
-             <PerformanceEvaluationForm 
-                data={{
-                  employeeName: individualData.metadata.name || individualData.metadata.Nama,
-                  jabatan: individualData.metadata.jabatan || individualData.metadata.Jabatan || "Karyawan",
-                  periode: individualData.metadata.periode || individualData.metadata.Periode,
-                  lokasi: individualData.metadata.lokasi || individualData.metadata.Lokasi || "JAKARTA",
-                  totalScore: individualData.kesimpulan.skor || individualData.kesimpulan.Skor,
-                  evaluator: individualData.metadata.dibuat_oleh || individualData.metadata.DibuatOleh || user?.name || "SUPERVISOR",
-                  approver: individualData.metadata.disetujui_oleh || individualData.metadata.DisetujuiOleh || "HR MANAGER",
-                  rincian: individualData.rincian.map((r: any) => ({
-                    Kriteria: r.kriteria || r.Kriteria,
-                    Nilai: r.nilai !== undefined ? r.nilai : r.Nilai
-                  })),
-                  scores: {}, // Fallback scores empty since we use rincian
-                  notes: {
-                    prestasi: individualData.metadata.catatan?.p || individualData.metadata.CatatanPrestasi || "-",
-                    indisipliner: individualData.metadata.catatan?.i || individualData.metadata.CatatanIndisipliner || "-",
-                    saran: individualData.metadata.catatan?.s || individualData.metadata.CatatanSaran || "-"
-                  }
-                }}
-             />
-           )}
-        </Modal.Body>
-      </Modal>
+  <Modal.Header className="print:hidden">Pratinjau Laporan Resmi</Modal.Header>
+  <Modal.Body className="p-0 bg-gray-100">
+    {individualData && (
+      <PerformanceEvaluationForm 
+        data={{
+          employeeName: individualData.metadata.name || individualData.metadata.Nama,
+          jabatan: individualData.metadata.jabatan || individualData.metadata.Jabatan || "Karyawan",
+          periode: individualData.metadata.periode || individualData.metadata.Periode,
+          lokasi: individualData.metadata.lokasi || individualData.metadata.Lokasi || "JAKARTA",
+          totalScore: individualData.kesimpulan.skor || individualData.kesimpulan.Skor || individualData.kesimpulan.totalScore || individualData.kesimpulan.nilai_akhir || 0,
+          evaluator: individualData.metadata.dibuat_oleh || individualData.metadata.DibuatOleh || user?.name || "SUPERVISOR",
+          approver: individualData.metadata.disetujui_oleh || individualData.metadata.DisetujuiOleh || "HR MANAGER",
+          
+          // Rincian dengan grouped data - include nilai score langsung di setiap KPI
+          rincian: individualData.rincian.map((group: any) => ({
+            kpi_group_title: group.kpi_group_title || group.nama_grup || group.GroupKriteria || group.nama_group || group.namaGroup || "KPI Group", 
+            kpis: (group.kpis || group.items || group.Kpis || []).map((kpi: any) => ({
+              id: kpi.id || kpi.kpi_id || kpi.kpiId,
+              kpi_name: kpi.kpi_name || kpi.kriteria || kpi.NamaKpi || kpi.nama_kpi || kpi.nama || kpi.name || `KPI #${kpi.id || kpi.kpi_id}`,
+              nilai: kpi.nilai || kpi.Nilai || kpi.score || kpi.Score || kpi.nilai_akhir || kpi.nilaiAkhir || 0,
+            }))
+          })),
+
+          scores: {}, // Scores tidak diperlukan karena nilai sudah di-include langsung di setiap KPI
+          notes: {
+            prestasi: individualData.metadata.catatan?.p || individualData.metadata.CatatanPrestasi || "-",
+            indisipliner: individualData.metadata.catatan?.i || individualData.metadata.CatatanIndisipliner || "-",
+            saran: individualData.metadata.catatan?.s || individualData.metadata.CatatanSaran || "-"
+          }
+        }}
+      />
+    )}
+  </Modal.Body>
+</Modal>
     </div>
   );
 };

@@ -1,13 +1,8 @@
 "use client";
-import React, { useState } from "react";
-import { Table, Radio, Label, Textarea, Button } from "flowbite-react";
-import { Icon } from "@iconify/react";
 
-interface EvaluationRow {
-  id: string;
-  label: string;
-  category: string;
-}
+import React from "react";
+import { Label, Button } from "flowbite-react";
+import { Icon } from "@iconify/react";
 
 const EVALUATION_STRUCTURE = [
   {
@@ -22,7 +17,7 @@ const EVALUATION_STRUCTURE = [
     title: "II. PERFORMA",
     items: [
       { id: "p1", label: "Penampilan" },
-      { id: "p2", label: "Efektifitas dan Efisiensi Kerja" },
+      { id: "p2", label: "Efektivitas dan Efisiensi Kerja" },
       { id: "p3", label: "Kemampuan Mencapai Target" },
     ],
   },
@@ -42,8 +37,8 @@ interface PerformanceEvaluationFormProps {
     jabatan: string;
     periode: string;
     lokasi: string;
-    scores: { [key: string]: number | { Nilai: number, Kriteria: string } };
-    rincian?: Array<{ Kriteria: string, Nilai: number }>;
+    scores?: any;
+    rincian?: Array<any>;
     totalScore: number;
     notes: {
       prestasi: string;
@@ -55,246 +50,400 @@ interface PerformanceEvaluationFormProps {
   };
 }
 
-const PerformanceEvaluationForm = ({ data }: PerformanceEvaluationFormProps) => {
-  const normalizeKey = (str: string) => str.toLowerCase().replace(/[^a-z0-9]/g, "");
+const PerformanceEvaluationForm = ({
+  data,
+}: PerformanceEvaluationFormProps) => {
+  const normalizeKey = (str: string) =>
+    str.toLowerCase().replace(/[^a-z0-9]/g, "");
 
-  // Use dynamic criteria if provided, fallback to legacy structure
   const dynamicSections = React.useMemo(() => {
     if (data?.rincian && data.rincian.length > 0) {
-      return [{
-        title: "ASPEK PENILAIAN KINERJA (BERDASARKAN KPI)",
-        items: data.rincian.map((r, idx) => ({
-          id: `dyn-${idx}`,
-          label: r.Kriteria,
-          score: r.Nilai
-        }))
-      }];
+      // Cek apakah rincian berupa grouped data (memiliki kpi_group_title atau nama_grup/GroupKriteria)
+      const first = data.rincian[0];
+      if (first.kpi_group_title || first.nama_grup || first.GroupKriteria || first.kpis || first.items) {
+        // Ini adalah grouped data dari API
+        return data.rincian.map((group: any, gIdx: number) => {
+          const kpis = group.kpis || group.items || group.Kpis || [];
+          return {
+            title: group.kpi_group_title || group.nama_grup || group.GroupKriteria || `Grup ${gIdx + 1}`,
+            items: kpis.map((kpi: any, kIdx: number) => ({
+              id: `group-${gIdx}-kpi-${kIdx}`,
+              label: kpi.kpi_name || kpi.kriteria || kpi.NamaKpi || kpi.Kriteria || kpi.nama_kpi || `KPI #${kIdx + 1}`,
+              score: kpi.nilai || kpi.Nilai || kpi.score || kpi.Score || 0,
+            })),
+          };
+        });
+      }
+
+      // Flat array {Kriteria, Nilai}
+      return [
+        {
+          title: "ASPEK PENILAIAN KINERJA BERDASARKAN KPI",
+          items: data.rincian.map((r, idx) => ({
+            id: `dyn-${idx}`,
+            label: r.Kriteria,
+            score: r.Nilai,
+          })),
+        },
+      ];
     }
+
     return EVALUATION_STRUCTURE;
   }, [data?.rincian]);
 
-  const calculateTotal = () => {
-    if (!data) return "0";
-    const val = data.totalScore;
-    // Formatting tampilan agar bukan angka desimal mentah SPK
-    if (val < 1 && val > 0) return (val * 100).toFixed(0);
-    return Math.round(val).toString();
-  };
-
-  const handlePrint = () => {
-    window.print();
-  };
-
   const getScoreByItem = (item: any) => {
-    if (item.score !== undefined) return item.score;
+    if (item.score !== undefined && item.score !== null) return item.score;
+
     if (!data?.scores) return 0;
-    
-    // 1. Try direct ID match
+
     if (data.scores[item.id] !== undefined) {
       const val = data.scores[item.id];
-      return typeof val === 'object' ? val.Nilai : val;
+      return typeof val === "object" ? val.Nilai : val;
     }
-    
-    // 2. Try label match (normalized)
+
     const normLabel = normalizeKey(item.label);
+
     for (const key in data.scores) {
       const val = data.scores[key];
-      const scoreVal = typeof val === 'object' ? val.Nilai : val;
-      
+      const scoreVal = typeof val === "object" ? val.Nilai : val;
+
       if (normalizeKey(key) === normLabel) return scoreVal;
-      if (normLabel.includes(normalizeKey(key)) || normalizeKey(key).includes(normLabel)) {
-          return scoreVal;
+
+      if (
+        normLabel.includes(normalizeKey(key)) ||
+        normalizeKey(key).includes(normLabel)
+      ) {
+        return scoreVal;
       }
     }
-    
+
     return 0;
   };
 
+  const formatScore = (value: number) => {
+    if (!value) return 0;
+    return value <= 1 ? value * 100 : value;
+  };
+
+  const finalScore = formatScore(data?.totalScore || 0);
+
+  const getCategory = (score: number) => {
+    if (score >= 90) return "Outstanding";
+    if (score >= 80) return "Excellent";
+    if (score >= 70) return "Good";
+    if (score >= 60) return "Fair";
+    return "Poor";
+  };
+
+  const handlePrint = () => {
+    setTimeout(() => {
+      window.print();
+    }, 200);
+  };
+
   return (
-    <div className="max-w-5xl mx-auto my-8 bg-white shadow-xl rounded-lg overflow-hidden border border-gray-200 print:shadow-none print:border-none print:m-0 print:w-full print-section">
-      {/* Container for Print-Ready UI */}
-      <div className="p-10 print:p-0 print:text-black">
-        
+    <div className="max-w-5xl mx-auto my-8 bg-white shadow-xl rounded-lg overflow-hidden border border-gray-200 print-section">
+
+      <div className="p-10 print:p-0">
+
         {/* HEADER */}
-        <div className="text-center mb-10 space-y-1">
-          <h1 className="text-2xl font-black uppercase tracking-tight text-gray-900 leading-tight">
-            Formulir Evaluasi dan Penilaian Kinerja Karyawan
+        <div className="text-center mb-10">
+          <h1 className="text-2xl font-black uppercase">
+            Formulir Evaluasi Kinerja Karyawan
           </h1>
-          <h2 className="text-xl font-bold uppercase text-gray-800">
+
+          <h2 className="text-xl font-bold text-gray-700">
             PT. Wira Buana Arum
           </h2>
-          <div className="w-32 h-1 bg-gray-900 mx-auto mt-4"></div>
+
+          <div className="w-32 h-1 bg-black mx-auto mt-4"></div>
         </div>
 
-        {/* INFO KARYAWAN */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8 border-b border-gray-200 pb-8 print:gap-4 print:pb-4">
+        {/* INFORMASI */}
+        <div className="grid md:grid-cols-2 gap-8 mb-8 border-b pb-8">
+
           <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <Label htmlFor="nama" className="w-24 text-[10px] font-black uppercase text-gray-500">Nama</Label>
-              <div className="flex-1 border-b border-gray-300 py-1 font-black uppercase text-sm">
-                {data?.employeeName || "---"}
+
+            <div className="flex gap-3">
+              <Label className="w-24 text-xs font-bold uppercase">
+                Nama
+              </Label>
+
+              <div className="flex-1 border-b font-bold uppercase">
+                {data?.employeeName || "-"}
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              <Label htmlFor="jabatan" className="w-24 text-[10px] font-black uppercase text-gray-500">Jabatan</Label>
-              <div className="flex-1 border-b border-gray-300 py-1 font-black uppercase text-sm">
-                {data?.jabatan || "---"}
+
+            <div className="flex gap-3">
+              <Label className="w-24 text-xs font-bold uppercase">
+                Jabatan
+              </Label>
+
+              <div className="flex-1 border-b font-bold uppercase">
+                {data?.jabatan || "-"}
               </div>
             </div>
           </div>
+
           <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <Label htmlFor="periode" className="w-32 text-[10px] font-black uppercase text-gray-500">Periode Penilaian</Label>
-              <div className="flex-1 border-b border-gray-300 py-1 font-black uppercase text-sm">
-                {data?.periode || "---"}
+
+            <div className="flex gap-3">
+              <Label className="w-32 text-xs font-bold uppercase">
+                Periode
+              </Label>
+
+              <div className="flex-1 border-b font-bold uppercase">
+                {data?.periode || "-"}
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              <Label htmlFor="lokasi" className="w-32 text-[10px] font-black uppercase text-gray-500">Lokasi</Label>
-              <div className="flex-1 border-b border-gray-300 py-1 font-black uppercase text-sm">
-                {data?.lokasi || "JAKARTA"}
+
+            <div className="flex gap-3">
+              <Label className="w-32 text-xs font-bold uppercase">
+                Lokasi
+              </Label>
+
+              <div className="flex-1 border-b font-bold uppercase">
+                {data?.lokasi || "-"}
               </div>
             </div>
           </div>
         </div>
 
-        {/* TABEL PENILAIAN */}
+        {/* TABEL KPI */}
         <div className="overflow-x-auto mb-8">
-          <table className="w-full border-collapse border-2 border-gray-900 text-sm">
+          <table className="w-full border-2 border-black text-sm">
+
             <thead>
-              <tr className="bg-gray-900 text-white uppercase text-[10px] tracking-widest">
-                <th rowSpan={2} className="border border-white/20 p-3 w-12 text-center">No</th>
-                <th rowSpan={2} className="border border-white/20 p-3 text-left">Aspek Penilaian Kinerja</th>
-                <th colSpan={3} className="border border-white/20 p-2 text-center">Skor Penilaian</th>
-              </tr>
-              <tr className="bg-gray-800 text-white uppercase text-[9px] tracking-wider">
-                <th className="border border-white/10 p-2 w-24 text-center">A (90-100)</th>
-                <th className="border border-white/10 p-2 w-24 text-center">B (70-89)</th>
-                <th className="border border-white/10 p-2 w-24 text-center">C (50-69)</th>
+              <tr className="bg-black text-white uppercase text-xs">
+                <th className="border p-3 w-16">No</th>
+                <th className="border p-3 text-left">
+                  Indikator KPI
+                </th>
+                <th className="border p-3 w-32">
+                  Nilai
+                </th>
+                <th className="border p-3 w-40">
+                  Kategori
+                </th>
               </tr>
             </thead>
+
             <tbody>
-              {dynamicSections.map((category) => (
-                <React.Fragment key={category.title}>
-                  <tr className="bg-gray-100 border-b-2 border-gray-900">
-                    <td colSpan={5} className="p-3 font-black text-gray-900 uppercase tracking-tight italic">
-                      {category.title}
+              {dynamicSections.map((section) => (
+                <React.Fragment key={section.title}>
+
+                  <tr className="bg-gray-100">
+                    <td
+                      colSpan={4}
+                      className="p-3 font-black uppercase"
+                    >
+                      {section.title}
                     </td>
                   </tr>
-                  {category.items.map((item, idx) => {
-                    const currentScore = getScoreByItem(item);
+
+                  {section.items.map((item: any, idx: number) => {
+                    const raw = getScoreByItem(item);
+
+                    const score =
+                      raw <= 1 ? raw * 100 : raw;
+
                     return (
-                      <tr key={item.id} className="border-b border-gray-300 hover:bg-gray-50 transition-colors">
-                        <td className="p-3 text-center font-mono text-xs text-gray-500">{idx + 1}</td>
-                        <td className="p-3 font-semibold text-gray-800 uppercase text-xs">{item.label}</td>
-                        {/* Sub-Kolom Skor */}
-                        <td className="p-3 text-center border-l border-gray-200">
-                          {currentScore >= 90 || (currentScore >= 0.9 && currentScore < 1) ? (
-                            <Icon icon="solar:check-circle-bold" className="mx-auto text-primary text-xl" />
-                          ) : <div className="w-5 h-5 border border-gray-300 rounded-full mx-auto" />}
+                      <tr key={item.id}>
+                        <td className="border p-3 text-center">
+                          {idx + 1}
                         </td>
-                        <td className="p-3 text-center border-l border-gray-200">
-                          {(currentScore >= 70 && currentScore < 90) || (currentScore >= 0.7 && currentScore < 0.9) ? (
-                            <Icon icon="solar:check-circle-bold" className="mx-auto text-primary text-xl" />
-                          ) : <div className="w-5 h-5 border border-gray-300 rounded-full mx-auto" />}
+
+                        <td className="border p-3 font-semibold uppercase text-xs">
+                          {item.label}
                         </td>
-                        <td className="p-3 text-center border-l border-gray-200">
-                          {(currentScore > 0 && currentScore < 70) || (currentScore > 0 && currentScore < 0.7) ? (
-                            <Icon icon="solar:check-circle-bold" className="mx-auto text-primary text-xl" />
-                          ) : <div className="w-5 h-5 border border-gray-300 rounded-full mx-auto" />}
+
+                        <td className="border p-3 text-center font-black">
+                          {score.toFixed(2)}
+                        </td>
+
+                        <td className="border p-3 text-center">
+                          <span
+                            className={`px-3 py-1 rounded-full text-xs font-bold
+                            ${
+                              score >= 90
+                                ? "bg-green-100 text-green-700"
+                                : score >= 80
+                                ? "bg-blue-100 text-blue-700"
+                                : score >= 70
+                                ? "bg-yellow-100 text-yellow-700"
+                                : score >= 60
+                                ? "bg-orange-100 text-orange-700"
+                                : "bg-red-100 text-red-700"
+                            }`}
+                          >
+                            {getCategory(score)}
+                          </span>
                         </td>
                       </tr>
                     );
                   })}
                 </React.Fragment>
               ))}
-              {/* REKAPITULASI */}
-              <tr className="bg-gray-900 text-white border-t-2 border-gray-900">
-                <td colSpan={2} className="p-3 text-right font-black uppercase tracking-widest text-[10px]">Total Akumulasi Skor</td>
-                <td colSpan={3} className="p-3 text-center font-black text-lg bg-primary">
-                  {calculateTotal()}
+
+              <tr className="bg-black text-white">
+                <td
+                  colSpan={2}
+                  className="p-4 text-right font-black uppercase"
+                >
+                  Nilai Akhir
+                </td>
+
+                <td
+                  colSpan={2}
+                  className="text-center text-2xl font-black"
+                >
+                  {finalScore.toFixed(2)}
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
 
-        {/* CATATAN & LEGENDA */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start mb-12">
-          {/* Legenda & Metadata */}
-          <div className="md:col-span-4 space-y-6">
-            <div className="border border-gray-200 p-4 bg-gray-50 rounded shadow-sm">
-              <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-3 border-b border-gray-200 pb-1">Keterangan Nilai</h4>
-              <ul className="text-xs space-y-2 font-bold text-gray-700">
-                <li className="flex justify-between"><span>A : Sangat Baik</span> <span className="text-primary">(90 - 100)</span></li>
-                <li className="flex justify-between"><span>B : Baik</span> <span className="text-primary">(70 - 89)</span></li>
-                <li className="flex justify-between"><span>C : Cukup</span> <span className="text-primary">(50 - 69)</span></li>
-              </ul>
-            </div>
-            <div className="text-[10px] text-gray-400 font-mono italic leading-relaxed">
-              * Formulir ini merupakan dokumen resmi PT. Wira Buana Arum. Berdasarkan hasil perhitungan sistem pendukung keputusan (SPK).
-            </div>
-          </div>
+        {/* RINGKASAN */}
+        <div className="border-2 border-black p-6 mb-8">
 
-          {/* Form Catatan */}
-          <div className="md:col-span-8 space-y-6">
-            <div className="space-y-4">
-              <h3 className="font-black text-gray-900 uppercase tracking-tight flex items-center gap-2">
-                <div className="w-1.5 h-6 bg-primary"></div>
-                IV. CATATAN EVALUASI
-              </h3>
-              
-              <div className="space-y-4">
-                <div className="border-b border-gray-200 pb-2">
-                  <Label className="text-[9px] font-black uppercase text-gray-500 mb-1 block">1. Prestasi lain yang perlu dicatat</Label>
-                  <p className="text-sm font-medium text-gray-800 italic min-h-[40px]">
-                    {data?.notes.prestasi || "-"}
-                  </p>
-                </div>
-                <div className="border-b border-gray-200 pb-2">
-                  <Label className="text-[9px] font-black uppercase text-gray-500 mb-1 block">2. Indisipliner yang perlu dicatat</Label>
-                  <p className="text-sm font-medium text-gray-800 italic min-h-[40px]">
-                    {data?.notes.indisipliner || "-"}
-                  </p>
-                </div>
-                <div className="border-b border-gray-200 pb-2">
-                  <Label className="text-[9px] font-black uppercase text-gray-500 mb-1 block">3. Saran dan perbaikan</Label>
-                  <p className="text-sm font-medium text-gray-800 italic min-h-[40px]">
-                    {data?.notes.saran || "-"}
-                  </p>
-                </div>
+          <h3 className="font-black text-lg uppercase mb-4">
+            Ringkasan Hasil Penilaian
+          </h3>
+
+          <div className="grid md:grid-cols-3 gap-6">
+
+            <div className="text-center">
+              <p className="text-xs uppercase text-gray-500">
+                Nilai Akhir
+              </p>
+
+              <div className="text-4xl font-black">
+                {finalScore.toFixed(2)}
               </div>
             </div>
+
+            <div className="text-center">
+              <p className="text-xs uppercase text-gray-500">
+                Kategori
+              </p>
+
+              <div className="text-2xl font-black">
+                {getCategory(finalScore)}
+              </div>
+            </div>
+
+            <div className="text-center">
+              <p className="text-xs uppercase text-gray-500">
+                Metode
+              </p>
+
+              <div className="text-2xl font-black">
+                AHP-MOORA
+              </div>
+            </div>
+
+          </div>
+
+          <div className="mt-5 h-3 rounded bg-gray-200">
+            <div
+              className="h-3 rounded bg-black"
+              style={{
+                width: `${Math.min(finalScore, 100)}%`,
+              }}
+            />
+          </div>
+
+          <p className="mt-4 text-sm text-gray-600 text-justify">
+            Berdasarkan hasil evaluasi kinerja menggunakan
+            metode AHP dan MOORA, karyawan memperoleh
+            kategori <b>{getCategory(finalScore)}</b>
+            dengan nilai akhir <b>{finalScore.toFixed(2)}</b>.
+          </p>
+        </div>
+
+        {/* CATATAN */}
+        <div className="space-y-4 mb-10">
+
+          <h3 className="font-black uppercase">
+            Catatan Evaluasi
+          </h3>
+
+          <div>
+            <Label className="text-xs font-bold">
+              Prestasi
+            </Label>
+            <p>{data?.notes.prestasi || "-"}</p>
+          </div>
+
+          <div>
+            <Label className="text-xs font-bold">
+              Indisipliner
+            </Label>
+            <p>{data?.notes.indisipliner || "-"}</p>
+          </div>
+
+          <div>
+            <Label className="text-xs font-bold">
+              Saran
+            </Label>
+            <p>{data?.notes.saran || "-"}</p>
           </div>
         </div>
 
-        {/* TANDA TANGAN */}
-        <div className="grid grid-cols-2 gap-12 mt-16 text-center">
+        {/* TTD */}
+        <div className="grid grid-cols-2 gap-12 text-center mt-20">
+
           <div>
-            <p className="text-[10px] font-black uppercase text-gray-400 mb-16 underline underline-offset-4">Dicatat Oleh (Supervisor),</p>
-            <div className="w-48 h-px bg-gray-400 mx-auto"></div>
-            <p className="text-[10px] font-bold text-gray-800 mt-2 uppercase tracking-widest">
-              ( {data?.evaluator || "........................................"} )
+            <p className="text-xs uppercase mb-16">
+              Dicatat Oleh
             </p>
+
+            <div className="border-t border-black w-48 mx-auto pt-2">
+              <p className="font-bold uppercase">
+                {data?.evaluator || "-"}
+              </p>
+            </div>
           </div>
+
           <div>
-            <p className="text-[10px] font-black uppercase text-gray-400 mb-16 underline underline-offset-4">Disetujui Oleh (HR Manager),</p>
-            <div className="w-48 h-px bg-gray-400 mx-auto"></div>
-            <p className="text-[10px] font-bold text-gray-800 mt-2 uppercase tracking-widest">
-              ( {data?.approver || "........................................"} )
+            <p className="text-xs uppercase mb-16">
+              Disetujui Oleh
             </p>
+
+            <div className="border-t border-black w-48 mx-auto pt-2">
+              <p className="font-bold uppercase">
+                {data?.approver || "-"}
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* FOOTER INFO */}
-        <div className="mt-12 pt-4 border-t border-gray-200 flex justify-between items-end text-[8px] font-mono text-gray-400 uppercase tracking-tighter">
-          <div>Ref No: WBA/HRD/FORM-EVAL/{new Date().getFullYear()}</div>
+        {/* FOOTER */}
+        <div className="mt-10 pt-4 border-t flex justify-between items-center text-xs text-gray-500">
+
+          <div>
+            WBA/HRD/EVALUASI/{new Date().getFullYear()}
+          </div>
+
           <div className="print:hidden">
-            <Button size="xs" color="gray" onClick={handlePrint}>
-              <Icon icon="solar:printer-bold" className="mr-1" /> Cetak Dokumen
+            <Button
+              size="sm"
+              color="gray"
+              onClick={handlePrint}
+            >
+              <Icon
+                icon="solar:printer-bold"
+                className="mr-2"
+              />
+              Cetak Dokumen
             </Button>
           </div>
-          <div>Generated on: {new Date().toLocaleDateString('id-ID')}</div>
+
+          <div>
+            {new Date().toLocaleDateString("id-ID")}
+          </div>
+
         </div>
       </div>
 
@@ -303,41 +452,45 @@ const PerformanceEvaluationForm = ({ data }: PerformanceEvaluationFormProps) => 
           body * {
             visibility: hidden;
           }
-          .print-section, .print-section * {
+
+          .print-section,
+          .print-section * {
             visibility: visible;
           }
+
           .print-section {
             position: absolute;
             left: 0;
             top: 0;
-            width: 100% !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            border: none !important;
-            box-shadow: none !important;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            box-shadow: none;
+            border: none;
           }
-          body {
-            background-color: white !important;
-          }
+
           .print\\:hidden {
             display: none !important;
           }
-          input, textarea {
-            border-color: #000 !important;
-            color: #000 !important;
-          }
+
           table {
-            border-color: #000 !important;
-            width: 100% !important;
+            width: 100%;
+            border-collapse: collapse;
           }
-          .bg-primary {
-            background-color: #000 !important;
-            color: #fff !important;
-            -webkit-print-color-adjust: exact;
+
+          th,
+          td {
+            border: 1px solid black !important;
           }
-          .text-primary {
-            color: #000 !important;
+
+          thead {
+            display: table-header-group;
           }
+
+          tr {
+            page-break-inside: avoid;
+          }
+
           @page {
             size: A4;
             margin: 15mm;
