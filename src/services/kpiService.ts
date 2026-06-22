@@ -16,7 +16,7 @@ export interface KPIGroup {
 export interface KPI {
   Id: number;
   NamaKpi: string;
-  Tipe: 'Benefit' | 'Cost';
+  Tipe: 'benefit' | 'cost';
   PeriodeId: number;
   Target?: number;
   GroupId?: number;
@@ -32,13 +32,12 @@ export interface KPI {
   bobot?: number;
   deskripsi?: string;
   periodeId?: number;
-  tipe?: 'Benefit' | 'Cost';
+  tipe?: 'benefit' | 'cost';
   // UI legacy fields
   id: number;
   namaKpi: string;
   simbol?: string;
   // Dynamic UI properties
-  IsBenefit?: boolean;
   GrupKpi?: {
     idGrup?: number;
     namaGrup?: string;

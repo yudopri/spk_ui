@@ -22,6 +22,7 @@ const NilaiPerbandingan = () => {
   const [success, setSuccess] = useState<string | null>(null);
   const [cr, setCr] = useState<number | null>(null);
   const [weights, setWeights] = useState<Record<number, number>>({});
+  const [weightList, setWeightList] = useState<number[]>([]);
   const [isSimulated, setIsSimulated] = useState(false);
 
   useEffect(() => {
@@ -65,6 +66,7 @@ const NilaiPerbandingan = () => {
           setLoading(true);
           setCr(null);
           setWeights({});
+          setWeightList([]);
           setIsSimulated(false);
           setSuccess(null);
           let items: any[] = [];
@@ -146,28 +148,31 @@ const NilaiPerbandingan = () => {
       }
 
       const resCalc = await spkService.calculateAhpWeight(selectedPeriodeId, selectedGroupId || undefined);
-      if (resCalc.data?.cr !== undefined) {
-          setCr(resCalc.data.cr);
-          
-          // Map weights from results
-          const newWeights: Record<number, number> = {};
-          if (resCalc.data.weights) {
-             resCalc.data.weights.forEach((w: any) => {
-                newWeights[w.id || w.Id || w.kpiId] = w.weight || w.Weight || w.nilai;
-             });
-          } else if (resCalc.data.results) {
-             Object.entries(resCalc.data.results).forEach(([k, v]) => {
-                newWeights[Number(k)] = Number(v);
-             });
-          }
-          setWeights(newWeights);
-          setIsSimulated(true);
+      const consistency = resCalc.data?.consistency || {};
+      const nextCr = Number(consistency.cr ?? resCalc.data?.cr ?? 0);
+      const rawWeights = Array.isArray(resCalc.data?.data)
+        ? resCalc.data.data
+        : Array.isArray(resCalc.data?.weights)
+          ? resCalc.data.weights.map((w: any) => Number(w.weight ?? w.Weight ?? w.nilai ?? 0))
+          : Array.isArray(resCalc.data?.results)
+            ? resCalc.data.results.map((v: any) => Number(v))
+            : [];
 
-          if (resCalc.data.cr >= 0.1) {
-        setError(`Input tidak konsisten. CR = ${resCalc.data.cr.toFixed(4)}. Perbaiki pairwise comparison sebelum menyimpan.`);
-          } else {
-            setSuccess("Matriks berhasil dihitung. Silakan tinjau bobot di bawah ini.");
-          }
+      setCr(nextCr);
+      setWeightList(rawWeights);
+
+      const newWeights: Record<number, number> = {};
+      kpis.forEach((item, index) => {
+        const itemId = Number(item.Id || item.id || index + 1);
+        newWeights[itemId] = Number(rawWeights[index] ?? 0);
+      });
+      setWeights(newWeights);
+      setIsSimulated(true);
+
+      if (nextCr >= 0.1) {
+        setError(`Input tidak konsisten. CR = ${nextCr.toFixed(4)}. Perbaiki pairwise comparison sebelum menyimpan.`);
+      } else {
+        setSuccess("Matriks berhasil dihitung. Silakan tinjau bobot di bawah ini.");
       }
     } catch (err) {
       setError("Gagal melakukan simulasi perhitungan");
@@ -337,7 +342,7 @@ const NilaiPerbandingan = () => {
                     </Table>
                 </div>
 
-                {isSimulated && Object.keys(weights).length > 0 && (
+                {isSimulated && (weightList.length > 0 || Object.keys(weights).length > 0) && (
                   <div className="mt-8 p-6 bg-primary/5 rounded-2xl border border-primary/10 transition-all animate-in fade-in slide-in-from-bottom-4">
                     <div className="flex items-center gap-3 mb-4">
                       <div className="bg-primary p-2 rounded-lg">
@@ -348,7 +353,8 @@ const NilaiPerbandingan = () => {
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {kpis.map((kpi) => {
-                        const weight = weights[kpi.Id || kpi.id] || 0;
+                        const itemId = kpi.Id || kpi.id;
+                        const weight = weights[itemId] ?? weightList[kpis.findIndex((x) => (x.Id || x.id) === itemId)] ?? 0;
                         return (
                           <div key={kpi.Id || kpi.id} className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center transition-all hover:scale-[1.02]">
                             <div className="flex flex-col">

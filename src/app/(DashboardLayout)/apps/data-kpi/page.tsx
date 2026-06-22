@@ -59,8 +59,8 @@ const DataKPI = () => {
     {
       header: "Tipe",
       render: (item: KPI) => (
-        <Badge color={item.IsBenefit ? "success" : "warning"}>
-          {item.IsBenefit ? "Benefit" : "Cost"}
+        <Badge color={item.Tipe === 'benefit' ? "success" : "warning"}>
+          {item.Tipe === 'benefit' ? "Benefit" : "Cost"}
         </Badge>
       )
     },
@@ -179,7 +179,8 @@ const DataKPI = () => {
         periodeId: selectedPeriodeId,
         namaKpi: "",
         deskripsi: "",
-        tipe: "Benefit",
+        tipe: "benefit",
+        Tipe: "benefit",
         Target: 1,
         attributeId: attributes[0]?.id,
         GroupId: groups[0]?.Id || groups[0]?.id,
@@ -200,7 +201,7 @@ const DataKPI = () => {
       // Map everything to the new backend structure
       const payload: any = {  
         NamaKpi: selectedKpi.namaKpi || selectedKpi.NamaKpi,
-        Tipe: selectedKpi.tipe || selectedKpi.Tipe,
+        Tipe: selectedKpi.tipe || selectedKpi.Tipe || "Benefit",
         PeriodeId: Number(selectedKpi.periodeId || selectedKpi.PeriodeId),
         Target: Number(selectedKpi.Target ?? 1),
         GroupId: Number(selectedKpi.GroupId || 0) || null,
@@ -369,12 +370,16 @@ const DataKPI = () => {
               <Label htmlFor="tipe" value="Tipe" />
               <Select 
                 id="tipe" 
-                value={selectedKpi?.tipe || selectedKpi?.Tipe} 
-                onChange={(e) => setSelectedKpi({ ...selectedKpi!, tipe: e.target.value as "Benefit" | "Cost" })}
+                value={selectedKpi?.tipe || selectedKpi?.Tipe || "benefit"} 
+                onChange={(e) => setSelectedKpi({ 
+                  ...selectedKpi!, 
+                  tipe: e.target.value as "benefit" | "cost",
+                  Tipe: e.target.value as "benefit" | "cost"
+                })}
                 disabled={modalType === "view"}
               >
-                <option value="Benefit">Benefit</option>
-                <option value="Cost">Cost</option>
+                <option value="benefit">Benefit</option>
+                <option value="cost">Cost</option>
               </Select>
             </div>
             <div>
