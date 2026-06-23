@@ -29,7 +29,7 @@ const PenilaianKaryawan = () => {
   const [departments, setDepartments] = useState<Divisi[]>([]);
   const [selectedDeptId, setSelectedDeptId] = useState<number | string>("all");
   const [selectedLocation, setSelectedLocation] = useState<string>("all");
-  const [includeManagement, setIncludeManagement] = useState(false);
+  const [includeManagement, setIncludeManagement] = useState(true);
   
   // Pagination & Search States
   const [page, setPage] = useState(1);
@@ -93,17 +93,10 @@ const PenilaianKaryawan = () => {
           search: searchTerm,
           page,
           pageSize,
-          // include_management: includeManagement
+          include_management_roles: includeManagement,
         });
-        
-        let scopedEmployees = (filterEmployeesByScope(res.data || []) as Karyawan[]);
-        
-        if (!includeManagement && normalizedRole === "Kadiv") {
-          scopedEmployees = scopedEmployees.filter((employee) => {
-            return normalizeRole(employee.role) !== "Manager";
-          });
-        }
 
+        const scopedEmployees = (filterEmployeesByScope(res.data || []) as Karyawan[]);
         setAllEmployees(scopedEmployees);
         setTotalItems(res.meta?.total || 0);
       } catch (err: any) {

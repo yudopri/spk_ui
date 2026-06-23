@@ -18,28 +18,32 @@ interface IndividualReportProps {
     };
     rincian: Array<{
       Kriteria: string;
-      Nilai: number;
+      Nilai: string | number;
       Satuan: string;
     }>;
     kesimpulan: {
       Ranking: number;
-      Skor: number;
+      Skor: string | number;
     };
   } | null;
 }
 
 const IndividualReportModal = ({ show, onClose, data }: IndividualReportProps) => {
-  if (!data) return null;
+  if (!data || !data.kesimpulan) return null;
 
   const handlePrint = () => {
     window.print();
   };
-const finalScore =
-  data.kesimpulan.Skor <= 1
-    ? data.kesimpulan.Skor * 100
-    : data.kesimpulan.Skor;
 
-const score = Number(finalScore.toFixed(2));
+  const skorValue = typeof data.kesimpulan.Skor === 'string'
+    ? parseFloat(data.kesimpulan.Skor)
+    : Number(data.kesimpulan.Skor);
+
+  const finalScore = Number.isFinite(skorValue)
+    ? (skorValue <= 1 ? skorValue * 100 : skorValue)
+    : 0;
+
+  const score = Number(finalScore.toFixed(2));
   return (
     <Modal show={show} onClose={onClose} size="4xl" className="print-modal">
       <Modal.Header className="print:hidden">Laporan Hasil Penilaian Individual</Modal.Header>

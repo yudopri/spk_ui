@@ -86,7 +86,7 @@ const formatScore = (value?: number) => {
       header: "Rank",
       headerClasses: "text-center",
       cellClasses: "text-center font-bold text-lg text-primary",
-      render: (item: SpkReport) => item.rank ?? item.Ranking,
+      render: (item: SpkReport) => (item as any).displayRank ?? item.rank ?? item.Ranking,
     },
     {
       header: "Nama",
@@ -256,7 +256,19 @@ const formatScore = (value?: number) => {
           return true;
         });
 
-        setReports(scoped);
+        // Urutkan berdasarkan skor akhir tertinggi -> rank 1 di atas
+        const sorted = [...scoped].sort((a, b) => {
+          const scoreA = Number(a.nilai_akhir || a.totalScore || a.NilaiSkala || 0);
+          const scoreB = Number(b.nilai_akhir || b.totalScore || b.NilaiSkala || 0);
+          return scoreB - scoreA;
+        });
+
+        const ranked = sorted.map((item, idx) => ({
+          ...item,
+          displayRank: (reportPage - 1) * reportPageSize + idx + 1,
+        }));
+
+        setReports(ranked);
         setError(null);
       } catch (err: any) {
         setError(err?.response?.data?.message || "Gagal mengambil laporan hasil");

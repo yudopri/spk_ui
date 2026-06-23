@@ -34,6 +34,9 @@ const karyawanService = {
       filter?: any;
     } = {}
   ): Promise<ApiResponse<Karyawan[]>> => {
+    const includeManagement = typeof params.include_management_roles === 'boolean'
+      ? params.include_management_roles
+      : false;
     const response = await axiosServices.get<any>('/employees', {
       params: {
         page: params.page,
@@ -43,9 +46,7 @@ const karyawanService = {
         filter: params.filter ? JSON.stringify(params.filter) : undefined,
         ...(params.dept_id ? { dept_id: params.dept_id } : {}),
         ...(params.lokasi_kerja ? { lokasi_kerja: params.lokasi_kerja } : {}),
-        ...(typeof params.include_management_roles === 'boolean'
-          ? { include_management_roles: params.include_management_roles }
-          : {}),
+        include_management_roles: includeManagement,
         ...(params.role_group ? { role_group: params.role_group } : {}),
       },
     });
