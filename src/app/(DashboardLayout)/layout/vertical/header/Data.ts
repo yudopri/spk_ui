@@ -219,11 +219,7 @@ const profileDD: ProfileType[] = [
   {
     title: "My Profile",
     url: "/apps/user-profile/profile",
-  },
-  {
-    title: "Sign Out",
-    url: "/auth/auth2/login",
-  },
+  }
 ];
 
 export { appsLink, pageLinks, SearchLinks, Notification, profileDD };

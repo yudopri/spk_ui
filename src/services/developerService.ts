@@ -88,10 +88,22 @@ const developerService = {
       }
     });
     
+    const mappedData = (response.data.data || []).map((item: any) => ({
+      id: item.Id,
+      userId: item.UserId,
+      username: item.Username,
+      action: item.Action,
+      entityName: item.EntityName,
+      details: item.Details,
+      ipAddress: item.IpAddress,
+      userAgent: item.UserAgent,
+      timestamp: item.CreatedAt != null ? item.CreatedAt : new Date().toISOString(),
+    }));
+    
     return {
       success: true,
       message: 'Success',
-      data: response.data.data,
+      data: mappedData,
       meta: response.data.meta
     };
   }

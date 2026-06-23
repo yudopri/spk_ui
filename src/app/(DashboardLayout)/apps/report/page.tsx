@@ -144,7 +144,7 @@ const formatScore = (value?: number) => {
               size="xs" 
               pill 
               onClick={() => {
-                setReviewReportId(item.id || item.Id);
+                setReviewReportId(Number(item.Karyawan?.id || item.Karyawan?.Id || item.id || item.Id || 0));
                 
                 // Inisialisasi form review dari objek atau string
                 const c = item.catatan || (item as any).Catatan;
@@ -201,7 +201,7 @@ const formatScore = (value?: number) => {
     },
   ];
 
-  const getReportRowId = (item: SpkReport) => Number(item.id || item.Id || item.Karyawan?.id || item.Karyawan?.Id || 0);
+  const getReportRowId = (item: SpkReport) => Number(item.Karyawan?.id || item.Karyawan?.Id || item.id || item.Id || 0);
 
   useEffect(() => {
     const fetchData = async () => {
