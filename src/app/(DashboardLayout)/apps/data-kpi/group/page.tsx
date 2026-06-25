@@ -54,6 +54,9 @@ const KPIGroupPage = () => {
         fetchGroups();
     }, [selectedPeriodeId]);
 
+    const selectedPeriode = periodes.find(p => p.id === selectedPeriodeId || p.Id === selectedPeriodeId);
+    const isLocked = selectedPeriode?.Status === 'locked';
+
     const handleSave = async () => {
         if (!currentGroup.NamaGroup) return;
         try {
@@ -113,6 +116,7 @@ const KPIGroupPage = () => {
                             setCurrentGroup({ NamaGroup: "" });
                             setShowModal(true);
                         }}
+                        disabled={isLocked}
                     >
                         <Icon icon="solar:add-circle-bold" className="mr-2 h-4 w-4" />
                         Grup Baru
@@ -134,34 +138,35 @@ const KPIGroupPage = () => {
                     {loading ? (
                         <Table.Row><Table.Cell colSpan={3} className="text-center py-10"><Spinner /></Table.Cell></Table.Row>
                     ) : (groups || []).length > 0 ? (groups || []).map((group) => (
-                        <Table.Row key={group.Id || group.id} className="bg-white">
-                            <Table.Cell className="font-bold text-gray-900">{group.NamaGroup}</Table.Cell>
-                            <Table.Cell className="text-center">
-                                {group.BobotGrup ? (
-                                    <Badge color="info">{(Number(group.BobotGrup) * 100).toFixed(2)}%</Badge>
-                                ) : (
-                                    <span className="text-gray-400 italic text-xs">Belum dihitung</span>
-                                )}
-                            </Table.Cell>
-                            <Table.Cell className="text-center">
-                                <div className="flex justify-center gap-2">
-                                    <Button
-                                        size="xs"
-                                        color="info"
-                                        onClick={() => {
-                                            setIsEdit(true);
-                                            setCurrentGroup(group);
-                                            setShowModal(true);
-                                        }}
-                                    >
-                                        Edit
-                                    </Button>
-                                    <Button size="xs" color="failure" onClick={() => handleDelete(group.Id || group.id)}>
-                                        Hapus
-                                    </Button>
-                                </div>
-                            </Table.Cell>
-                        </Table.Row>
+                            <Table.Row key={group.Id || group.id} className="bg-white">
+                                <Table.Cell className="font-bold text-gray-900">{group.NamaGroup}</Table.Cell>
+                                <Table.Cell className="text-center">
+                                    {group.BobotGrup ? (
+                                        <Badge color="info">{(Number(group.BobotGrup) * 100).toFixed(2)}%</Badge>
+                                    ) : (
+                                        <span className="text-gray-400 italic text-xs">Belum dihitung</span>
+                                    )}
+                                </Table.Cell>
+                                <Table.Cell className="text-center">
+                                    <div className="flex justify-center gap-2">
+                                        <Button
+                                            size="xs"
+                                            color="info"
+                                            onClick={() => {
+                                                setIsEdit(true);
+                                                setCurrentGroup(group);
+                                                setShowModal(true);
+                                            }}
+                                            disabled={isLocked}
+                                        >
+                                            Edit
+                                        </Button>
+                                        <Button size="xs" color="failure" onClick={() => handleDelete(group.Id || group.id)} disabled={isLocked}>
+                                            Hapus
+                                        </Button>
+                                    </div>
+                                </Table.Cell>
+                            </Table.Row>
                     )) : (
                         <Table.Row>
                             <Table.Cell colSpan={3} className="text-center py-10 text-gray-400 italic">
@@ -174,28 +179,29 @@ const KPIGroupPage = () => {
                 </div>
             </CardBox>
 
-            <Modal show={showModal} onClose={() => setShowModal(false)} size="md">
-                <Modal.Header>{isEdit ? "Edit Grup KPI" : "Tambah Grup KPI"}</Modal.Header>
-                <Modal.Body>
-                    <div className="space-y-4">
-                        <div>
-                            <TextInput
-                                placeholder="Contoh: Hard Skill / Kompetensi Teknis"
-                                value={currentGroup.NamaGroup}
-                                onChange={(e) => setCurrentGroup({ ...currentGroup, NamaGroup: e.target.value })}
-                            />
+                <Modal show={showModal} onClose={() => setShowModal(false)} size="md">
+                    <Modal.Header>{isEdit ? "Edit Grup KPI" : "Tambah Grup KPI"}</Modal.Header>
+                    <Modal.Body>
+                        <div className="space-y-4">
+                            <div>
+                                <TextInput
+                                    placeholder="Contoh: Hard Skill / Kompetensi Teknis"
+                                    value={currentGroup.NamaGroup}
+                                    onChange={(e) => setCurrentGroup({ ...currentGroup, NamaGroup: e.target.value })}
+                                    disabled={isLocked}
+                                />
+                            </div>
                         </div>
-                    </div>
-                </Modal.Body>
-                <Modal.Footer>
-                    <Button color="primary" onClick={handleSave} disabled={loading}>
-                        Simpan
-                    </Button>
-                    <Button color="gray" onClick={() => setShowModal(false)}>
-                        Batal
-                    </Button>
-                </Modal.Footer>
-            </Modal>
+                    </Modal.Body>
+                    <Modal.Footer>
+                        <Button color="primary" onClick={handleSave} disabled={loading || isLocked}>
+                            {isLocked ? 'Periode Terkunci' : 'Simpan'}
+                        </Button>
+                        <Button color="gray" onClick={() => setShowModal(false)}>
+                            Batal
+                        </Button>
+                    </Modal.Footer>
+                </Modal>
         </div>
     );
 };
