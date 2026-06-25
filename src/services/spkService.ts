@@ -163,7 +163,7 @@ const spkService = {
   },
 
   calculateAhpWeight: async (periodeId: number, groupId?: number) => {
-    const response = await axiosServices.post<{ data: any; success: boolean }>(`/spk/ahp/calculate-weight/${periodeId}`, {
+    const response = await axiosServices.post<{ data: any; success: boolean; consistency?: any }>(`/spk/ahp/calculate-weight/${periodeId}`, {
       group_id: groupId
     });
     return response.data;

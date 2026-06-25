@@ -82,7 +82,7 @@ const NilaiPerbandingan = () => {
                   });
               }
           } else {
-              const res = await kpiService.getByPeriode(selectedPeriodeId);
+              const res = await kpiService.getByPeriode(selectedPeriodeId, 1, 1000);
               items = res.data.filter((k: KPI) => Number(k.GroupId) === selectedGroupId);
               const resComp = await spkService.getAhpPerbandingan(selectedPeriodeId, selectedGroupId);
               if (resComp.success && resComp.data) {
@@ -148,15 +148,10 @@ const NilaiPerbandingan = () => {
       }
 
       const resCalc = await spkService.calculateAhpWeight(selectedPeriodeId, selectedGroupId || undefined);
-      const consistency = resCalc.data?.consistency || {};
-      const nextCr = Number(consistency.cr ?? resCalc.data?.cr ?? 0);
-      const rawWeights = Array.isArray(resCalc.data?.data)
-        ? resCalc.data.data
-        : Array.isArray(resCalc.data?.weights)
-          ? resCalc.data.weights.map((w: any) => Number(w.weight ?? w.Weight ?? w.nilai ?? 0))
-          : Array.isArray(resCalc.data?.results)
-            ? resCalc.data.results.map((v: any) => Number(v))
-            : [];
+      const nextCr = Number(resCalc.consistency?.cr ?? 0);
+      const rawWeights = Array.isArray(resCalc.data)
+        ? resCalc.data
+        : [];
 
       setCr(nextCr);
       setWeightList(rawWeights);
