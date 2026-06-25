@@ -116,7 +116,7 @@ const DataKPI = () => {
       setGroups([]);
       setLoading(false);
     }
-  }, [selectedPeriodeId, currentPage]);
+  }, [selectedPeriodeId, currentPage, pageSize]);
 
   const fetchGroups = async () => {
     try {
