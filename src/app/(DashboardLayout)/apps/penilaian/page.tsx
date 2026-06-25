@@ -114,7 +114,7 @@ const PenilaianKaryawan = () => {
       const fetchData = async () => {
         try {
           const [resKpi, resGroup] = await Promise.all([
-            kpiService.getByPeriode(selectedPeriodeId),
+            kpiService.getByPeriode(selectedPeriodeId, 1, pageSize),
             kpiService.getGroups(selectedPeriodeId)
           ]);
           setKpis(resKpi.data);
@@ -128,7 +128,7 @@ const PenilaianKaryawan = () => {
       setKpis([]);
       setGroups([]);
     }
-  }, [selectedPeriodeId]);
+  }, [selectedPeriodeId, pageSize]);
 
   useEffect(() => {
     fetchInitialData();
