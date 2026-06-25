@@ -261,10 +261,10 @@ const spkService = {
     return response.data;
   },
 
-  reviewMooraResult: async (id: number, catatan: string, status: 'Draft' | 'Pending' | 'Reviewed' = 'Reviewed') => {
+  reviewMooraResult: async (id: number, catatan: { p: string; i: string; s: string }, status: 'Draft' | 'Pending' | 'Reviewed' = 'Reviewed') => {
     const response = await axiosServices.patch<{ message: string; success: boolean }>(`/spk/moora/hasil/${id}/review`, {
       status: status,
-      catatan: catatan
+      Catatan: catatan
     });
     return response.data;
   },

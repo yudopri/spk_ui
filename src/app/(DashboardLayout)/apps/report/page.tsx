@@ -144,7 +144,7 @@ const formatScore = (value?: number) => {
               size="xs" 
               pill 
               onClick={() => {
-                setReviewReportId(Number(item.Karyawan?.id || item.Karyawan?.Id || item.id || item.Id || 0));
+                setReviewReportId(Number(item.id || item.Id || 0));
                 
                 // Inisialisasi form review dari objek atau string
                 const c = item.catatan || (item as any).Catatan;
@@ -332,13 +332,11 @@ const formatScore = (value?: number) => {
     try {
       setReviewLoading(true);
       
-      // Gabungkan catatan menjadi string format JSON atau terstruktur jika backend belum support 3 field
-      // Mengikuti pola existing reviewMooraResult(id, catatan, status)
-      const combinedNote = JSON.stringify({
+      const combinedNote = {
         p: reviewForm.catatan_prestasi,
         i: reviewForm.catatan_indisipliner,
         s: reviewForm.catatan_saran
-      });
+      };
 
       const res = await spkService.reviewMooraResult(reviewReportId, combinedNote, reviewForm.status);
       if (res.success) {

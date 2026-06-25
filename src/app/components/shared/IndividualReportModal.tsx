@@ -308,33 +308,30 @@ const IndividualReportModal = ({ show, onClose, data }: IndividualReportProps) =
               size: A4;
               margin: 20mm;
             }
-            body {
+            html, body {
               -webkit-print-color-adjust: exact;
               print-color-adjust: exact;
               background-color: white !important;
             }
-            body * {
-              visibility: hidden;
-            }
-            .print-modal,
-            .print-modal * {
-              visibility: visible !important;
+            body > *:not(.print-modal) {
+              display: none !important;
             }
             .print-modal {
-              position: fixed;
-              left: 0;
-              top: 0;
-              width: 100%;
-              height: auto;
-              margin: 0;
-              padding: 0 !important;
-              box-shadow: none !important;
-            }
-            #printable-report {
+              display: block !important;
               position: absolute;
               left: 0;
               top: 0;
               width: 100%;
+              margin: 0;
+              padding: 0 !important;
+              box-shadow: none !important;
+              background: white !important;
+            }
+            .print-modal * {
+              visibility: visible !important;
+              display: block !important;
+            }
+            #printable-report {
               padding: 0 !important;
               margin: 0 !important;
             }
