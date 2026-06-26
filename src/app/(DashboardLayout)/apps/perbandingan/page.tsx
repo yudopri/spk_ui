@@ -351,8 +351,21 @@ const NilaiPerbandingan = () => {
                                     </Table.Cell>
                                     <Table.Cell className="w-2/4">
                                         <div className="flex flex-col items-center py-4">
+                                            <div className="flex items-center gap-2 w-full justify-center mb-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const reciprocal = comparisonValues[p.key] === 0 ? 1 : (1 / (comparisonValues[p.key] >= 1 ? comparisonValues[p.key] : 1 / comparisonValues[p.key]));
+                                                        setComparisonValues({...comparisonValues, [p.key]: Number(comparisonValues[p.key] < 1 ? comparisonValues[p.key] : (1/comparisonValues[p.key]).toFixed(4))});
+                                                    }}
+                                                    disabled={isLocked}
+                                                    className="px-3 py-1 rounded text-[10px] font-bold bg-gray-200 hover:bg-gray-300 disabled:opacity-30"
+                                                >
+                                                    Balik A ↔ B
+                                                </button>
+                                            </div>
                                             <input 
-                                                type="range" min="1" max="9" step="1"
+                                                type="range" min="0.111" max="9" step="any"
                                                 value={comparisonValues[p.key] || 1}
                                                 onChange={(e) => setComparisonValues({...comparisonValues, [p.key]: Number(e.target.value)})}
                                                 disabled={isLocked}
@@ -364,18 +377,18 @@ const NilaiPerbandingan = () => {
                                                    <span className="text-[10px] font-bold text-primary">SANGAT PENTING (9)</span>
                                                 </div>
                                                 <div className={`px-6 py-2 rounded-full border-2 transition-all flex flex-col items-center shadow-sm ${
-                                                  comparisonValues[p.key] > 1 ? "border-primary bg-primary/5" : "border-gray-200 bg-gray-50"
+                                                  comparisonValues[p.key] >= 1 ? "border-primary bg-primary/5" : "border-warning bg-warning/5"
                                                 }`}>
                                                     <span className="text-xl font-black text-primary leading-none">
                                                       {comparisonValues[p.key] || 1}
                                                     </span>
                                                     <span className="text-[9px] font-black uppercase tracking-tighter text-gray-500 mt-1">
-                                                      {getSaatyLabel(comparisonValues[p.key] || 1)}
+                                                      {getSaatyLabel(comparisonValues[p.key] >= 1 ? comparisonValues[p.key] : 1/(comparisonValues[p.key] || 1))}
                                                     </span>
                                                 </div>
                                                 <div className="mt-4 flex items-center gap-2 bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded text-[9px] font-bold text-gray-500 uppercase tracking-tighter">
                                                     <Icon icon="solar:reorder-bold" className="h-3 w-3" />
-                                                    Resiprokal Otomatis: {p.itemB.NamaGroup || p.itemB.NamaKpi} = 1/{comparisonValues[p.key] || 1}
+                                                    Resiprokal: {p.itemB.NamaGroup || p.itemB.NamaKpi} = {comparisonValues[p.key] >= 1 ? (1/comparisonValues[p.key]).toFixed(4) : (comparisonValues[p.key] || 1).toFixed(4)}
                                                 </div>
                                             </div>
                                         </div>
