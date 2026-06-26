@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import WelcomeBox from "@/app/components/dashboards/Dashboard1/WelcomeBox";
-import AnalyticsChart from "@/app/components/dashboards/Dashboard1/AnalyticsChart";
+import TrendChart from "@/app/components/dashboards/Dashboard1/TrendChart";
 import CardBox from "@/app/components/shared/CardBox";
 import { Icon } from "@iconify/react";
 import Link from "next/link";
@@ -51,7 +51,7 @@ const DashboardPage = () => {
 
       <div className="grid grid-cols-12 gap-30">
         <div className="col-span-12">
-          <AnalyticsChart />
+          <TrendChart />
         </div>
       </div>
 
