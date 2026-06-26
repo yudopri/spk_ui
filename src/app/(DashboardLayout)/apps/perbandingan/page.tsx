@@ -149,6 +149,16 @@ const NilaiPerbandingan = () => {
 
       const resCalc = await spkService.calculateAhpWeight(selectedPeriodeId, selectedGroupId || undefined);
       const nextCr = Number(resCalc.consistency?.cr ?? 0);
+
+      if (!resCalc.success) {
+        setError(resCalc.message || "Gagal menghitung bobot AHP");
+        setCr(nextCr);
+        setIsSimulated(true);
+        setWeightList([]);
+        setWeights({});
+        return;
+      }
+
       const rawWeights = Array.isArray(resCalc.data)
         ? resCalc.data
         : [];
@@ -169,8 +179,9 @@ const NilaiPerbandingan = () => {
       } else {
         setSuccess("Matriks berhasil dihitung. Silakan tinjau bobot di bawah ini.");
       }
-    } catch (err) {
-      setError("Gagal melakukan simulasi perhitungan");
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.message || "Gagal melakukan simulasi perhitungan";
+      setError(msg);
     } finally {
       setSubmitting(false);
     }
