@@ -7,6 +7,7 @@ import dynamic from "next/dynamic";
 import spkService, { SpkReport } from "@/services/spkService";
 import periodeService, { Periode } from "@/services/periodeService";
 import karyawanService from "@/services/karyawanService";
+import kpiService from "@/services/kpiService";
 import { usePermission } from "@/hooks/usePermission";
 import IndividualReportModal from "@/app/components/shared/IndividualReportModal";
 import { isManagerRole } from "@/utils/accessControl";
@@ -25,8 +26,10 @@ const ReportHasil = () => {
   const { user, isKaryawan, isAdminLike, isManager } = usePermission();
   const [selectedPeriodeId, setSelectedPeriodeId] = useState<number>(0);
   const [selectedLokasi, setSelectedLokasi] = useState<string>("");
+  const [selectedGroupId, setSelectedGroupId] = useState<number>(0);
   const [periodes, setPeriodes] = useState<Periode[]>([]);
   const [lokasiOptions, setLokasiOptions] = useState<{id: any, name: string}[]>([]);
+  const [groups, setGroups] = useState<{id: number, NamaGroup: string}[]>([]);
   const [reports, setReports] = useState<SpkReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
@@ -223,6 +226,19 @@ const formatScore = (value?: number) => {
   }, []);
 
   useEffect(() => {
+    const fetchGroups = async () => {
+      if (!selectedPeriodeId) return;
+      try {
+        const res = await kpiService.getGroups(selectedPeriodeId);
+        setGroups(res.data || []);
+      } catch (err) {
+        console.error("Gagal mengambil grup KPI", err);
+      }
+    };
+    fetchGroups();
+  }, [selectedPeriodeId]);
+
+  useEffect(() => {
     const fetchReport = async () => {
       if (!selectedPeriodeId) return;
       try {
@@ -233,7 +249,7 @@ const formatScore = (value?: number) => {
         const latestP = resP_Single.data.find((p: any) => (p.id || p.Id) === selectedPeriodeId);
         if (latestP) setSelectedPeriode(latestP);
 
-        const res = await spkService.getReport(selectedPeriodeId, reportPage, reportPageSize, selectedLokasi || undefined, search);
+        const res = await spkService.getReport(selectedPeriodeId, reportPage, reportPageSize, selectedLokasi || undefined, search, {}, selectedGroupId || undefined);
         const rawReports = res.data || [];
         setTotalReports(res.meta?.total || (res as any).totalCount || 0);
         
@@ -389,7 +405,7 @@ const formatScore = (value?: number) => {
         if (updatedP) setSelectedPeriode(updatedP);
         
         // Refresh laporan untuk memperbarui status per baris
-        const resR = await spkService.getReport(selectedPeriodeId, 1, 100, selectedLokasi || undefined);
+        const resR = await spkService.getReport(selectedPeriodeId, 1, 100, selectedLokasi || undefined, '', {}, selectedGroupId || undefined);
         setReports(resR.data || []);
       }
     } catch (err: any) {
@@ -553,19 +569,30 @@ const formatScore = (value?: number) => {
                 placeholder="Semua Lokasi"
                 className="w-full md:w-48"
              />
-             <DataFilter
-                value={selectedPeriodeId}
-                onChange={(val) => {
-                  setSelectedPeriodeId(Number(val));
-                  setReportPage(1);
-                }}
-                options={periodes.map(p => ({ 
-                  value: p.id || p.Id, 
-                  label: `${p.NamaPeriode || p.namaPeriode} - ${p.NamaDivisi || p.divisi?.namaDivisi || ""}`
-                }))}
-                placeholder="Pilih Periode"
-                className="w-full md:w-56"
-             />
+              <DataFilter
+                 value={selectedPeriodeId}
+                 onChange={(val) => {
+                   setSelectedPeriodeId(Number(val));
+                   setSelectedGroupId(0);
+                   setReportPage(1);
+                 }}
+                 options={periodes.map(p => ({ 
+                   value: p.id || p.Id, 
+                   label: `${p.NamaPeriode || p.namaPeriode} - ${p.NamaDivisi || p.divisi?.namaDivisi || ""}`
+                 }))}
+                 placeholder="Pilih Periode"
+                 className="w-full md:w-56"
+              />
+              <DataFilter
+                 value={selectedGroupId}
+                 onChange={(val) => {
+                   setSelectedGroupId(Number(val));
+                   setReportPage(1);
+                 }}
+                 options={[{ value: 0, label: "Semua Grup KPI" }, ...groups.map(g => ({ value: g.id, label: g.NamaGroup }))]}
+                 placeholder="Pilih Grup KPI"
+                 className="w-full md:w-48"
+              />
              
              <div className="flex gap-2 w-full md:w-auto">
                 {!isFinal && (

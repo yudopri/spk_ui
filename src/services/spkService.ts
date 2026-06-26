@@ -186,7 +186,7 @@ const spkService = {
   },
 
   // Report Endpoints
-  getReport: async (periodeId: number, page = 1, pageSize = 10, search = '', sort = '', filter = {}) => {
+  getReport: async (periodeId: number, page = 1, pageSize = 10, search = '', sort = '', filter = {}, groupId?: number) => {
     const response = await axiosServices.get<any>(`/spk/moora/hasil/${periodeId}`, {
       params: {
         page,
@@ -194,6 +194,7 @@ const spkService = {
         search,
         sort,
         filter: JSON.stringify(filter),
+        group_id: groupId,
       }
     });
 
