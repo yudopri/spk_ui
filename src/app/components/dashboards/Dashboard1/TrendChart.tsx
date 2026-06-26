@@ -133,7 +133,7 @@ const TrendChart = () => {
       width: 3,
     },
     xaxis: {
-      categories: trendData.map((d) => d.periodeName),
+      categories: trendData.map((d) => d.periodeName.replace(/\s*\(\d+\)\s*$/, "")),
       axisBorder: { show: false },
       axisTicks: { show: false },
       labels: {
