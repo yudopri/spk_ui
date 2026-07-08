@@ -55,8 +55,9 @@ async function proxyRequest(request: NextRequest, method: string) {
       });
     }
 
-    const text = await response.text();
-    return new NextResponse(text, {
+    // Binary responses (PDF, Excel, images, etc.) — must use arrayBuffer, not text
+    const buffer = await response.arrayBuffer();
+    return new NextResponse(buffer, {
       status: response.status,
       headers: responseHeaders,
     });

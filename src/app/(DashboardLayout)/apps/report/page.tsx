@@ -11,8 +11,6 @@ import kpiService from "@/services/kpiService";
 import { usePermission } from "@/hooks/usePermission";
 import IndividualReportModal from "@/app/components/shared/IndividualReportModal";
 import { isManagerRole } from "@/utils/accessControl";
-import { useEffect as useClientEffect } from "react";
-import PerformanceEvaluationForm from "@/app/components/shared/PerformanceEvaluationForm";
 
 // Shared Components
 import DataTable, { Column } from "@/app/components/shared/DataTable";
@@ -31,6 +29,7 @@ const ReportHasil = () => {
   const [lokasiOptions, setLokasiOptions] = useState<{id: any, name: string}[]>([]);
   const [groups, setGroups] = useState<{id: number, NamaGroup: string}[]>([]);
   const [reports, setReports] = useState<SpkReport[]>([]);
+  const [chartReports, setChartReports] = useState<SpkReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [updating, setUpdating] = useState(false);
@@ -41,7 +40,7 @@ const ReportHasil = () => {
   // Manager UI state - must be declared early since columns use it
   const [isManagerUI, setIsManagerUI] = useState(false);
   
-  useClientEffect(() => {
+  useEffect(() => {
     const role = localStorage.getItem('userRole');
     setIsManagerUI(isManagerRole(role));
   }, []);
@@ -250,6 +249,7 @@ const formatScore = (value?: number) => {
         if (latestP) setSelectedPeriode(latestP);
 
         const res = await spkService.getReport(selectedPeriodeId, reportPage, reportPageSize, selectedLokasi || undefined, search, {}, selectedGroupId || undefined);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         const rawReports = res.data || [];
         setTotalReports(res.meta?.total || (res as any).totalCount || 0);
         
@@ -286,6 +286,20 @@ const formatScore = (value?: number) => {
 
         setReports(ranked);
         setError(null);
+
+        // Fetch all reports for chart (tanpa pagination)
+        try {
+          const resAll = await spkService.getReport(selectedPeriodeId, 1, 1000, selectedLokasi || undefined, search, {}, selectedGroupId || undefined);
+          const allRaw = resAll.data || [];
+          const allSorted = [...allRaw].sort((a, b) => {
+            const scoreA = Number(a.nilai_akhir || a.totalScore || a.NilaiSkala || 0);
+            const scoreB = Number(b.nilai_akhir || b.totalScore || b.NilaiSkala || 0);
+            return scoreB - scoreA;
+          });
+          setChartReports(allSorted);
+        } catch {
+          setChartReports(ranked); // fallback ke data paginated
+        }
       } catch (err: any) {
         setError(err?.response?.data?.message || "Gagal mengambil laporan hasil");
       } finally {
@@ -293,7 +307,7 @@ const formatScore = (value?: number) => {
       }
     };
     fetchReport();
-  }, [selectedPeriodeId, selectedLokasi, reportPage, search, isKaryawan, isAdminLike, isManager, user?.employee_id, user?.dept_id]);
+  }, [selectedPeriodeId, selectedLokasi, reportPage, search, selectedGroupId, isKaryawan, isAdminLike, isManager, user?.employee_id, user?.dept_id]);
 
   const handleFetchIndividual = async (karyawanId: number) => {
     try {
@@ -301,8 +315,9 @@ const formatScore = (value?: number) => {
       setReportLoading(true);
       setReportError(null);
       const res = await spkService.getIndividualReport(selectedPeriodeId, karyawanId);
-      if (res.success) {
-        setIndividualData(res);
+      const payload = res?.data ?? res;
+      if (res.success && payload?.metadata && payload?.kesimpulan) {
+        setIndividualData(payload);
         setShowPrintModal(true);
       } else {
         setReportError(res.message || "Gagal mengambil data laporan individual");
@@ -404,9 +419,35 @@ const formatScore = (value?: number) => {
         const updatedP = resP.data.find((p: any) => (p.id || p.Id) === selectedPeriodeId);
         if (updatedP) setSelectedPeriode(updatedP);
         
-        // Refresh laporan untuk memperbarui status per baris
-        const resR = await spkService.getReport(selectedPeriodeId, 1, 100, selectedLokasi || undefined, '', {}, selectedGroupId || undefined);
-        setReports(resR.data || []);
+        // Refresh laporan dengan filter & pagination saat ini
+        const resR = await spkService.getReport(selectedPeriodeId, reportPage, reportPageSize, selectedLokasi || undefined, search, {}, selectedGroupId || undefined);
+        const rawRefresh = resR.data || [];
+        setTotalReports(resR.meta?.total || 0);
+        // Re-rank seperti fetchReport
+        const sortedRefresh = [...rawRefresh].sort((a, b) => {
+          const scoreA = Number(a.nilai_akhir || a.totalScore || a.NilaiSkala || 0);
+          const scoreB = Number(b.nilai_akhir || b.totalScore || b.NilaiSkala || 0);
+          return scoreB - scoreA;
+        });
+        const rankedRefresh = sortedRefresh.map((item, idx) => ({
+          ...item,
+          displayRank: (reportPage - 1) * reportPageSize + idx + 1,
+        }));
+        setReports(rankedRefresh);
+
+        // Refresh chart data
+        try {
+          const resAllR = await spkService.getReport(selectedPeriodeId, 1, 1000, selectedLokasi || undefined, search, {}, selectedGroupId || undefined);
+          const allRawR = resAllR.data || [];
+          const allSortedR = [...allRawR].sort((a, b) => {
+            const scoreA = Number(a.nilai_akhir || a.totalScore || a.NilaiSkala || 0);
+            const scoreB = Number(b.nilai_akhir || b.totalScore || b.NilaiSkala || 0);
+            return scoreB - scoreA;
+          });
+          setChartReports(allSortedR);
+        } catch {
+          setChartReports(rankedRefresh);
+        }
       }
     } catch (err: any) {
       setError(err?.response?.data?.message || `Gagal mengubah status menjadi ${status}`);
@@ -460,7 +501,7 @@ const formatScore = (value?: number) => {
     },
     legend: { show: false },
     xaxis: {
-      categories: reports.map(r => r.nama || r.Karyawan?.name || r.Karyawan?.Nama || "Unknown"),
+      categories: chartReports.map(r => r.nama || r.Karyawan?.name || r.Karyawan?.Nama || "Unknown"),
       axisBorder: { show: false },
       axisTicks: { show: false },
       labels: {
@@ -494,7 +535,7 @@ const formatScore = (value?: number) => {
 
   const chartSeries = [{
   name: 'Nilai Akhir',
-  data: reports.map(r =>
+  data: chartReports.map(r =>
     formatScore(
       r.nilai_akhir ||
       r.totalScore ||
@@ -503,9 +544,9 @@ const formatScore = (value?: number) => {
   )
 }];
 
-  const bestEmployee = reports.length > 0 ? reports[0] : null;
+  const bestEmployee = chartReports.length > 0 ? chartReports[0] : null;
 
-  const canExport = !selectedPeriodeId || (!isFinal && !isManagerUI);
+  const canExport = !selectedPeriodeId || !isFinal;
 
   const getStatusBadge = (status?: string) => {
     const s = (status || 'Draft').toLowerCase();
@@ -644,7 +685,7 @@ const formatScore = (value?: number) => {
               </div>
               {loading ? (
                 <div className="flex justify-center p-20"><Spinner size="xl" /></div>
-              ) : reports.length > 0 ? (
+              ) : reports.length > 0 || chartReports.length > 0 ? (
                 <Chart
                   options={chartOptions}
                   series={chartSeries}
@@ -694,7 +735,7 @@ const formatScore = (value?: number) => {
               loading={loading}
               data={reports}
               columns={columns}
-              rowKey={(item) => item.Id}
+              rowKey={(item) => item.Id || item.id || 0}
             />
 
             <DataPagination
@@ -773,6 +814,19 @@ const formatScore = (value?: number) => {
       </Modal>
 
       {/* Individual Report Modal */}
+      {reportLoading && (
+        <Modal show={true} size="sm">
+          <Modal.Body className="flex flex-col items-center justify-center py-10 gap-4">
+            <Spinner size="xl" color="info" />
+            <p className="text-sm text-gray-500">Memuat laporan individual...</p>
+          </Modal.Body>
+        </Modal>
+      )}
+      {reportError && !reportLoading && (
+        <Alert color="failure" className="mb-4" onDismiss={() => setReportError(null)}>
+          {reportError}
+        </Alert>
+      )}
       {individualData && (
         <IndividualReportModal
           show={showPrintModal}

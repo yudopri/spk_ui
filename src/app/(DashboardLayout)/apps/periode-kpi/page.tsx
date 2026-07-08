@@ -9,6 +9,8 @@ import { usePermission } from "@/hooks/usePermission";
 
 import DataTable, { Column } from "@/app/components/shared/DataTable";
 import DataPagination from "@/app/components/shared/DataPagination";
+import DataSearch from "@/app/components/shared/DataSearch";
+import DataFilter from "@/app/components/shared/DataFilter";
 
 const PeriodeKPI = () => {
   const { isReadOnly } = usePermission();
@@ -21,10 +23,12 @@ const PeriodeKPI = () => {
   const [error, setError] = useState<string | null>(null);
   const [btnLoading, setBtnLoading] = useState(false);
 
-  // Pagination & Search
+  // Pagination, Search & Filter
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [totalItems, setTotalItems] = useState(0);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
 
   const columns: Column<Periode>[] = [
     {
@@ -141,17 +145,20 @@ const PeriodeKPI = () => {
 
   useEffect(() => {
     fetchData();
-  }, [currentPage, pageSize]);
+  }, [currentPage, pageSize, searchTerm, statusFilter]);
 
   const fetchData = async () => {
     try {
       setLoading(true);
+      const filterObj: Record<string, any> = {};
+      if (statusFilter) filterObj.Status = statusFilter;
+
       const [periodRes, divisiRes] = await Promise.all([
-        periodeService.getAll(currentPage, pageSize),
+        periodeService.getAll(currentPage, pageSize, searchTerm, '', filterObj),
         divisiService.getAll()
       ]);
       setPeriods(periodRes.data);
-      setTotalItems(periodRes.meta?.total || (periodRes as any).totalCount || periodRes.data.length || 0);
+      setTotalItems(periodRes.meta?.total || 0);
       setDivisis(divisiRes.data);
       setError(null);
     } catch (err: any) {
@@ -185,6 +192,16 @@ const PeriodeKPI = () => {
 
   const handleSubmit = async () => {
     if (!selectedItem) return;
+
+    // Validasi wajib isi
+    const nama = (selectedItem.namaPeriode || selectedItem.NamaPeriode || "").trim();
+    const mulai = selectedItem.tanggalMulai || selectedItem.TanggalMulai || "";
+    const selesai = selectedItem.tanggalSelesai || selectedItem.TanggalSelesai || "";
+    if (!nama) { alert("Nama Periode wajib diisi."); return; }
+    if (!mulai) { alert("Tanggal Mulai wajib diisi."); return; }
+    if (!selesai) { alert("Tanggal Selesai wajib diisi."); return; }
+    if (mulai && selesai && new Date(mulai) > new Date(selesai)) { alert("Tanggal Mulai tidak boleh melebihi Tanggal Selesai."); return; }
+
     try {
       setBtnLoading(true);
 
@@ -249,17 +266,44 @@ const PeriodeKPI = () => {
   return (
     <div className="flex flex-col gap-6">
 
-      <div className="flex justify-between items-center bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Periode Penilaian</h1>
           <p className="text-sm text-gray-500">Tentukan rentang waktu penilaian untuk setiap divisi</p>
         </div>
-        {!isReadOnly && (
-        <Button color="primary" onClick={() => handleAction("create")}>
-          <Icon icon="solar:calendar-add-line-duotone" className="mr-2 h-5 w-5" />
-          Tambah Periode
-        </Button>
-        )}
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+          <DataSearch
+            placeholder="Cari nama periode..."
+            onSearch={(val) => {
+              setSearchTerm(val);
+              setCurrentPage(1);
+            }}
+          />
+          <DataFilter
+            value={statusFilter}
+            onChange={(val) => {
+              setStatusFilter(val);
+              setCurrentPage(1);
+            }}
+            options={[
+              { value: "draft", label: "Draft" },
+              { value: "open", label: "Open" },
+              { value: "processed", label: "Processed" },
+              { value: "locked", label: "Locked" },
+            ]}
+            placeholder="Semua Status"
+          />
+          <Button color="primary" onClick={fetchData} outline>
+            <Icon icon="solar:refresh-linear" className="mr-2 h-5 w-5" />
+            Refresh
+          </Button>
+          {!isReadOnly && (
+            <Button color="primary" onClick={() => handleAction("create")}>
+              <Icon icon="solar:calendar-add-line-duotone" className="mr-2 h-5 w-5" />
+              Tambah Periode
+            </Button>
+          )}
+        </div>
       </div>
 
       {error && <Alert color="failure">{error}</Alert>}
@@ -387,7 +431,7 @@ const PeriodeKPI = () => {
           {(modalMode !== "detail" && !isReadOnly && selectedItem?.Status !== 'locked') && (
             <Button color="primary" onClick={handleSubmit} disabled={btnLoading} size="sm" className="px-6 shadow-lg shadow-primary/20">
               {btnLoading ? <Spinner size="sm" className="mr-2" /> : <Icon icon="solar:diskette-bold" className="mr-2 h-4 w-4" />}
-              <span className="font-black uppercase text-[10px] tracking-widest">Simpan Perubahan</span>
+              <span className="font-black uppercase text-[10px] tracking-widest">{modalMode === 'create' ? 'Buat Periode' : 'Simpan Perubahan'}</span>
             </Button>
           )}
         </Modal.Footer>
