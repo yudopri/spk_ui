@@ -23,7 +23,7 @@ export default function RootLayout({
   return (
     <html lang="id">
       <head>
-        <link rel="icon" href="/favicon.png" type="image/svg+xml" />
+        <link rel="icon" href="/images/logos/ptwba.jpg" type="image/jpeg" />
         <ThemeModeScript />
       </head>
       <body className={`${outfit.className}`}>
