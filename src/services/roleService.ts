@@ -72,18 +72,34 @@ const roleService = {
     try {
       const response = await axiosServices.get<any>(`/auth/roles/${id}`);
       const raw = response.data?.data ?? response.data;
+
+      // Try to extract permissions from role detail response
+      let permissions: RolePermission[] = [];
+      const rawPerms = raw?.permissions ?? raw?.role_permissions ?? [];
+
+      if (Array.isArray(rawPerms) && rawPerms.length > 0) {
+        permissions = rawPerms.map((p: any) => ({
+          id: Number(p.id ?? p.permission_id ?? p.permissionId ?? 0),
+          permission_name: p.permission_name ?? p.name ?? p.permission ?? '',
+          path: p.path ?? '',
+        }));
+      }
+
+      // Fallback: if no permissions from detail, fetch from dedicated endpoint
+      if (permissions.length === 0) {
+        try {
+          permissions = await roleService.getRolePermissions(id);
+        } catch {
+          // ignore
+        }
+      }
+
       return {
         success: true,
         data: {
-          id: Number(raw?.id ?? 0),
-          role_name: raw?.role_name ?? '',
-          permissions: Array.isArray(raw?.permissions)
-            ? raw.permissions.map((p: any) => ({
-                id: Number(p.id ?? 0),
-                permission_name: p.permission_name ?? p.name ?? '',
-                path: p.path ?? '',
-              }))
-            : [],
+          id: Number(raw?.id ?? raw?.role_id ?? id),
+          role_name: raw?.role_name ?? raw?.name ?? '',
+          permissions,
         },
       };
     } catch (error: any) {
@@ -100,8 +116,8 @@ const roleService = {
           ? response.data
           : [];
       return rawList.map((item: any) => ({
-        id: Number(item.id ?? 0),
-        permission_name: item.permission_name ?? item.name ?? '',
+        id: Number(item.id ?? item.permission_id ?? item.permissionId ?? 0),
+        permission_name: item.permission_name ?? item.name ?? item.permission ?? '',
         path: item.path ?? '',
       }));
     } catch {

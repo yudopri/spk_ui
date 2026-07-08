@@ -111,11 +111,29 @@ const RolePage = () => {
         setDetailLoading(true);
         setSaveMsg(null);
         try {
-            const res = await roleService.getById(role.id);
-            if (res.success && res.data) {
-                setDetailRole(res.data);
-                setSelectedPermIds(res.data.permissions.map(p => p.id));
+            const [detailRes, rolePerms] = await Promise.all([
+                roleService.getById(role.id),
+                roleService.getRolePermissions(role.id),
+            ]);
+
+            let roleDetail = detailRes.data;
+
+            // Use the more reliable getRolePermissions if detail has none
+            const assignedPerms = rolePerms.length > 0
+                ? rolePerms
+                : (roleDetail?.permissions || []);
+
+            if (detailRes.success && roleDetail) {
+                setDetailRole({ ...roleDetail, permissions: assignedPerms });
+            } else {
+                // Fallback: construct detail from list data
+                setDetailRole({
+                    id: role.id,
+                    role_name: role.role_name,
+                    permissions: assignedPerms,
+                });
             }
+            setSelectedPermIds(assignedPerms.map(p => p.id));
         } catch {
             setDetailRole(null);
         } finally {
