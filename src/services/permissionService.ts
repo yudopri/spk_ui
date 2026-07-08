@@ -57,12 +57,16 @@ const permissionService = {
   },
 
   update: async (data: Permission) => {
-    const response = await axiosServices.post('/auth/permissions', data);
+    const response = await axiosServices.put(`/auth/permissions/${data.id}`, {
+      permission_name: data.permission_name,
+      path: data.path,
+    });
     return response.data;
   },
 
   delete: async (id: number) => {
-    throw new Error('Endpoint delete permission belum tersedia pada backend SPK terbaru (hanya GET/POST).');
+    const response = await axiosServices.delete(`/auth/permissions/${id}`);
+    return response.data;
   }
 };
 

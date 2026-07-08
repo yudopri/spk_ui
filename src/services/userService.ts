@@ -1,5 +1,4 @@
 import axiosServices from '@/utils/axios';
-import { Role } from './roleService';
 
 export interface User {
   id: number;

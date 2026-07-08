@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { Table, Badge, Spinner, Alert, Button } from "flowbite-react";
 import CardBox from "@/app/components/shared/CardBox";
 import { Icon } from "@iconify/react";
@@ -20,15 +20,32 @@ const getFriendlyError = (err: any, fallback: string) => {
   return err?.message || err?.response?.data?.message || fallback;
 };
 
+interface WorkLocation {
+  id: string | number;
+  name: string;
+}
+
 const DataKaryawan = () => {
   const { normalizedRole, filterEmployeesByScope, isAdminLike, isKaryawan } = usePermission();
   const [employees, setEmployees] = useState<Karyawan[]>([]);
   const [divisiList, setDivisiList] = useState<Divisi[]>([]);
+  const [workLocations, setWorkLocations] = useState<WorkLocation[]>([]);
   const [selectedDeptId, setSelectedDeptId] = useState<string>("");
   const [selectedLokasi, setSelectedLokasi] = useState<string>("");
   const [roleGroup, setRoleGroup] = useState<string>("");
   const [includeManagement, setIncludeManagement] = useState<boolean>(true);
+  const [searchInput, setSearchInput] = useState<string>("");
   const [search, setSearch] = useState<string>("");
+  const debounceTimer = useRef<NodeJS.Timeout | null>(null);
+
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchInput(value);
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => {
+      setSearch(value);
+      setPage(1);
+    }, 400);
+  }, []);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -79,12 +96,23 @@ const DataKaryawan = () => {
 
   const fetchDepartments = async () => {
     try {
-      const res = await divisiService.getAll();
+      const res = await divisiService.getAll(1, 1000, "");
       if (res.success) {
         setDivisiList(res.data);
       }
     } catch (err: any) {
-      setError(getFriendlyError(err, "Gagal mengambil daftar departemen"));
+      console.error("Gagal mengambil daftar departemen:", err);
+    }
+  };
+
+  const fetchWorkLocations = async () => {
+    try {
+      const res = await karyawanService.getWorkLocations();
+      if (res.success && res.data) {
+        setWorkLocations(res.data);
+      }
+    } catch (err: any) {
+      console.error("Gagal mengambil daftar lokasi kerja:", err);
     }
   };
 
@@ -116,16 +144,21 @@ const DataKaryawan = () => {
 
   useEffect(() => {
     fetchDepartments();
+    fetchWorkLocations();
   }, []);
 
   useEffect(() => {
     fetchEmployees();
-  }, [selectedDeptId, selectedLokasi, roleGroup, includeManagement, normalizedRole, page, pageSize]);
+  }, [selectedDeptId, selectedLokasi, roleGroup, includeManagement, normalizedRole, page, pageSize, search]);
+
+  // Reset page to 1 when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [selectedDeptId, selectedLokasi, roleGroup, includeManagement]);
 
   const divisiOptions = divisiList.map((div) => ({ value: String(div.id), label: div.namaDivisi }));
 
-  const uniqueLokasi = Array.from(new Set(employees.map((e) => e.lokasi_kerja).filter(Boolean))) as string[];
-  const lokasiOptions = uniqueLokasi.map((value) => ({ value, label: value }));
+  const lokasiOptions = workLocations.map((loc) => ({ value: String(loc.name), label: loc.name }));
 
   const selectedDeptName = !selectedDeptId 
     ? "Semua Departemen" 
@@ -146,8 +179,8 @@ const DataKaryawan = () => {
         </div>
 
         <EmployeeFilters
-          search={search}
-          onSearchChange={setSearch}
+          search={searchInput}
+          onSearchChange={handleSearchChange}
           divisiOptions={divisiOptions}
           selectedDivisi={selectedDeptId}
           onDivisiChange={setSelectedDeptId}
@@ -177,6 +210,11 @@ const DataKaryawan = () => {
           loading={loading}
           striped
           rowKey={(item: Karyawan) => item.id}
+          emptyMessage={
+            search || selectedDeptId || selectedLokasi || roleGroup
+              ? "Tidak ada karyawan yang cocok dengan filter yang dipilih."
+              : "Belum ada data karyawan."
+          }
         />
 
         <DataPagination

@@ -1,9 +1,9 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Table, Button, Badge, Spinner, Alert, Modal, Label, TextInput, Checkbox } from "flowbite-react";
 import CardBox from "@/app/components/shared/CardBox";
 import { Icon } from "@iconify/react";
-import roleService, { Role } from "@/services/roleService";
+import roleService, { Role, RoleDetail } from "@/services/roleService";
 import permissionService, { Permission } from "@/services/permissionService";
 import { usePermission } from "@/hooks/usePermission";
 
@@ -17,58 +17,82 @@ const RolePage = () => {
     const [permissions, setPermissions] = useState<Permission[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [showModal, setShowModal] = useState(false);
-    const [editData, setEditData] = useState<Role | null>(null);
-    const [formData, setFormData] = useState({ role_name: '' });
+    const [search, setSearch] = useState("");
+
+    // Detail modal
+    const [showDetailModal, setShowDetailModal] = useState(false);
+    const [detailRole, setDetailRole] = useState<RoleDetail | null>(null);
+    const [detailLoading, setDetailLoading] = useState(false);
+    const [selectedPermIds, setSelectedPermIds] = useState<number[]>([]);
     const [saving, setSaving] = useState(false);
+    const [saveMsg, setSaveMsg] = useState<{ type: "success" | "failure"; text: string } | null>(null);
 
     // Pagination
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(10);
     const [totalItems, setTotalItems] = useState(0);
 
+    const isAdminRole = detailRole?.role_name?.toLowerCase() === "admin";
+
     const columns: Column<Role>[] = [
-      {
-        header: "Role Name",
-        render: (item: Role) => (
-          <div className="flex items-center gap-2">
-            <Icon icon="solar:shield-user-bold" className="text-primary text-lg" />
-            <span className="font-bold">{item.role_name}</span>
-          </div>
-        )
-      },
-      {
-        header: "Jumlah Hak Akses",
-        render: (item: Role) => (
-          <Badge color="gray">{(item as any).permissions?.length || 0} Hak Akses</Badge>
-        )
-      },
-      {
-        header: "Aksi",
-        headerClasses: "text-right",
-        cellClasses: "text-right",
-        render: (item: Role) => (
-          <div className="flex justify-end gap-2">
-            <Button color="primary" size="xs" onClick={() => handleOpenModal(item)}>
-              <Icon icon="solar:pen-new-square-bold" className="text-base" />
-            </Button>
-            <Button color="failure" size="xs" onClick={() => handleDelete(item.id)}>
-              <Icon icon="solar:trash-bin-trash-bold" className="text-base" />
-            </Button>
-          </div>
-        )
-      }
+        {
+            header: "Nama Peran",
+            render: (item: Role) => (
+                <div className="flex items-center gap-2">
+                    <Icon icon="solar:shield-user-bold" className="text-primary text-lg" />
+                    <div className="flex flex-col">
+                        <span className="font-bold">{item.role_name}</span>
+                        <span className="text-[10px] text-gray-400 font-mono italic">ID: {item.id}</span>
+                    </div>
+                </div>
+            )
+        },
+        {
+            header: "Jumlah Hak Akses",
+            render: (item: Role) => (
+                <Badge color="info">{item.permission_count ?? 0} Hak Akses</Badge>
+            )
+        },
+        {
+            header: "Ringkasan",
+            render: (item: Role) => (
+                <div className="flex flex-wrap gap-1 max-w-md">
+                    {(item.permissions || []).slice(0, 3).map((perm, i) => (
+                        <Badge key={i} color="gray" className="text-[10px]">{perm}</Badge>
+                    ))}
+                    {(item.permissions || []).length > 3 && (
+                        <Badge color="gray" className="text-[10px]">+{(item.permissions || []).length - 3} lagi</Badge>
+                    )}
+                    {(!item.permissions || item.permissions.length === 0) && (
+                        <span className="text-xs text-gray-400 italic">Tidak ada hak akses</span>
+                    )}
+                </div>
+            )
+        },
+        {
+            header: "Aksi",
+            headerClasses: "text-right",
+            cellClasses: "text-right",
+            render: (item: Role) => (
+                <div className="flex justify-end gap-2">
+                    <Button color="primary" size="xs" onClick={() => handleOpenDetail(item)}>
+                        <Icon icon="solar:eye-bold" className="text-base mr-1" />
+                        Lihat Detail
+                    </Button>
+                </div>
+            )
+        }
     ];
 
     useEffect(() => {
         fetchData();
-    }, [page, pageSize]);
+    }, [page, pageSize, search]);
 
     const fetchData = async () => {
         setLoading(true);
         try {
             const [roleRes, permRes] = await Promise.all([
-                roleService.getAll(page, pageSize),
+                roleService.getAll(page, pageSize, search),
                 permissionService.getAll()
             ]);
             setRoles(roleRes.data);
@@ -82,60 +106,48 @@ const RolePage = () => {
         }
     };
 
-    const handleOpenModal = (item?: Role) => {
-        if (item) {
-            setEditData(item);
-            setFormData({ role_name: item.role_name });
-        } else {
-            setEditData(null);
-            setFormData({ role_name: '' });
-        }
-        setShowModal(true);
-    };
-
-    const handleSave = async () => {
-        setSaving(true);
+    const handleOpenDetail = async (role: Role) => {
+        setShowDetailModal(true);
+        setDetailLoading(true);
+        setSaveMsg(null);
         try {
-            if (editData) {
-                await roleService.update({ ...editData, ...formData });
-            } else {
-                await roleService.create({ ...formData, rolePermissions: [] });
+            const res = await roleService.getById(role.id);
+            if (res.success && res.data) {
+                setDetailRole(res.data);
+                setSelectedPermIds(res.data.permissions.map(p => p.id));
             }
-            setShowModal(false);
-            fetchData();
-        } catch (err: any) {
-            alert(err?.response?.data?.message || "Gagal menyimpan data");
+        } catch {
+            setDetailRole(null);
         } finally {
-            setSaving(false);
+            setDetailLoading(false);
         }
     };
 
-    const handleDelete = async (id: number) => {
-        if (!confirm("Apakah Anda yakin ingin menghapus role ini?")) return;
-        try {
-            await roleService.delete(id);
-            fetchData();
-        } catch (err: any) {
-            alert(err?.response?.data?.message || "Gagal menghapus data");
-        }
+    const togglePerm = (permId: number) => {
+        setSelectedPermIds(prev =>
+            prev.includes(permId) ? prev.filter(id => id !== permId) : [...prev, permId]
+        );
     };
 
-    const togglePermission = async (role: Role, permissionId: number) => {
+    const handleSavePermissions = async () => {
+        if (!detailRole) return;
         setSaving(true);
+        setSaveMsg(null);
         try {
-            const currentIds = role.rolePermissions.map(rp => rp.permissionId);
-            let nextIds: number[];
-            
-            if (currentIds.includes(permissionId)) {
-                nextIds = currentIds.filter(id => id !== permissionId);
-            } else {
-                nextIds = [...currentIds, permissionId];
+            const res = await roleService.setPermissions(detailRole.id, selectedPermIds);
+            setSaveMsg({ type: "success", text: res.message || "Berhasil menyimpan hak akses." });
+            fetchData(); // Refresh list
+            // Reload detail
+            const updated = await roleService.getById(detailRole.id);
+            if (updated.success && updated.data) {
+                setDetailRole(updated.data);
+                setSelectedPermIds(updated.data.permissions.map(p => p.id));
             }
-
-            await roleService.updatePermissions(role.role_name, nextIds);
-            fetchData();
         } catch (err: any) {
-            alert(err?.response?.data?.message || "Gagal mengubah permission (Role Mapping)");
+            setSaveMsg({
+                type: "failure",
+                text: err?.response?.data?.message || "Gagal menyimpan hak akses."
+            });
         } finally {
             setSaving(false);
         }
@@ -143,76 +155,36 @@ const RolePage = () => {
 
     return (
         <div className="flex flex-col gap-6">
-            <div className="flex justify-between items-center bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm">
                 <div>
                     <h1 className="text-2xl font-bold flex items-center gap-2">
                         <Icon icon="solar:user-rounded-bold-duotone" className="text-primary" />
                         Manajemen Peran & Hak Akses
                     </h1>
-                    <p className="text-sm text-gray-500">Konfigurasi hak akses untuk tiap tingkatan peran</p>
+                    <p className="text-sm text-gray-500">Daftar peran dalam sistem beserta hak akses yang dimiliki</p>
                 </div>
+                <TextInput
+                    value={search}
+                    onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                    placeholder="Cari nama peran..."
+                    sizing="sm"
+                    className="w-full md:w-64"
+                />
             </div>
 
             {error && <Alert color="failure">{error}</Alert>}
 
             <CardBox>
-                <div className="overflow-x-auto">
-                    <Table hoverable>
-                        <Table.Head>
-                            <Table.HeadCell>Nama Peran</Table.HeadCell>
-                            <Table.HeadCell>Matriks Hak Akses</Table.HeadCell>
-                            <Table.HeadCell className="text-center">Aksi</Table.HeadCell>
-                        </Table.Head>
-                        <Table.Body>
-                            {loading ? (
-                                <Table.Row>
-                                    <Table.Cell colSpan={3} className="text-center py-10">
-                                        <Spinner size="xl" />
-                                    </Table.Cell>
-                                </Table.Row>
-                            ) : roles.map((role) => (
-                                <Table.Row key={role.id}>
-                                    <Table.Cell className="font-bold whitespace-nowrap align-top pt-4">
-                                        <div className="flex flex-col gap-1">
-                                            <span>{role.role_name}</span>
-                                            <span className="text-[10px] text-gray-400 font-mono italic">Role ID: {role.id}</span>
-                                        </div>
-                                    </Table.Cell>
-                                    <Table.Cell>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 py-2">
-                                            {permissions.map((perm) => {
-                                                const isAssigned = role.rolePermissions.some(rp => rp.permissionId === perm.id);
-                                                return (
-                                                    <div key={perm.id} className="flex items-center gap-2 bg-gray-50 dark:bg-gray-700/50 p-2 rounded border border-gray-100 dark:border-gray-600">
-                                                        <Checkbox 
-                                                            id={`role-${role.id}-perm-${perm.id}`}
-                                                            checked={isAssigned}
-                                                            onChange={() => togglePermission(role, perm.id)}
-                                                            disabled={!hasPermission("user_manage") || saving}
-                                                        />
-                                                        <div className="flex flex-col">
-                                                            <Label htmlFor={`role-${role.id}-perm-${perm.id}`} className="text-xs font-semibold cursor-pointer">
-                                                                {perm.permission_name}
-                                                            </Label>
-                                                            <span className="text-[10px] text-gray-500">{perm.path}</span>
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    </Table.Cell>
-                                    <Table.Cell className="align-top pt-4">
-                                        <div className="flex justify-center gap-2">
-                                            <Badge color="gray" size="sm">Role CRUD belum tersedia</Badge>
-                                        </div>
-                                    </Table.Cell>
-                                </Table.Row>
-                            ))}
-                        </Table.Body>
-                    </Table>
-                </div>
+                <DataTable
+                    columns={columns}
+                    data={roles}
+                    loading={loading}
+                    striped
+                    rowKey={(item: Role) => item.id}
+                    emptyMessage="Tidak ada data peran."
+                />
 
-                <DataPagination 
+                <DataPagination
                     currentPage={page}
                     totalItems={totalItems}
                     pageSize={pageSize}
@@ -220,6 +192,90 @@ const RolePage = () => {
                     onPageSizeChange={setPageSize}
                 />
             </CardBox>
+
+            {/* Detail Role + Permission Mapping Modal */}
+            <Modal show={showDetailModal} onClose={() => setShowDetailModal(false)} size="4xl">
+                <Modal.Header>
+                    {detailRole ? `Detail Peran — ${detailRole.role_name}` : "Detail Peran"}
+                </Modal.Header>
+                <Modal.Body>
+                    {detailLoading ? (
+                        <div className="flex justify-center py-10">
+                            <Spinner size="xl" />
+                        </div>
+                    ) : detailRole ? (
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                                <Icon icon="solar:shield-user-bold" className="text-primary text-2xl" />
+                                <div>
+                                    <p className="font-bold text-lg">{detailRole.role_name}</p>
+                                    <p className="text-xs text-gray-500">ID: {detailRole.id} · {detailRole.permissions.length} hak akses ter-assign</p>
+                                </div>
+                                {isAdminRole && (
+                                    <Badge color="warning" className="ml-auto">Admin — semua akses</Badge>
+                                )}
+                            </div>
+
+                            {saveMsg && (
+                                <Alert color={saveMsg.type === "success" ? "success" : "failure"}>
+                                    {saveMsg.text}
+                                </Alert>
+                            )}
+
+                            <div>
+                                <Label value="Hak Akses (Permission)" className="mb-2 block font-semibold" />
+                                <p className="text-xs text-gray-500 mb-3">
+                                    {isAdminRole
+                                        ? "Role Admin memiliki semua hak akses secara otomatis."
+                                        : "Centang atauhapus hak akses untuk peran ini, lalu klik Simpan."}
+                                </p>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-96 overflow-y-auto border rounded-lg p-3">
+                                    {permissions.map((perm) => {
+                                        const isAssigned = selectedPermIds.includes(perm.id);
+                                        return (
+                                            <div
+                                                key={perm.id}
+                                                className={`flex items-center gap-2 p-2 rounded border transition-colors ${
+                                                    isAssigned
+                                                        ? "bg-primary/5 border-primary/30"
+                                                        : "bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-600"
+                                                }`}
+                                            >
+                                                <Checkbox
+                                                    id={`perm-${perm.id}`}
+                                                    checked={isAssigned}
+                                                    onChange={() => togglePerm(perm.id)}
+                                                    disabled={isAdminRole || saving}
+                                                />
+                                                <Label htmlFor={`perm-${perm.id}`} className="cursor-pointer flex-1">
+                                                    <span className="text-xs font-semibold block">{perm.permission_name}</span>
+                                                    <span className="text-[10px] text-gray-500 block">{perm.path}</span>
+                                                </Label>
+                                            </div>
+                                        );
+                                    })}
+                                    {permissions.length === 0 && (
+                                        <p className="text-sm text-gray-400 italic col-span-2 text-center py-4">
+                                            Tidak ada data permission.
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        <p className="text-center text-gray-500 py-10">Gagal memuat detail peran.</p>
+                    )}
+                </Modal.Body>
+                <Modal.Footer>
+                    {!isAdminRole && (
+                        <Button color="primary" onClick={handleSavePermissions} disabled={saving || detailLoading}>
+                            {saving ? <Spinner size="sm" className="mr-2" /> : null}
+                            Simpan Perubahan
+                        </Button>
+                    )}
+                    <Button color="gray" onClick={() => setShowDetailModal(false)}>Tutup</Button>
+                </Modal.Footer>
+            </Modal>
         </div>
     );
 };
