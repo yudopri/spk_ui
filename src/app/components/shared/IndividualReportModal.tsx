@@ -53,7 +53,64 @@ const IndividualReportModal = ({ show, onClose, data }: IndividualReportProps) =
   if (!data || !data.kesimpulan) return null;
 
   const handlePrint = () => {
-    window.print();
+    const printContent = document.getElementById("printable-report");
+    if (!printContent) return;
+
+    const printWindow = window.open("", "_blank", "width=900,height=700");
+    if (!printWindow) {
+      window.print();
+      return;
+    }
+
+    // Collect existing Tailwind/global stylesheets for print context
+    const stylesheets = Array.from(document.styleSheets)
+      .map((sheet) => {
+        try {
+          return Array.from(sheet.cssRules).map((r) => r.cssText).join("\n");
+        } catch {
+          return "";
+        }
+      })
+      .join("\n");
+
+    printWindow.document.write(`<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <title>Laporan Hasil Penilaian Kinerja</title>
+  <style>${stylesheets}</style>
+  <style>
+    @page { size: A4; margin: 20mm; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; padding: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: #000; background: #fff;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    table { border-collapse: collapse !important; width: 100%; }
+    th, td { border: 1px solid #000 !important; }
+    .bg-gray-100 { background-color: #f3f4f6 !important; }
+    .bg-gray-900 { background-color: #111827 !important; color: #fff !important; }
+    .border-gray-900 { border-color: #111827 !important; }
+    .border-double { border-style: double !important; }
+    .border-dashed { border-style: dashed !important; }
+    .text-primary { color: #4f46e5 !important; }
+    .bg-yellow-400 { background-color: #facc15 !important; }
+    .shadow-\\[4px_4px_0px_0px_rgba\\(0\\,0\\,0\\,1\\)\\] {
+      box-shadow: 4px 4px 0px 0px rgba(0,0,0,1) !important;
+    }
+  </style>
+</head>
+<body>${printContent.innerHTML}</body>
+</html>`);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 400);
   };
 
   const skorValue = typeof data.kesimpulan.Skor === 'string'
@@ -312,29 +369,42 @@ const IndividualReportModal = ({ show, onClose, data }: IndividualReportProps) =
               -webkit-print-color-adjust: exact;
               print-color-adjust: exact;
               background-color: white !important;
+              overflow: visible !important;
             }
-            body > *:not(.print-modal) {
+            /* Hide main app content */
+            #__next {
               display: none !important;
             }
-            .print-modal {
+            /* Show portal containers (Flowbite renders modals in portals at body level) */
+            body > div {
               display: block !important;
-              position: absolute;
-              left: 0;
-              top: 0;
-              width: 100%;
-              margin: 0;
+            }
+            /* Reset modal overlay — remove backdrop, fixed positioning */
+            [role="dialog"],
+            [role="dialog"] > div,
+            .fixed.inset-0 {
+              position: static !important;
+              background: none !important;
+              overflow: visible !important;
+              display: block !important;
+            }
+            /* Modal container: full width, no shadow */
+            .print-modal {
+              position: static !important;
+              width: 100% !important;
+              max-width: 100% !important;
+              margin: 0 !important;
               padding: 0 !important;
               box-shadow: none !important;
               background: white !important;
-            }
-            .print-modal * {
-              visibility: visible !important;
               display: block !important;
             }
+            /* Print content */
             #printable-report {
               padding: 0 !important;
               margin: 0 !important;
             }
+            /* Hide elements marked print:hidden (Modal Header, Footer, preview note) */
             .print\\:hidden {
               display: none !important;
             }
@@ -347,6 +417,13 @@ const IndividualReportModal = ({ show, onClose, data }: IndividualReportProps) =
             }
             .bg-gray-100 {
               background-color: #f3f4f6 !important;
+            }
+            .bg-gray-900 {
+              background-color: #111827 !important;
+              color: white !important;
+            }
+            .bg-yellow-400 {
+              background-color: #facc15 !important;
             }
           }
         `}</style>
