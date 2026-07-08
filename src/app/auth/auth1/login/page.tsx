@@ -3,8 +3,8 @@ import type { Metadata } from "next";
 import LoginPageClient from "./LoginPageClient";
 
 export const metadata: Metadata = {
-  title: "Login - SPK Kinerja Karyawan",
-  description: "Halaman autentikasi sistem SPK penilaian kinerja karyawan.",
+  title: "Masuk — HRIS PT. Wira Buana Arum",
+  description: "Halaman masuk sistem HRIS PT. Wira Buana Arum.",
 };
 
 const Login = () => {

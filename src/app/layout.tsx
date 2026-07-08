@@ -11,8 +11,8 @@ import "@/app/api/index";
 const outfit = Outfit({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"] });
 
 export const metadata: Metadata = {
-  title: "SPK Kinerja Karyawan",
-  description: "Sistem pendukung keputusan penilaian kinerja karyawan berbasis AHP-MOORA.",
+  title: "HRIS — PT. Wira Buana Arum",
+  description: "Human Resource Information System — PT. Wira Buana Arum. Sistem penilaian kinerja karyawan yang terintegrasi.",
 };
 
 export default function RootLayout({

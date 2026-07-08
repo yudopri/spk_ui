@@ -202,9 +202,9 @@ const DeveloperPage = () => {
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2">
               <Icon icon="solar:code-bold-duotone" className="text-primary" />
-              Developer Tools (Debug AHP/MOORA)
+              Alat Pengembang (Debug Perhitungan)
             </h1>
-            <p className="text-sm text-gray-500">Audit logs dan pengecekan perhitungan SPK secara transparan</p>
+            <p className="text-sm text-gray-500">Pengecekan dan validasi perhitungan penilaian kinerja secara transparan</p>
           </div>
           <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
             <Select
@@ -229,7 +229,7 @@ const DeveloperPage = () => {
               disabled={loading || !selectedPeriodeId}
             >
               {loading ? <Spinner size="sm" className="mr-2" /> : <Icon icon="solar:refresh-linear" className="mr-2 h-4 w-4" />}
-              Fetch Debug Data
+              Ambil Data Debug
             </Button>
           </div>
         </div>
@@ -239,13 +239,13 @@ const DeveloperPage = () => {
         {/* Tabs */}
         <Tabs variant="underline">
           {/* ========== AHP TAB ========== */}
-          <Tabs.Item active title="AHP Matrix" icon={() => <Icon icon="solar:chart-linear" className="mr-2" />}>
+          <Tabs.Item active title="Matriks Perbandingan" icon={() => <Icon icon="solar:chart-linear" className="mr-2" />}>
             {ahpData ? (
               <div className="space-y-6">
                 {/* Summary Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <CardBox>
-                    <h5 className="font-bold text-gray-400 uppercase text-xs">Inconsistency Index (CI)</h5>
+                    <h5 className="font-bold text-gray-400 uppercase text-xs">Indeks Ketidak Konsistenan (CI)</h5>
                     <p className="text-2xl font-bold font-mono">{ahpData.ci.toFixed(6)}</p>
                   </CardBox>
                   <CardBox>
@@ -266,7 +266,7 @@ const DeveloperPage = () => {
                 <CardBox>
                   <h3 className="font-bold mb-4 flex items-center gap-2">
                     <Icon icon="solar:matrix-bold" className="text-primary" />
-                    Pairwise Comparison Matrix
+                    Matriks Perbandingan Kriteria
                   </h3>
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm text-center border-collapse">
@@ -326,7 +326,7 @@ const DeveloperPage = () => {
                   <CardBox>
                     <h3 className="font-bold mb-4 flex items-center gap-2">
                       <Icon icon="solar:scale-bold" className="text-primary" />
-                      Daftar Perbandingan Pairwise
+                      Daftar Perbandingan Kriteria
                     </h3>
                     <div className="overflow-x-auto">
                       <Table striped hoverable>
@@ -360,13 +360,13 @@ const DeveloperPage = () => {
             ) : (
               <div className="text-center py-20 text-gray-400 italic">
                 <Icon icon="solar:chart-square-bold" className="h-16 w-16 mx-auto mb-4 opacity-30" />
-                <p>Klik <b>Fetch Debug Data</b> untuk memuat analisis AHP.</p>
+                <p>Klik <b>Ambil Data Debug</b> untuk memuat analisis perbandingan kriteria.</p>
               </div>
             )}
           </Tabs.Item>
 
           {/* ========== MOORA TAB ========== */}
-          <Tabs.Item title="MOORA Detail" icon={() => <Icon icon="solar:user-speak-rounded-linear" className="mr-2" />}>
+          <Tabs.Item title="Detail Penilaian" icon={() => <Icon icon="solar:user-speak-rounded-linear" className="mr-2" />}>
             {mooraData && mooraResult ? (
               <div className="space-y-6">
                 {/* Raw Score Matrix */}
@@ -495,7 +495,7 @@ const DeveloperPage = () => {
             ) : (
               <div className="text-center py-20 text-gray-400 italic">
                 <Icon icon="solar:user-speak-rounded-bold" className="h-16 w-16 mx-auto mb-4 opacity-30" />
-                <p>Klik <b>Fetch Debug Data</b> untuk memuat detail perhitungan MOORA.</p>
+                <p>Klik <b>Ambil Data Debug</b> untuk memuat detail perhitungan penilaian.</p>
               </div>
             )}
           </Tabs.Item>

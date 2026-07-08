@@ -339,7 +339,7 @@ const PerformanceEvaluationForm = ({
               </p>
 
               <div className="text-2xl font-black">
-                AHP-MOORA
+                Sistem Penilaian
               </div>
             </div>
 
@@ -356,7 +356,7 @@ const PerformanceEvaluationForm = ({
 
           <p className="mt-4 text-sm text-gray-600 text-justify">
             Berdasarkan hasil evaluasi kinerja menggunakan
-            metode AHP dan MOORA, karyawan memperoleh
+            sistem penilaian terintegrasi, karyawan memperoleh
             kategori <b>{getCategory(finalScore)}</b>
             dengan nilai akhir <b>{finalScore.toFixed(2)}</b>.
           </p>

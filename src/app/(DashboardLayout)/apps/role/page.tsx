@@ -38,9 +38,9 @@ const RolePage = () => {
         )
       },
       {
-        header: "Permissions Count",
+        header: "Jumlah Hak Akses",
         render: (item: Role) => (
-          <Badge color="gray">{(item as any).permissions?.length || 0} Permissions</Badge>
+          <Badge color="gray">{(item as any).permissions?.length || 0} Hak Akses</Badge>
         )
       },
       {
@@ -147,9 +147,9 @@ const RolePage = () => {
                 <div>
                     <h1 className="text-2xl font-bold flex items-center gap-2">
                         <Icon icon="solar:user-rounded-bold-duotone" className="text-primary" />
-                        Manajemen Role & Permission
+                        Manajemen Peran & Hak Akses
                     </h1>
-                    <p className="text-sm text-gray-500">Konfigurasi hak akses per tingkatan jabatan (ACL)</p>
+                    <p className="text-sm text-gray-500">Konfigurasi hak akses untuk tiap tingkatan peran</p>
                 </div>
             </div>
 
@@ -159,8 +159,8 @@ const RolePage = () => {
                 <div className="overflow-x-auto">
                     <Table hoverable>
                         <Table.Head>
-                            <Table.HeadCell>Role Name</Table.HeadCell>
-                            <Table.HeadCell>Permissions Matrix</Table.HeadCell>
+                            <Table.HeadCell>Nama Peran</Table.HeadCell>
+                            <Table.HeadCell>Matriks Hak Akses</Table.HeadCell>
                             <Table.HeadCell className="text-center">Aksi</Table.HeadCell>
                         </Table.Head>
                         <Table.Body>

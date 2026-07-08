@@ -8,19 +8,19 @@ import Link from "next/link";
 
 const DashboardPage = () => {
   const stats = [
-    { title: "Data Karyawan", value: "Kelola data master", icon: "solar:users-group-rounded-bold-duotone", color: "text-primary", href: "/apps/karyawan" },
-    { title: "Periode KPI", value: "Atur periode aktif", icon: "solar:calendar-bold-duotone", color: "text-secondary", href: "/apps/periode-kpi" },
-    { title: "Data KPI", value: "Kriteria penilaian", icon: "solar:documents-line-duotone", color: "text-warning", href: "/apps/data-kpi" },
-    { title: "Report Hasil", value: "Lihat ranking akhir", icon: "solar:chart-square-bold-duotone", color: "text-success", href: "/apps/report" },
+    { title: "Data Karyawan", value: "Kelola data karyawan", icon: "solar:users-group-rounded-bold-duotone", color: "text-primary", href: "/apps/karyawan" },
+    { title: "Periode KPI", value: "Atur periode penilaian", icon: "solar:calendar-bold-duotone", color: "text-secondary", href: "/apps/periode-kpi" },
+    { title: "Data KPI", value: "Kelola kriteria penilaian", icon: "solar:documents-line-duotone", color: "text-warning", href: "/apps/data-kpi" },
+    { title: "Laporan Ranking", value: "Lihat hasil ranking", icon: "solar:chart-square-bold-duotone", color: "text-success", href: "/apps/report" },
   ];
 
   const steps = [
-    { label: "Siapkan Periode KPI", desc: "Buat periode dan tetapkan status aktif.", href: "/apps/periode-kpi" },
-    { label: "Sediakan Attribute KPI", desc: "Definisikan attribute KPI.", href: "/apps/attribute" },
-    { label: "Lengkapi Kriteria KPI", desc: "Masukkan daftar kriteria untuk periode terpilih.", href: "/apps/data-kpi" },
-    { label: "Input Perbandingan", desc: "Masukkan perbandingan antar Kriteria.", href: "/apps/perbandingan" },
-    { label: "Input Penilaian", desc: "Masukkan nilai per karyawan berdasarkan KPI.", href: "/apps/penilaian" },
-    { label: "Analisis Hasil", desc: "Tinjau ranking dan hasil rekomendasi.", href: "/apps/report" },
+    { label: "Siapkan Periode Penilaian", desc: "Buat periode baru dan tetapkan sebagai periode aktif.", href: "/apps/periode-kpi" },
+    { label: "Atur Attribute / Satuan", desc: "Definisikan satuan pengukuran untuk tiap kriteria KPI.", href: "/apps/attribute" },
+    { label: "Lengkapi Kriteria KPI", desc: "Masukkan daftar kriteria beserta target dan bobotnya.", href: "/apps/data-kpi" },
+    { label: "Input Perbandingan", desc: "Masukkan perbandingan prioritas antar kriteria penilaian.", href: "/apps/perbandingan" },
+    { label: "Input Penilaian Karyawan", desc: "Isi nilai penilaian untuk tiap karyawan berdasarkan kriteria yang berlaku.", href: "/apps/penilaian" },
+    { label: "Lihat Hasil & Ranking", desc: "Tinjau hasil perhitungan dan ranking karyawan terbaik.", href: "/apps/report" },
   ];
 
   return (
@@ -59,7 +59,7 @@ const DashboardPage = () => {
         <div className="lg:col-span-7 col-span-12">
            <CardBox>
               <div className="flex justify-between items-center mb-4">
-                 <h4 className="text-lg font-bold">Alur Kerja Cepat</h4>
+                 <h4 className="text-lg font-bold">Alur Kerja Penilaian</h4>
               </div>
               <div className="space-y-3">
                 {steps.map((step, idx) => (
@@ -82,16 +82,16 @@ const DashboardPage = () => {
         </div>
         <div className="lg:col-span-5 col-span-12">
            <CardBox>
-              <h4 className="text-lg font-bold mb-4">Panduan Singkat</h4>
+              <h4 className="text-lg font-bold mb-4">Tips Penggunaan</h4>
               <div className="flex flex-col gap-4 text-sm text-bodytext">
                 <div className="rounded-lg bg-lightprimary p-3 text-primary">
-                  Gunakan satu periode aktif untuk menjaga konsistensi perhitungan.
+                  Gunakan satu periode aktif agar perhitungan perbandingan dan penilaian tetap konsisten.
                 </div>
                 <div className="rounded-lg bg-lightsuccess p-3 text-success">
-                  Pastikan seluruh nilai penilaian terisi sebelum generate report.
+                  Pastikan semua nilai penilaian sudah terisi sebelum melakukan finalisasi ranking.
                 </div>
                 <div className="rounded-lg bg-lightinfo p-3 text-info">
-                  Cek menu Developer hanya untuk audit proses dan validasi data.
+                  Menu Pengembang hanya untuk administrator guna memvalidasi perhitungan penilaian kinerja.
                 </div>
               </div>
            </CardBox>

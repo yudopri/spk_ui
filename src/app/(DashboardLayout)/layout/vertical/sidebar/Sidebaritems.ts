@@ -115,32 +115,32 @@ const SidebarContent: MenuItem[] = [
         ],
       },
       {
-        heading: "System",
+        heading: "Pengaturan Sistem",
         permission: "user_manage",
         children: [
           {
-            name: "User Management",
+            name: "Manajemen Pengguna",
             icon: "solar:user-id-linear",
             id: uniqueId(),
             url: "/apps/user",
             permission: "user_manage",
           },
           {
-            name: "Role Management",
+            name: "Manajemen Peran",
             icon: "solar:users-group-two-rounded-linear",
             id: uniqueId(),
             url: "/apps/role",
             permission: "user_manage",
           },
           {
-            name: "Permission",
+            name: "Hak Akses",
             icon: "solar:shield-keyhole-linear",
             id: uniqueId(),
             url: "/apps/permission",
             permission: "user_manage",
           },
           {
-            name: "Audit Logs",
+            name: "Catatan Aktivitas",
             icon: "solar:history-bold-duotone",
             id: uniqueId(),
             url: "/apps/audit-logs",

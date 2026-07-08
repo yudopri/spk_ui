@@ -101,10 +101,10 @@ const AuthLogin = () => {
         router.replace("/dashboards");
         router.refresh();
       } else {
-        setError(payload?.message || body?.message || "Login failed");
+        setError(payload?.message || body?.message || "Gagal masuk. Periksa email dan password Anda.");
       }
     } catch (err: any) {
-      setError(err?.response?.data?.message || err?.message || "An error occurred during login");
+        setError(err?.response?.data?.message || err?.message || "Terjadi kesalahan saat mencoba masuk.");
     } finally {
       setLoading(false);
     }

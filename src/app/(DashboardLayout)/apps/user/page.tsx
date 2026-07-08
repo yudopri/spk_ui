@@ -52,9 +52,9 @@ const UserManagementPage = () => {
                 <div>
                     <h1 className="text-2xl font-bold flex items-center gap-2">
                         <Icon icon="solar:user-id-bold-duotone" className="text-primary" />
-                        Manajemen User
+                        Manajemen Pengguna
                     </h1>
-                    <p className="text-sm text-gray-500">Daftar pengguna aktif dari database Mitra (SIP)</p>
+                    <p className="text-sm text-gray-500">Daftar pengguna terdaftar dalam sistem HRIS</p>
                 </div>
             </div>
 
@@ -64,7 +64,7 @@ const UserManagementPage = () => {
                 <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
                     <div className="relative w-full md:w-96">
                         <TextInput
-                            placeholder="Cari user (nama, email, atau role)..."
+                            placeholder="Cari pengguna (nama, email, atau role)..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             icon={() => <Icon icon="solar:magnifer-linear" className="text-xl" />}
@@ -78,7 +78,7 @@ const UserManagementPage = () => {
                             <Table.HeadCell>ID</Table.HeadCell>
                             <Table.HeadCell>Nama</Table.HeadCell>
                             <Table.HeadCell>Email</Table.HeadCell>
-                            <Table.HeadCell>Role (Mitra)</Table.HeadCell>
+                            <Table.HeadCell>Role</Table.HeadCell>
                         </Table.Head>
                         <Table.Body className="divide-y">
                             {loading ? (

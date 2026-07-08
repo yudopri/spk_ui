@@ -44,7 +44,7 @@ const DataKaryawan = () => {
       render: (item: Karyawan) => `#${item.id}`
     },
     {
-      header: "Name",
+      header: "Nama",
       cellClasses: "font-medium text-gray-900 dark:text-white",
       render: (item: Karyawan) => item.name || item.nama || "-"
     },
@@ -136,8 +136,8 @@ const DataKaryawan = () => {
       <div className="flex flex-col gap-4 bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Data Karyawan Mitra</h1>
-            <p className="text-sm text-gray-500">Daftar karyawan sesuai scope role dan unit kerja</p>
+            <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Data Karyawan</h1>
+            <p className="text-sm text-gray-500">Daftar karyawan berdasarkan departemen dan lokasi kerja</p>
           </div>
           <Button color="primary" onClick={() => fetchEmployees()} outline>
             <Icon icon="solar:refresh-linear" className="mr-2 h-5 w-5" />

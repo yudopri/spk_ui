@@ -61,7 +61,7 @@ const AuditLogsPage = () => {
         <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm">
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <Icon icon="solar:history-bold-duotone" className="text-primary" />
-            Audit Logs System
+            Catatan Aktivitas Sistem
           </h1>
           <p className="text-sm text-gray-500">Rekam jejak aktivitas pengguna di dalam sistem</p>
         </div>
@@ -72,14 +72,14 @@ const AuditLogsPage = () => {
           <div className="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
             <div className="w-full md:w-64">
               <TextInput 
-                placeholder="Cari logs (User/Action/Entity)..." 
+                placeholder="Cari catatan (pengguna/aksi/entitas)..." 
                 icon={() => <Icon icon="solar:magnifer-linear" />} 
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
             <div className="text-sm text-gray-500">
-              Total Entri: <b>{totalLogs}</b>
+              Total Catatan: <b>{totalLogs}</b>
             </div>
           </div>
 

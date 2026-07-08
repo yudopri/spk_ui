@@ -65,13 +65,13 @@ const PermissionPage = () => {
                 <div>
                     <h1 className="text-2xl font-bold flex items-center gap-2">
                         <Icon icon="solar:shield-keyhole-bold-duotone" className="text-primary" />
-                        Manajemen Permission
+                        Manajemen Hak Akses
                     </h1>
-                    <p className="text-sm text-gray-500">Kelola hak akses sistem (RBAC Configuration)</p>
+                    <p className="text-sm text-gray-500">Kelola hak akses pengguna dalam sistem</p>
                 </div>
                 <Button color="primary" onClick={() => handleOpenModal()}>
                     <Icon icon="solar:add-circle-linear" className="mr-2 h-5 w-5" />
-                    Tambah Permission
+                    Tambah Hak Akses
                 </Button>
             </div>
 
@@ -82,7 +82,7 @@ const PermissionPage = () => {
                     <Table hoverable>
                         <Table.Head>
                             <Table.HeadCell>ID</Table.HeadCell>
-                            <Table.HeadCell>Key Name</Table.HeadCell>
+                            <Table.HeadCell>Nama Hak Akses</Table.HeadCell>
                             <Table.HeadCell>Path</Table.HeadCell>
                             <Table.HeadCell className="text-center">Aksi</Table.HeadCell>
                         </Table.Head>

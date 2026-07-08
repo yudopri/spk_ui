@@ -186,7 +186,7 @@ const formatScore = (value?: number) => {
           )}
           <Button color="light" size="xs" pill onClick={() => handleFetchIndividual(getReportRowId(item))}>
             {printingId === getReportRowId(item) ? <Spinner size="xs" /> : <Icon icon="solar:eye-bold" className="h-4 w-4" />}
-            <span className="ml-1">Preview</span>
+            <span className="ml-1">Lihat</span>
           </Button>
           <Button 
             color="dark" 
@@ -196,7 +196,7 @@ const formatScore = (value?: number) => {
             onClick={() => handlePrintPdf(getReportRowId(item))}
           >
             <Icon icon="solar:printer-bold" className="h-4 w-4" />
-            <span className="ml-1">PDF</span>
+            <span className="ml-1">Unduh PDF</span>
           </Button>
         </div>
       ),
@@ -560,8 +560,8 @@ const formatScore = (value?: number) => {
       {/* Stepper for Laporan */}
       <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm">
         <div className="flex items-center justify-between max-w-4xl mx-auto overflow-x-auto gap-4">
-          {[
-            { step: 1, label: "Master KPI", icon: "solar:settings-bold" },
+          {[ 
+            { step: 1, label: "Grup KPI", icon: "solar:settings-bold" },
             { step: 2, label: "Bandingkan Grup", icon: "solar:folder-2-bold" },
             { step: 3, label: "Bandingkan KPI", icon: "solar:documents-bold" },
             { step: 4, label: "Input Realisasi", icon: "solar:pen-new-square-bold" },
@@ -589,8 +589,8 @@ const formatScore = (value?: number) => {
 
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Ranking Karyawan</h1>
-          <p className="text-sm text-gray-500">Snapshot hasil per periode, bukan hanya hasil terbaru</p>
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Ranking Kinerja Karyawan</h1>
+          <p className="text-sm text-gray-500">Hasil perhitungan penilaian kinerja per periode</p>
         </div>
         <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
              <DataSearch 
@@ -645,7 +645,7 @@ const formatScore = (value?: number) => {
                     title={!isManagerUI ? "Hanya Manager yang dapat mengunci snapshot" : !allReviewed ? "Semua karyawan harus direview terlebih dahulu" : ""}
                   >
                     {updating ? <Spinner size="sm" /> : <Icon icon="solar:check-read-linear" className="mr-2 h-4 w-4" />}
-                    Locked Snapshot
+                    Kunci Periode
                   </Button>
                 )}
                 {isFinal && isManagerUI && (
@@ -661,7 +661,7 @@ const formatScore = (value?: number) => {
                 )}
                 <Button color="dark" size="sm" className="flex items-center" onClick={handleExportSummary} disabled={Boolean(canExport)}>
                     {exporting ? <Spinner size="sm" className="mr-2" /> : <Icon icon="solar:file-send-bold" className="mr-2 h-4 w-4" />}
-                    Ekspor Rekapitulasi
+                    Unduh Rekap Excel
                 </Button>
              </div>
         </div>
@@ -669,8 +669,8 @@ const formatScore = (value?: number) => {
 
       {!isFinal && !loading && (
         <Alert color="warning" className="mb-4" icon={() => <Icon icon="solar:info-circle-bold" className="h-5 w-5" />}>
-          Laporan ini masih berstatus <b>DRAFT</b>. 
-          {isManagerUI ? " Silakan lock snapshot setelah review selesai." : " Menunggu persetujuan Manager."}
+          Periode ini masih berstatus <b>DRAFT</b>.
+          {isManagerUI ? " Kunci periode setelah semua karyawan direview." : " Menunggu persetujuan Manager."}
         </Alert>
       )}
 
@@ -680,8 +680,8 @@ const formatScore = (value?: number) => {
         <div className="col-span-12 lg:col-span-8">
            <CardBox>
               <div className="flex justify-between items-center mb-6">
-                <h4 className="text-lg font-bold text-gray-800 dark:text-white">Visualisasi Ranking Karyawan</h4>
-                  <Badge color="info">Yi / Skor Akhir</Badge>
+                <h4 className="text-lg font-bold text-gray-800 dark:text-white">Visualisasi Ranking Kinerja</h4>
+                  <Badge color="info">Skor Akhir</Badge>
               </div>
               {loading ? (
                 <div className="flex justify-center p-20"><Spinner size="xl" /></div>
@@ -701,7 +701,7 @@ const formatScore = (value?: number) => {
 
         <div className="col-span-12 lg:col-span-4">
             <CardBox className="h-full">
-                <h4 className="text-lg font-bold mb-4 text-gray-800 dark:text-white text-center">🏆 Best Employee</h4>
+                <h4 className="text-lg font-bold mb-4 text-gray-800 dark:text-white text-center">🏆 Karyawan Terbaik</h4>
                 {bestEmployee ? (
                   <div className="flex flex-col items-center justify-center space-y-4 py-6 text-center">
                       <div className="relative">
@@ -718,18 +718,18 @@ const formatScore = (value?: number) => {
                           <h2 className="text-xl font-black text-primary uppercase">{bestEmployee.nama || bestEmployee.Karyawan?.name || bestEmployee.Karyawan?.Nama}</h2>
                       </div>
                       <div className="bg-primary/10 px-6 py-2 rounded-full">
-                          <span className="text-primary font-bold text-lg">Skor: {formatScore(bestEmployee.nilai_akhir || bestEmployee.totalScore || bestEmployee.NilaiSkala)}</span>
+                          <span className="text-primary font-bold text-lg">Skor Akhir: {formatScore(bestEmployee.nilai_akhir || bestEmployee.totalScore || bestEmployee.NilaiSkala)}</span>
                       </div>
                   </div>
                 ) : (
-                  <div className="text-center py-10 text-gray-400 italic">Belum ada pemenang</div>
+                  <div className="text-center py-10 text-gray-400 italic">Belum ada data ranking</div>
                 )}
             </CardBox>
         </div>
         
         <div className="col-span-12">
           <CardBox>
-          <h4 className="text-lg font-bold mb-4 text-gray-800 dark:text-white">Detail Snapshot</h4>
+          <h4 className="text-lg font-bold mb-4 text-gray-800 dark:text-white">Daftar Ranking Karyawan</h4>
             
             <DataTable
               loading={loading}
@@ -755,26 +755,26 @@ const formatScore = (value?: number) => {
 
       {/* Review & Notes Modal */}
       <Modal show={showReviewModal} onClose={() => setShowReviewModal(false)} size="lg">
-        <Modal.Header>Review Laporan & Catatan Evaluasi</Modal.Header>
+        <Modal.Header>Review Hasil Penilaian</Modal.Header>
         <Modal.Body>
           <div className="space-y-4">
             <div>
-              <Label value="Status Persetujuan" />
+              <Label value="Keputusan Review" />
               <Select 
                 value={reviewForm.status} 
                 onChange={(e) => setReviewForm({...reviewForm, status: e.target.value as any})}
               >
-                <option value="Reviewed">SETUJUI (Reviewed)</option>
-                <option value="Pending">TUNDA (Pending)</option>
+                <option value="Reviewed">SETUJUI</option>
+                <option value="Pending">TUNDA</option>
                 <option value="Draft">KEMBALIKAN KE DRAFT</option>
               </Select>
             </div>
             
             <div className="border-t pt-4 space-y-3">
-              <h4 className="text-xs font-black uppercase text-gray-500 tracking-widest">Catatan Kualitatif</h4>
+              <h4 className="text-xs font-black uppercase text-gray-500 tracking-widest">Catatan Evaluasi</h4>
               
               <div>
-                <Label value="1. Prestasi yang perlu dicatat" className="text-[10px] uppercase" />
+                <Label value="1. Catatan Prestasi" className="text-[10px] uppercase" />
                 <Textarea 
                   placeholder="Contoh: Sangat proaktif dalam tim..."
                   rows={2}
@@ -784,7 +784,7 @@ const formatScore = (value?: number) => {
               </div>
 
               <div>
-                <Label value="2. Indisipliner / Pelanggaran" className="text-[10px] uppercase" />
+                <Label value="2. Catatan Indisipliner" className="text-[10px] uppercase" />
                 <Textarea 
                   placeholder="Contoh: Terlambat tanpa izin 2x..."
                   rows={2}
@@ -794,7 +794,7 @@ const formatScore = (value?: number) => {
               </div>
 
               <div>
-                <Label value="3. Saran Perbaikan" className="text-[10px] uppercase" />
+                <Label value="3. Saran Pengembangan" className="text-[10px] uppercase" />
                 <Textarea 
                   placeholder="Contoh: Tingkatkan ketelitian data..."
                   rows={2}
@@ -807,7 +807,7 @@ const formatScore = (value?: number) => {
         </Modal.Body>
         <Modal.Footer>
           <Button color="primary" onClick={handleReview} disabled={reviewLoading}>
-            {reviewLoading ? <Spinner size="sm" /> : "Simpan Review"}
+            {reviewLoading ? <Spinner size="sm" /> : "Simpan"}
           </Button>
           <Button color="gray" onClick={() => setShowReviewModal(false)}>Batal</Button>
         </Modal.Footer>

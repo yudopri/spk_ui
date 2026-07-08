@@ -103,7 +103,7 @@ const NilaiPerbandingan = () => {
           
           setComparisonValues(nextValues);
       } catch (err) {
-          setError("Gagal memuat data matriks");
+          setError("Gagal memuat data perbandingan");
       } finally {
           setLoading(false);
       }
@@ -151,7 +151,7 @@ const NilaiPerbandingan = () => {
       const nextCr = Number(resCalc.consistency?.cr ?? 0);
 
       if (!resCalc.success) {
-        setError(resCalc.message || "Gagal menghitung bobot AHP");
+        setError(resCalc.message || "Gagal menghitung bobot kriteria");
         setCr(nextCr);
         setIsSimulated(true);
         setWeightList([]);
@@ -175,9 +175,9 @@ const NilaiPerbandingan = () => {
       setIsSimulated(true);
 
       if (nextCr >= 0.1) {
-        setError(`Input tidak konsisten. CR = ${nextCr.toFixed(4)}. Perbaiki pairwise comparison sebelum menyimpan.`);
+              setError(`Input tidak konsisten. CR = ${nextCr.toFixed(4)}. Perbaiki perbandingan sebelum menyimpan.`);
       } else {
-        setSuccess("Matriks berhasil dihitung. Silakan tinjau bobot di bawah ini.");
+        setSuccess("Perhitungan berhasil. Silakan tinjau bobot di bawah ini.");
       }
     } catch (err: any) {
       const msg = err?.response?.data?.message || err?.message || "Gagal melakukan simulasi perhitungan";
@@ -292,8 +292,8 @@ const NilaiPerbandingan = () => {
 
       <div className="flex flex-col md:flex-row justify-between items-center bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm gap-4">
         <div>
-           <h1 className="text-2xl font-bold">AHP Pairwise Comparison</h1>
-           <p className="text-sm text-gray-500">Bandingkan prioritas antar KPI sebelum bobot dipakai ke MOORA</p>
+           <h1 className="text-2xl font-bold">Perbandingan Prioritas Kriteria</h1>
+           <p className="text-sm text-gray-500">Bandingkan prioritas antar kriteria penilaian untuk menentukan bobot masing-masing</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Select sizing="sm" value={selectedPeriodeId} onChange={(e) => setSelectedPeriodeId(Number(e.target.value))}>
@@ -351,7 +351,7 @@ const NilaiPerbandingan = () => {
                     <Table hoverable>
                         <Table.Head>
                             <Table.HeadCell className="bg-gray-900 text-white uppercase tracking-widest text-[10px]">Kriteria Utama (A)</Table.HeadCell>
-                            <Table.HeadCell className="bg-gray-900 text-white text-center uppercase tracking-widest text-[10px]">Perbandingan Skala Prioritas (Saaty)</Table.HeadCell>
+                            <Table.HeadCell className="bg-gray-900 text-white text-center uppercase tracking-widest text-[10px]">Skala Prioritas (Saaty)</Table.HeadCell>
                             <Table.HeadCell className="bg-gray-900 text-white text-right uppercase tracking-widest text-[10px]">Kriteria Pembanding (B)</Table.HeadCell>
                         </Table.Head>
                         <Table.Body className="divide-y">
@@ -404,7 +404,7 @@ const NilaiPerbandingan = () => {
                       <div className="bg-primary p-2 rounded-lg">
                         <Icon icon="solar:chart-square-bold" className="text-white h-5 w-5" />
                       </div>
-                      <h3 className="font-black text-gray-900 dark:text-white uppercase tracking-tight">Hasil Bobot AHP</h3>
+                      <h3 className="font-black text-gray-900 dark:text-white uppercase tracking-tight">Hasil Perhitungan Bobot</h3>
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -435,7 +435,7 @@ const NilaiPerbandingan = () => {
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mt-6 sm:mt-8 p-4 sm:p-6 bg-gray-50 dark:bg-gray-700/30 rounded-xl">
                     <div className="flex items-center gap-3 text-xs sm:text-sm font-bold text-gray-500 uppercase">
                        <Icon icon="solar:info-circle-bold" className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500 shrink-0" />
-                       <span className="leading-tight">Lakukan simulasi terlebih dahulu untuk melihat bobot.</span>
+                       <span className="leading-tight">Lakukan simulasi terlebih dahulu untuk melihat bobot masing-masing kriteria.</span>
                     </div>
                     <div className="flex flex-col xs:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
                         <Button 

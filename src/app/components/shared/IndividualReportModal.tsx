@@ -62,7 +62,6 @@ const IndividualReportModal = ({ show, onClose, data }: IndividualReportProps) =
       return;
     }
 
-    // Collect existing Tailwind/global stylesheets for print context
     const stylesheets = Array.from(document.styleSheets)
       .map((sheet) => {
         try {
@@ -77,30 +76,28 @@ const IndividualReportModal = ({ show, onClose, data }: IndividualReportProps) =
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
-  <title>Laporan Hasil Penilaian Kinerja</title>
+  <title>Laporan Hasil Penilaian Kinerja - PT. Wira Buana Arum</title>
   <style>${stylesheets}</style>
   <style>
-    @page { size: A4; margin: 20mm; }
+    @page { size: A4; margin: 15mm 20mm; }
     * { box-sizing: border-box; }
     body {
       margin: 0; padding: 0;
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      color: #000; background: #fff;
+      color: #12263a; background: #fff;
       -webkit-print-color-adjust: exact;
       print-color-adjust: exact;
+      font-size: 11px;
     }
     table { border-collapse: collapse !important; width: 100%; }
-    th, td { border: 1px solid #000 !important; }
-    .bg-gray-100 { background-color: #f3f4f6 !important; }
-    .bg-gray-900 { background-color: #111827 !important; color: #fff !important; }
-    .border-gray-900 { border-color: #111827 !important; }
-    .border-double { border-style: double !important; }
-    .border-dashed { border-style: dashed !important; }
-    .text-primary { color: #4f46e5 !important; }
+    th, td { border: 1px solid #d7e1ea !important; padding: 6px 10px; }
+    .bg-primary { background-color: #1f4f78 !important; color: #fff !important; }
+    .text-primary { color: #1f4f78 !important; }
+    .bg-gray-50 { background-color: #f2f6fa !important; }
+    .bg-gray-100 { background-color: #edf3f8 !important; }
+    .border-primary { border-color: #1f4f78 !important; }
+    .border-gray-200 { border-color: #d7e1ea !important; }
     .bg-yellow-400 { background-color: #facc15 !important; }
-    .shadow-\\[4px_4px_0px_0px_rgba\\(0\\,0\\,0\\,1\\)\\] {
-      box-shadow: 4px 4px 0px 0px rgba(0,0,0,1) !important;
-    }
   </style>
 </head>
 <body>${printContent.innerHTML}</body>
@@ -140,112 +137,131 @@ const IndividualReportModal = ({ show, onClose, data }: IndividualReportProps) =
     items: val.items,
   }));
 
+  const today = new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
+
   return (
     <Modal show={show} onClose={onClose} size="5xl" className="print-modal">
-      <Modal.Header className="print:hidden">
+      <Modal.Header className="print:hidden border-b border-border">
         <div className="flex items-center gap-2">
           <Icon icon="solar:document-text-bold" className="h-5 w-5 text-primary" />
-          <span>Laporan Hasil Penilaian Individual</span>
+          <span className="font-bold">Laporan Penilaian Kinerja Individual</span>
         </div>
       </Modal.Header>
       <Modal.Body className="p-0">
-        <div id="printable-report" className="p-6 sm:p-8 md:p-10 bg-white text-black font-sans leading-relaxed">
-          {/* Header - Industrial Formal Style */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 border-b-4 border-double border-gray-900 pb-6">
-            <div className="text-left">
-              <h1 className="text-xl sm:text-2xl font-black uppercase tracking-tighter leading-none mb-1">
-                Laporan Hasil Penilaian Kinerja
-              </h1>
-              <p className="text-[10px] sm:text-xs font-bold text-gray-600 uppercase tracking-widest leading-none">
-                Performance Evaluation Report
-              </p>
-            </div>
-            <div className="text-right flex flex-col items-start md:items-end">
-              <div className="bg-gray-900 text-white px-3 py-1 text-[10px] font-bold uppercase tracking-widest mb-2">
-                Confidential Document
+        <div id="printable-report" className="p-6 sm:p-8 md:p-10 bg-white text-bodytext font-sans leading-relaxed">
+
+          {/* ── HEADER RESMI ── */}
+          <div className="text-center mb-8">
+            <div className="flex items-center justify-center gap-3 mb-2">
+              <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
+                <Icon icon="solar:buildings-2-bold" className="h-6 w-6 text-white" />
               </div>
-              <p className="text-[10px] text-gray-500 font-mono tracking-tighter uppercase font-bold">
-                Doc Ref: {data.metadata.Tahun}/{data.metadata.Periode.replace(/\s+/g, "")}/{data.metadata.NIK}
-              </p>
+              <div className="text-left">
+                <h1 className="text-lg sm:text-xl font-black text-dark uppercase tracking-tight leading-none">
+                  PT. Wira Buana Arum
+                </h1>
+                <p className="text-[10px] font-bold text-muted uppercase tracking-widest">
+                  Human Resource Information System
+                </p>
+              </div>
             </div>
+            <div className="w-20 h-[3px] bg-primary mx-auto my-4 rounded-full" />
+            <h2 className="text-sm sm:text-base font-black text-primary uppercase tracking-wide">
+              Laporan Hasil Penilaian Kinerja Karyawan
+            </h2>
+            <p className="text-[10px] text-muted mt-1 font-medium">
+              Dokumen Internal — Bagian Sumber Daya Manusia
+            </p>
           </div>
 
-          {/* Metadata Grid */}
+          {/* ── INFO KARYAWAN & PERIODE ── */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-            <div className="bg-gray-50/50 border-l-4 border-gray-900 p-4">
-              <h3 className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-3 border-b border-gray-200 pb-1">
-                Informasi Karyawan
-              </h3>
-              <div className="grid grid-cols-1 gap-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="font-bold text-gray-500 uppercase text-[10px]">Nama Lengkap</span>
-                  <span className="font-black text-gray-900 uppercase text-right ml-4">: {data.metadata.Nama}</span>
+            <div className="border border-border rounded-lg overflow-hidden">
+              <div className="bg-primary px-4 py-2">
+                <h3 className="text-[10px] font-bold uppercase tracking-widest text-white">
+                  Data Karyawan
+                </h3>
+              </div>
+              <div className="p-4 space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-semibold text-muted">Nama Lengkap</span>
+                  <span className="text-xs font-black text-dark uppercase text-right ml-4">: {data.metadata.Nama}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="font-bold text-gray-500 uppercase text-[10px]">Nomor Induk (NIK)</span>
-                  <span className="font-mono font-bold text-gray-800 tracking-wider text-right ml-4">: {data.metadata.NIK}</span>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-semibold text-muted">Nomor Induk Karyawan</span>
+                  <span className="text-xs font-bold text-dark font-mono tracking-wide text-right ml-4">: {data.metadata.NIK}</span>
                 </div>
               </div>
             </div>
 
-            <div className="bg-gray-50 p-4 border border-gray-200">
-              <h3 className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-3 border-b border-gray-200 pb-1">
-                Detail Periode
-              </h3>
-              <div className="grid grid-cols-1 gap-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="font-bold text-gray-500 uppercase text-[10px]">Periode Kerja</span>
-                  <span className="font-black text-gray-900 uppercase text-right ml-4">: {data.metadata.Periode}</span>
+            <div className="border border-border rounded-lg overflow-hidden">
+              <div className="bg-primary px-4 py-2">
+                <h3 className="text-[10px] font-bold uppercase tracking-widest text-white">
+                  Informasi Periode
+                </h3>
+              </div>
+              <div className="p-4 space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-semibold text-muted">Periode Penilaian</span>
+                  <span className="text-xs font-black text-dark uppercase text-right ml-4">: {data.metadata.Periode}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="font-bold text-gray-500 uppercase text-[10px]">Tahun Buku</span>
-                  <span className="font-black text-gray-900 text-right ml-4">: {data.metadata.Tahun}</span>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-semibold text-muted">Tahun Buku</span>
+                  <span className="text-xs font-bold text-dark text-right ml-4">: {data.metadata.Tahun}</span>
                 </div>
                 {data.metadata.Status && (
-                  <div className="flex justify-between">
-                    <span className="font-bold text-gray-500 uppercase text-[10px]">Status Laporan</span>
-                    <span className="font-black uppercase text-xs flex items-center ml-4">
-                      :{" "}
-                      <span className={`ml-1 ${data.metadata.Status === "Final" ? "text-green-600" : "text-orange-500"}`}>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-semibold text-muted">Status Dokumen</span>
+                    <span className="text-xs font-bold text-right ml-4">:{" "}
+                      <span className={`uppercase ${data.metadata.Status === "Final" ? "text-success" : "text-warning"}`}>
                         {data.metadata.Status}
                       </span>
                     </span>
                   </div>
                 )}
                 {data.metadata.DibuatOleh && (
-                  <div className="flex justify-between">
-                    <span className="font-bold text-gray-500 uppercase text-[10px]">Dibuat Oleh</span>
-                    <span className="font-bold text-gray-800 text-right ml-4 text-[10px]">: {data.metadata.DibuatOleh}</span>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-semibold text-muted">Dibuat Oleh</span>
+                    <span className="text-xs font-bold text-dark text-right ml-4">: {data.metadata.DibuatOleh}</span>
                   </div>
                 )}
                 {data.metadata.DisetujuiOleh && (
-                  <div className="flex justify-between">
-                    <span className="font-bold text-gray-500 uppercase text-[10px]">Disetujui Oleh</span>
-                    <span className="font-bold text-gray-800 text-right ml-4 text-[10px]">: {data.metadata.DisetujuiOleh}</span>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-semibold text-muted">Disetujui Oleh</span>
+                    <span className="text-xs font-bold text-dark text-right ml-4">: {data.metadata.DisetujuiOleh}</span>
                   </div>
                 )}
               </div>
             </div>
           </div>
 
-          {/* Table by Group */}
-          <div className="mb-8 space-y-6">
-            <h3 className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-4">Performance Breakdown by Group</h3>
-            {groupEntries.map((group) => (
-              <div key={group.id} className="border-2 border-gray-900">
-                <div className="bg-gray-900 text-white px-4 py-2">
-                  <h4 className="text-xs font-black uppercase tracking-widest">
+          {/* ── RINCIAN PENILAIAN PER GRUP ── */}
+          <div className="mb-8 space-y-5">
+            <div className="flex items-center gap-2">
+              <div className="w-1 h-5 bg-primary rounded-full" />
+              <h3 className="text-xs font-black uppercase tracking-widest text-dark">
+                Rincian Penilaian per Grup KPI
+              </h3>
+            </div>
+
+            {groupEntries.map((group, gIdx) => (
+              <div key={group.id} className="border border-border rounded-lg overflow-hidden">
+                <div className="bg-primary px-4 py-2 flex items-center justify-between">
+                  <h4 className="text-[11px] font-bold uppercase tracking-widest text-white">
                     {group.name}
                   </h4>
+                  <span className="text-[9px] font-bold text-white/70">
+                    Grup {gIdx + 1}
+                  </span>
                 </div>
                 <div className="overflow-x-auto">
-                  <table className="w-full border-collapse text-sm">
+                  <table className="w-full text-xs">
                     <thead>
-                      <tr className="bg-gray-100 text-gray-700 uppercase text-[10px] tracking-widest">
-                        <th className="p-3 text-center border-r border-gray-300 w-16">#</th>
-                        <th className="p-3 text-left border-r border-gray-300">Kriteria Penilaian / Key Performance Indicator</th>
-                        <th className="p-3 text-center border-r border-gray-300 w-32">Nilai</th>
-                        <th className="p-3 text-center border-r border-gray-300 w-20">Satuan</th>
+                      <tr className="bg-gray-50 text-dark">
+                        <th className="p-2.5 text-center border-b border-r border-border w-10 font-bold text-[10px] uppercase tracking-widest">#</th>
+                        <th className="p-2.5 text-left border-b border-r border-border font-bold text-[10px] uppercase tracking-widest">Kriteria Penilaian</th>
+                        <th className="p-2.5 text-center border-b border-r border-border w-28 font-bold text-[10px] uppercase tracking-widest">Nilai</th>
+                        <th className="p-2.5 text-center border-b border-border w-16 font-bold text-[10px] uppercase tracking-widest">Satuan</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -259,16 +275,16 @@ const IndividualReportModal = ({ show, onClose, data }: IndividualReportProps) =
 
                         return (
                           <tr key={idx} className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                            <td className="border-r border-b border-gray-300 p-2 text-center text-gray-500 font-mono text-[10px]">
+                            <td className="p-2.5 text-center border-b border-r border-border text-muted font-mono">
                               {String(idx + 1).padStart(2, "0")}
                             </td>
-                            <td className="border-r border-b border-gray-300 p-2 font-bold text-gray-800 uppercase text-xs tracking-tight">
+                            <td className="p-2.5 border-b border-r border-border font-bold text-dark uppercase text-[11px] tracking-tight">
                               {item.Kriteria}
                             </td>
-                            <td className="border-r border-b border-gray-300 p-2 text-center font-black text-gray-900 text-xs sm:text-sm">
+                            <td className="p-2.5 text-center border-b border-r border-border font-black text-dark">
                               {displayValue}
                             </td>
-                            <td className="border-r border-b border-gray-300 p-2 text-center text-[10px] sm:text-xs text-gray-600 font-medium">
+                            <td className="p-2.5 text-center border-b border-border text-muted font-medium">
                               {item.Satuan}
                             </td>
                           </tr>
@@ -281,25 +297,30 @@ const IndividualReportModal = ({ show, onClose, data }: IndividualReportProps) =
             ))}
           </div>
 
-          {/* Conclusion - Industrial Scoreboard */}
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-6 border-t-2 border-dashed border-gray-300 pt-8 mt-8">
-            <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
-              <div className="flex-1 sm:flex-none sm:w-40 text-center border-4 border-gray-900 p-4 bg-gray-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                <span className="block text-[8px] font-black uppercase text-gray-500 tracking-[0.2em] mb-1">
-                  Final Score Index
+          {/* ── KESIMPULAN / HASIL AKHIR ── */}
+          <div className="border-t-2 border-primary pt-6 mb-8">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-1 h-5 bg-primary rounded-full" />
+              <h3 className="text-xs font-black uppercase tracking-widest text-dark">
+                Kesimpulan Penilaian
+              </h3>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-1 border-2 border-primary rounded-lg p-4 bg-primary/5 text-center">
+                <span className="block text-[9px] font-bold uppercase text-muted tracking-widest mb-1">
+                  Indeks Skor Akhir (Yi)
                 </span>
-                <span className="block text-3xl sm:text-4xl font-black text-gray-900 leading-none mb-1 tracking-tighter">
+                <span className="block text-3xl font-black text-primary leading-none">
                   {score}
                 </span>
               </div>
-
-              <div className="flex-1 sm:flex-none sm:w-40 text-center border-4 border-gray-900 p-4 bg-yellow-400 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                <span className="block text-[8px] font-black uppercase text-gray-900 tracking-[0.2em] mb-1">
-                  Merit Ranking
+              <div className="flex-1 border-2 border-primary rounded-lg p-4 bg-yellow-400 text-center">
+                <span className="block text-[9px] font-bold uppercase text-dark tracking-widest mb-1">
+                  Peringkat Karyawan
                 </span>
-                <div className="flex items-center justify-center gap-1 leading-none">
-                  <span className="text-[10px] font-black text-gray-900 opacity-50 uppercase">RANK</span>
-                  <span className="text-3xl sm:text-4xl font-black text-gray-900 tracking-tighter">
+                <div className="flex items-center justify-center gap-1">
+                  <span className="text-[10px] font-bold text-dark/50 uppercase">Rank</span>
+                  <span className="text-3xl font-black text-dark leading-none">
                     {data.kesimpulan.Ranking}
                   </span>
                 </div>
@@ -307,54 +328,56 @@ const IndividualReportModal = ({ show, onClose, data }: IndividualReportProps) =
             </div>
           </div>
 
-          {/* Signatures */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 sm:gap-12 mt-12 sm:mt-16 px-2 sm:px-4">
-            <div className="text-left">
-              <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 block mb-1">Evaluated by:</span>
-              <p className="text-[11px] text-gray-800 font-bold mb-12 uppercase italic">
+          {/* ── TANDA TANGAN ── */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 mt-10 pt-6 border-t border-border">
+            <div>
+              <p className="text-[10px] font-bold uppercase text-muted tracking-widest mb-1">
+                Dinilai Oleh:
+              </p>
+              <p className="text-[11px] font-bold text-dark mb-12">
                 Head of Department / Atasan Langsung
               </p>
-              <div className="space-y-0 text-left border-l-2 border-gray-900 pl-3">
-                <p className="text-xs font-black text-gray-900 uppercase tracking-tight">
-                  {data.metadata.DibuatOleh?.split("(")[0].trim() || "N/A"}
+              <div className="border-t border-dark pt-2">
+                <p className="text-xs font-black text-dark uppercase">
+                  {data.metadata.DibuatOleh?.split("(")[0].trim() || "________________"}
                 </p>
-                <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">
+                <p className="text-[9px] font-bold text-muted uppercase tracking-widest">
                   {data.metadata.DibuatOleh?.includes("(")
                     ? data.metadata.DibuatOleh.split("(")[1].replace(")", "").trim()
-                    : "Position Not Specified"}
+                    : "Jabatan"}
                 </p>
               </div>
             </div>
 
-            <div className="text-left">
-              <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 block mb-1">Approved by:</span>
-              <p className="text-[11px] text-gray-800 font-bold mb-12 uppercase italic">
+            <div>
+              <p className="text-[10px] font-bold uppercase text-muted tracking-widest mb-1">
+                Disetujui Oleh:
+              </p>
+              <p className="text-[11px] font-bold text-dark mb-12">
                 General Manager / Pimpinan Unit
               </p>
-              <div className="space-y-0 text-left border-l-2 border-gray-900 pl-3">
-                <p className="text-xs font-black text-gray-900 uppercase tracking-tight">
-                  {data.metadata.DisetujuiOleh?.split("(")[0].trim() || (data.metadata.Status === "Final" ? "VERIFIED SYSTEM" : "AWAITING APPROVAL")}
+              <div className="border-t border-dark pt-2">
+                <p className="text-xs font-black text-dark uppercase">
+                  {data.metadata.DisetujuiOleh?.split("(")[0].trim() || (data.metadata.Status === "Final" ? "VERIFIED SYSTEM" : "________________")}
                 </p>
-                <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">
+                <p className="text-[9px] font-bold text-muted uppercase tracking-widest">
                   {data.metadata.DisetujuiOleh?.includes("(")
                     ? data.metadata.DisetujuiOleh.split("(")[1].replace(")", "").trim()
-                    : data.metadata.Status === "Final"
-                      ? ""
-                      : "Manager"}
+                    : data.metadata.Status === "Final" ? "Sistem" : "Jabatan"}
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Footer */}
-          <div className="mt-12 sm:mt-16 pt-6 border-t border-gray-200 flex flex-col sm:flex-row justify-between items-center text-[8px] text-gray-400 font-mono tracking-tighter uppercase font-bold gap-2">
-            <div className="flex gap-4">
-              <span>Generated: {new Date().toLocaleString("id-ID")}</span>
-              <span className="text-gray-300">|</span>
-              <span>Doc Type: HR/PERF/EVAL-V2</span>
+          {/* ── FOOTER DOKUMEN ── */}
+          <div className="mt-8 pt-4 border-t border-border flex flex-col sm:flex-row justify-between items-center text-[8px] text-muted font-mono uppercase gap-2">
+            <div className="flex gap-3">
+              <span>Dicetak: {today}</span>
+              <span className="text-border">|</span>
+              <span>Ref: HR/SPK/{data.metadata.Tahun}/{data.metadata.NIK}</span>
             </div>
-            <div className="print:hidden italic font-sans text-primary text-[10px]">
-              * Preview Mode - Click Print to Generate Formal Document
+            <div className="print:hidden italic font-sans text-primary text-[10px] font-medium">
+              * Klik &quot;Cetak Sekarang&quot; untuk mencetak dokumen resmi
             </div>
           </div>
         </div>
@@ -363,7 +386,7 @@ const IndividualReportModal = ({ show, onClose, data }: IndividualReportProps) =
           @media print {
             @page {
               size: A4;
-              margin: 20mm;
+              margin: 15mm 20mm;
             }
             html, body {
               -webkit-print-color-adjust: exact;
@@ -371,15 +394,12 @@ const IndividualReportModal = ({ show, onClose, data }: IndividualReportProps) =
               background-color: white !important;
               overflow: visible !important;
             }
-            /* Hide main app content */
             #__next {
               display: none !important;
             }
-            /* Show portal containers (Flowbite renders modals in portals at body level) */
             body > div {
               display: block !important;
             }
-            /* Reset modal overlay — remove backdrop, fixed positioning */
             [role="dialog"],
             [role="dialog"] > div,
             .fixed.inset-0 {
@@ -388,7 +408,6 @@ const IndividualReportModal = ({ show, onClose, data }: IndividualReportProps) =
               overflow: visible !important;
               display: block !important;
             }
-            /* Modal container: full width, no shadow */
             .print-modal {
               position: static !important;
               width: 100% !important;
@@ -399,37 +418,34 @@ const IndividualReportModal = ({ show, onClose, data }: IndividualReportProps) =
               background: white !important;
               display: block !important;
             }
-            /* Print content */
             #printable-report {
               padding: 0 !important;
               margin: 0 !important;
             }
-            /* Hide elements marked print:hidden (Modal Header, Footer, preview note) */
             .print\\:hidden {
               display: none !important;
             }
             table {
               border-collapse: collapse !important;
             }
-            th,
-            td {
-              border: 1px solid black !important;
+            th, td {
+              border: 1px solid #d7e1ea !important;
             }
-            .bg-gray-100 {
-              background-color: #f3f4f6 !important;
-            }
-            .bg-gray-900 {
-              background-color: #111827 !important;
-              color: white !important;
+            .bg-primary {
+              background-color: #1f4f78 !important;
+              color: #fff !important;
             }
             .bg-yellow-400 {
               background-color: #facc15 !important;
             }
+            .bg-gray-50 {
+              background-color: #f2f6fa !important;
+            }
           }
         `}</style>
       </Modal.Body>
-      <Modal.Footer className="print:hidden flex flex-col sm:flex-row gap-2">
-        <Button color="dark" onClick={handlePrint} className="w-full sm:w-auto">
+      <Modal.Footer className="print:hidden flex flex-col sm:flex-row gap-2 border-t border-border">
+        <Button color="primary" onClick={handlePrint} className="w-full sm:w-auto">
           <Icon icon="solar:printer-bold" className="mr-2 h-5 w-5" />
           Cetak Sekarang
         </Button>

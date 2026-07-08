@@ -135,8 +135,8 @@ const AttributePage = () => {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between rounded-xl bg-white p-4 shadow-sm dark:bg-gray-800">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Attribute KPI</h1>
-          <p className="text-sm text-gray-500">Kelola satuan/simbol untuk kriteria KPI</p>
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Attribute / Satuan KPI</h1>
+          <p className="text-sm text-gray-500">Kelola satuan pengukuran untuk kriteria penilaian KPI</p>
         </div>
         {!isReadOnly && (
           <Button color="primary" onClick={() => openAction("create")}>
