@@ -1,46 +1,86 @@
 import { NextRequest, NextResponse } from "next/server";
 
-export async function POST(request: NextRequest) {
-  const targetUrl = `${process.env.NEXT_PUBLIC_API_HOST}/api/auth/refresh`;
+const COOKIE_MAX_AGE = 60 * 60 * 24; // 24 jam
 
-  const headers = new Headers(request.headers);
-  headers.delete("host");
-  headers.delete("connection");
-  // TAMBAHAN 1: Cegah backend mengompresi balasan (menghindari ERR_CONTENT_DECODING_FAILED)
-  headers.delete("accept-encoding"); 
+function setTokenCookie(
+  response: NextResponse,
+  name: string,
+  value: string
+): void {
+  response.cookies.set(name, value, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "strict",
+    path: "/",
+    maxAge: COOKIE_MAX_AGE,
+  });
+}
+
+export async function POST(request: NextRequest) {
+  const targetUrl = `${process.env.API_HOST}/api/auth/refresh`;
+
+  // ── Ambil refresh_token dari HttpOnly cookie ──
+  const refreshToken = request.cookies.get("refresh_token")?.value;
+
+  if (!refreshToken) {
+    return NextResponse.json(
+      { success: false, message: "Refresh token tidak tersedia" },
+      { status: 401 }
+    );
+  }
 
   try {
     const response = await fetch(targetUrl, {
-      method: 'POST',
-      headers: headers,
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${refreshToken}`,
+      },
       // @ts-ignore
-      duplex: 'half',
+      duplex: "half",
     });
 
     const responseData = await response.json();
 
-    // TAMBAHAN 2: Tangkap header baru dari backend (termasuk Set-Cookie / Token baru)
-    const responseHeaders = new Headers();
-    response.headers.forEach((value, key) => {
-      const lowerKey = key.toLowerCase();
-      if (
-        lowerKey !== 'content-length' && 
-        lowerKey !== 'transfer-encoding' &&
-        lowerKey !== 'content-encoding' // Buang label kompresi agar browser tidak bingung
-      ) {
-        responseHeaders.set(key, value);
-      }
+    // ── Ekstrak token baru dari response ──
+    const data = responseData?.data && typeof responseData.data === "object"
+      ? responseData.data
+      : responseData;
+
+    const newAccessToken =
+      data?.access_token || data?.token ||
+      responseData?.access_token || responseData?.token || "";
+    const newRefreshToken =
+      data?.refresh_token || data?.refreshToken ||
+      responseData?.refresh_token || responseData?.refreshToken || "";
+
+    // ── Bangun response tanpa token di body ──
+    const safeBody = { ...responseData };
+    if (safeBody.data && typeof safeBody.data === "object") {
+      const { access_token, token, refresh_token, refreshToken, ...safeData } = safeBody.data;
+      safeBody.data = safeData;
+    }
+    if (safeBody.access_token) delete safeBody.access_token;
+    if (safeBody.token) delete safeBody.token;
+    if (safeBody.refresh_token) delete safeBody.refresh_token;
+    if (safeBody.refreshToken) delete safeBody.refreshToken;
+
+    const nextResponse = NextResponse.json(safeBody, {
+      status: response.status,
     });
 
-    return NextResponse.json(responseData, {
-      status: response.status,
-      headers: responseHeaders, // Teruskan header yang berisi token/sesi baru ke browser
-    });
-  } catch (error: any) {
-    return NextResponse.json({ 
-      success: false, 
-      message: "Proxy Connection Error", 
-      detail: error.message 
-    }, { status: 502 });
+    // ── Set token baru sebagai HttpOnly cookie ──
+    if (newAccessToken) {
+      setTokenCookie(nextResponse, "access_token", newAccessToken);
+    }
+    if (newRefreshToken) {
+      setTokenCookie(nextResponse, "refresh_token", newRefreshToken);
+    }
+
+    return nextResponse;
+  } catch {
+    return NextResponse.json(
+      { success: false, message: "Gagal memperbarui sesi" },
+      { status: 502 }
+    );
   }
 }

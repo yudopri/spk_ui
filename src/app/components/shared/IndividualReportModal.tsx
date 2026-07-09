@@ -72,6 +72,9 @@ const IndividualReportModal = ({ show, onClose, data }: IndividualReportProps) =
       })
       .join("\n");
 
+    // Gunakan cloneNode(true) alih-alih innerHTML untuk mencegah XSS
+    const clonedContent = printContent.cloneNode(true) as HTMLElement;
+
     printWindow.document.write(`<!DOCTYPE html>
 <html lang="id">
 <head>
@@ -100,8 +103,9 @@ const IndividualReportModal = ({ show, onClose, data }: IndividualReportProps) =
     .bg-yellow-400 { background-color: #facc15 !important; }
   </style>
 </head>
-<body>${printContent.innerHTML}</body>
+<body></body>
 </html>`);
+    printWindow.document.body.appendChild(clonedContent);
     printWindow.document.close();
     printWindow.focus();
     setTimeout(() => {

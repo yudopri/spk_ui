@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const BACKEND_BASE_URL = `${process.env.NEXT_PUBLIC_API_HOST}/api`;
+// Gunakan API_HOST (server-only), BUKAN NEXT_PUBLIC_API_HOST (ter-expose ke client)
+const BACKEND_BASE_URL = `${process.env.API_HOST}/api`;
 
 function getPathSegmentsFromRequest(request: NextRequest): string[] {
   const prefix = "/api/proxy/";
@@ -62,11 +63,12 @@ async function proxyRequest(request: NextRequest, method: string) {
       headers: responseHeaders,
     });
   } catch (error: any) {
+    // Jangan leak detail error ke client — log di server saja
+    console.error("[Proxy Error]", error?.message || "Unknown error");
     return NextResponse.json(
       {
         success: false,
-        message: "Proxy Connection Error",
-        detail: error?.message || "Unknown proxy error",
+        message: "Gagal terhubung ke server",
       },
       { status: 502 }
     );

@@ -7,16 +7,6 @@ import { useRouter } from "next/navigation";
 import axiosServices from "@/utils/axios";
 import { AuthUser, setSession } from "@/utils/authSession";
 
-const parseJwt = (token: string) => {
-  try {
-    const base64 = token.split(".")[1];
-    const payload = atob(base64.replace(/-/g, "+").replace(/_/g, "/"));
-    return JSON.parse(payload);
-  } catch {
-    return null;
-  }
-};
-
 const normalizePermissions = (raw: any): string[] => {
   if (!Array.isArray(raw)) return [];
   return raw
@@ -29,13 +19,9 @@ const normalizePermissions = (raw: any): string[] => {
 };
 
 interface LoginResponse {
-  status: string;
-  access_token: string;
-  refresh_token: string;
-  token?: string;
-  refreshToken?: string;
-  user: AuthUser;
-  permissions: string[];
+  status?: string;
+  user?: AuthUser;
+  permissions?: string[];
   Permission?: string[];
   message?: string;
   success?: boolean;
@@ -63,37 +49,35 @@ const AuthLogin = () => {
 
       const payload = response?.data || {};
       const body = payload?.data && typeof payload.data === "object" ? payload.data : payload;
-      const token = body?.access_token || body?.token || payload?.access_token || payload?.token || "";
-      const refreshToken =
-        body?.refresh_token || body?.refreshToken || payload?.refresh_token || payload?.refreshToken || "";
+
+      // Token sudah di HttpOnly cookie — tidak perlu di-response body lagi
       const isSuccess = Boolean(
-        payload?.success === true || payload?.status === "success" || body?.status === "success" || token
+        payload?.success === true || payload?.status === "success" || body?.status === "success"
       );
 
-      if (isSuccess && token) {
-        const claims = token ? parseJwt(token) : null;
+      if (isSuccess) {
+        // Ambil permissions dari response (bukan dari JWT payload)
         const rawPermissions =
           body?.permissions ??
           body?.Permission ??
           payload?.permissions ??
           payload?.Permission ??
-          claims?.permissions ??
-          claims?.Permission ??
           [];
         const permissions = normalizePermissions(rawPermissions);
+
         const userData = body?.user || payload?.user || {};
         const normalizedUser: AuthUser = {
-          id: Number(userData?.id || claims?.id || 0),
-          employee_id: userData?.employee_id ?? claims?.employee_id ?? null,
-          name: userData?.name || claims?.name || "",
-          role: userData?.role || claims?.role || claims?.Role || "",
-          dept_id: userData?.dept_id ?? claims?.dept_id ?? null,
-          lokasi_kerja: userData?.lokasi_kerja ?? claims?.lokasi_kerja ?? null,
+          id: Number(userData?.id || 0),
+          employee_id: userData?.employee_id ?? null,
+          name: userData?.name || "",
+          role: userData?.role || "",
+          dept_id: userData?.dept_id ?? null,
+          lokasi_kerja: userData?.lokasi_kerja ?? null,
         };
 
+        // Simpan data user & permissions di localStorage (untuk UI)
+        // Token TIDAK disimpan — sudah di HttpOnly cookie
         setSession({
-          accessToken: token,
-          refreshToken,
           user: normalizedUser,
           permissions,
         });

@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { clearSession, getAccessToken, getRefreshToken, updateAccessToken } from './authSession';
+import { clearSession } from './authSession';
 
 interface CustomAxiosRequestConfig {
     _retry?: boolean;
@@ -16,20 +16,13 @@ const axiosServices = axios.create({
     baseURL: '/api/proxy',
 });
 
-// interceptor for http
-axiosServices.interceptors.request.use(
-    (config) => {
-        const token = getAccessToken();
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
-    },
-    (error) => {
-        return Promise.reject(error);
-    }
-);
+/**
+ * Token (access_token) disimpan di HttpOnly cookie.
+ * Middleware secara otomatis meng-inject token ke header Authorization.
+ * Oleh karena itu, interceptor request TIDAK perlu mengatur header manual.
+ */
 
+// Interceptor response: handle 401 → refresh token → retry
 axiosServices.interceptors.response.use(
     (response) => response,
     async (error) => {
@@ -50,7 +43,7 @@ axiosServices.interceptors.response.use(
         if (responseStatus === 403) {
             return Promise.reject({
                 status: 403,
-                message: responseData?.message || "Anda tidak memiliki akses ke laporan divisi ini",
+                message: responseData?.message || "Anda tidak memiliki akses ke laman ini",
                 data: responseData
             });
         }
@@ -68,35 +61,25 @@ axiosServices.interceptors.response.use(
             return Promise.reject(errorData);
         }
 
+        // ── Auto-refresh: panggil endpoint refresh saat 401 ──
+        // Refresh token ada di HttpOnly cookie — browser otomatis kirim via cookie.
+        // Middleware akan membaca cookie & meng-inject Authorization header.
         if (responseStatus === 401 && !originalRequest._retry) {
             originalRequest._retry = true;
-            const refreshToken = getRefreshToken();
-            if (refreshToken) {
-                try {
-                    const response = await axios.post(`/api/proxy/auth/refresh`, {}, {
-                        headers: { Authorization: `Bearer ${refreshToken}` },
-                    });
-                    if (response.data && response.data.access_token) {
-                        const newToken = response.data.access_token;
-                        updateAccessToken(newToken);
-                        axios.defaults.headers.common.Authorization = `Bearer ${newToken}`;
-                        originalRequest.headers = {
-                            ...(originalRequest.headers || {}),
-                            Authorization: `Bearer ${newToken}`,
-                        };
-
-                        return axiosServices(originalRequest as any);
-                    }
-                } catch (refreshError) {
-                    clearSession();
-                    window.location.href = '/auth/auth1/login';
-                    return Promise.reject({ status: 401, message: 'Session expired. Please login again.' });
+            try {
+                const refreshResponse = await axios.post(`/api/proxy/auth/refresh`, {});
+                // Jika refresh berhasil (200), cookie access_token sudah diperbarui.
+                // Retry request original — middleware akan inject token baru dari cookie.
+                if (refreshResponse.status === 200) {
+                    return axiosServices(originalRequest as any);
                 }
+            } catch {
+                // Refresh gagal → session expired
             }
 
             clearSession();
             window.location.href = '/auth/auth1/login';
-            return Promise.reject({ status: 401, message: 'Session expired. Please login again.' });
+            return Promise.reject({ status: 401, message: 'Sesi Anda telah berakhir. Silakan masuk kembali.' });
         }
 
         return Promise.reject(errorData);

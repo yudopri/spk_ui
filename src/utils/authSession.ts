@@ -8,15 +8,18 @@ export interface AuthUser {
 }
 
 export interface AuthSessionPayload {
-  accessToken: string;
-  refreshToken: string;
   user: AuthUser;
   permissions: string[];
 }
 
+/**
+ * Manajemen session — TOKEN DISIMPAN DI HttpOnly COOKIE (server-side).
+ * File ini HANYA menyimpan data user di localStorage untuk keperluan UI.
+ * Token (access_token, refresh_token) TIDAK BOLEH disimpan di localStorage
+ * agar tidak rentan terhadap serangan XSS.
+ */
+
 const STORAGE_KEYS = {
-  accessToken: "access_token",
-  refreshToken: "refresh_token",
   user: "auth_user",
   permissions: "permissions",
   role: "userRole",
@@ -24,11 +27,7 @@ const STORAGE_KEYS = {
   employeeId: "employeeId",
   deptId: "deptId",
   lokasiKerja: "lokasiKerja",
-  legacyAccessToken: "token",
-  legacyRefreshToken: "refreshToken",
 } as const;
-
-const COOKIE_MAX_AGE = 60 * 60 * 24;
 
 function safeJsonParse<T>(value: string | null, fallback: T): T {
   if (!value) return fallback;
@@ -39,25 +38,8 @@ function safeJsonParse<T>(value: string | null, fallback: T): T {
   }
 }
 
-function setCookie(name: string, value: string): void {
-  if (typeof document === "undefined") return;
-  document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`;
-}
-
-function clearCookie(name: string): void {
-  if (typeof document === "undefined") return;
-  document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax`;
-}
-
-export function getAccessToken(): string {
-  if (typeof window === "undefined") return "";
-  return localStorage.getItem(STORAGE_KEYS.accessToken) || localStorage.getItem(STORAGE_KEYS.legacyAccessToken) || "";
-}
-
-export function getRefreshToken(): string {
-  if (typeof window === "undefined") return "";
-  return localStorage.getItem(STORAGE_KEYS.refreshToken) || localStorage.getItem(STORAGE_KEYS.legacyRefreshToken) || "";
-}
+// ── Token di HttpOnly cookie: tidak bisa diakses dari JS ──
+// Middleware akan meng-inject token ke Authorization header secara otomatis.
 
 export function getStoredPermissions(): string[] {
   if (typeof window === "undefined") return [];
@@ -72,11 +54,7 @@ export function getStoredUser(): AuthUser | null {
 export function setSession(payload: AuthSessionPayload): void {
   if (typeof window === "undefined") return;
 
-  localStorage.setItem(STORAGE_KEYS.accessToken, payload.accessToken);
-  localStorage.setItem(STORAGE_KEYS.refreshToken, payload.refreshToken);
-  localStorage.setItem(STORAGE_KEYS.legacyAccessToken, payload.accessToken);
-  localStorage.setItem(STORAGE_KEYS.legacyRefreshToken, payload.refreshToken);
-
+  // Simpan data user & permissions di localStorage (untuk UI)
   localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(payload.user));
   localStorage.setItem(STORAGE_KEYS.permissions, JSON.stringify(payload.permissions || []));
   localStorage.setItem(STORAGE_KEYS.role, payload.user.role || "");
@@ -85,26 +63,17 @@ export function setSession(payload: AuthSessionPayload): void {
   localStorage.setItem(STORAGE_KEYS.deptId, payload.user.dept_id?.toString() || "");
   localStorage.setItem(STORAGE_KEYS.lokasiKerja, payload.user.lokasi_kerja || "");
 
-  setCookie("token", payload.accessToken);
-  setCookie("permissions", JSON.stringify(payload.permissions || []));
-  setCookie("userRole", payload.user.role || "");
-}
-
-export function updateAccessToken(accessToken: string): void {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(STORAGE_KEYS.accessToken, accessToken);
-  localStorage.setItem(STORAGE_KEYS.legacyAccessToken, accessToken);
-  setCookie("token", accessToken);
+  // Token TIDAK disimpan di localStorage — sudah di HttpOnly cookie
 }
 
 export function clearSession(): void {
   if (typeof window === "undefined") return;
 
+  // Hapus data user dari localStorage
   Object.values(STORAGE_KEYS).forEach((key) => {
     localStorage.removeItem(key);
   });
 
-  clearCookie("token");
-  clearCookie("permissions");
-  clearCookie("userRole");
+  // Bersihkan cookie via API logout (atau langsung clear kalau perlu)
+  fetch("/api/proxy/auth/logout", { method: "POST" }).catch(() => {});
 }
