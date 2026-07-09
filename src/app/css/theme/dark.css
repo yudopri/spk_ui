@@ -2,6 +2,10 @@
     border-top: 1px solid var(--color-darkborder);
 }
 
+.dark .sidebar-nav .caption.first-caption {
+    border-top: 0 !important;
+}
+
 .dark:root {
     --color-surface-ld: #1A2537;
 }

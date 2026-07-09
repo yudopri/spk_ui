@@ -32,10 +32,7 @@ const SidebarLayout = () => {
 
   useEffect(() => {
     const perms = localStorage.getItem("permissions");
-    const role = localStorage.getItem("userRole"); 
-    
-    console.log("Sidebar Debug:", { role, perms }); // Cek apakah role dan perms terbaca
-
+    const role = localStorage.getItem("userRole");
     if (perms) {
       try {
         setUserPermissions(normalizePermissions(JSON.parse(perms)));
@@ -97,9 +94,9 @@ const SidebarLayout = () => {
               <Sidebar.ItemGroup className="sidebar-nav hide-menu">
                 {selectedContent &&
                   selectedContent.items?.filter((item) => hasAccess(item.permission)).map((item, index) => (
-                    <div className="caption" key={item.heading}>
+                    <div className={`caption ${index === 0 ? 'first-caption' : ''}`} key={item.heading}>
                       <React.Fragment key={index}>
-                        <h5 className="text-slate-400 dark:text-white/50 font-medium caption leading-6 tracking-wider text-[11px] pb-2 pt-1 uppercase">
+                        <h5 className="text-slate-400 dark:text-white/50 font-semibold caption-text leading-6 tracking-wider text-[10px] pb-2 pt-1 px-3 uppercase">
                           {item.heading}
                         </h5>
                         {item.children?.filter((child) => hasAccess(child.permission, child.url)).map((child, index) => (

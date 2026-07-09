@@ -27,7 +27,7 @@ const NavItems: React.FC<NavItemsProps> = ({ item }) => {
           item.url == pathname
             ? "text-white bg-primary rounded-xl hover:text-white hover:bg-primary dark:hover:text-white shadow-btnshdw active"
             : "text-slate-600 dark:text-white/70 bg-transparent hover:bg-slate-100 dark:hover:bg-white/5 hover:text-primary rounded-xl transition-all duration-200"
-        } mb-0.5`}
+        } mb-0.5 px-3`}
       >
         <span onClick={handleMobileSidebar} className="flex gap-3 align-center items-center">
           {item.icon ? (

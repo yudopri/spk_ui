@@ -22,6 +22,16 @@
   margin-top: 16px !important;
 }
 
+.sidebar-nav .caption.first-caption {
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+}
+
+.sidebar-nav .caption .caption-text {
+  line-height: 1;
+  letter-spacing: 0.08em;
+}
+
 .sidebar-dropdown li a {
     opacity: 0.9;
     padding: 8px 16px;

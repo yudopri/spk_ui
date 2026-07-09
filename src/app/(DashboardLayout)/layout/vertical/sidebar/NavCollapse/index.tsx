@@ -35,7 +35,7 @@ const NavCollapse: React.FC<NavCollapseProps> = ({ item }: any) => {
         open={activeDD ? true : false}
         icon={() => <Icon icon={item.icon} height={18} />}
 
-        className={activeDD ? '!text-white bg-primary rounded-xl hover:bg-primary hover:text-white shadow-btnshdw' : 'rounded-xl dark:text-white/70 text-slate-600 hover:text-primary hover:bg-slate-100 dark:hover:bg-white/5 transition-all duration-200'}
+        className={activeDD ? '!text-white bg-primary rounded-xl hover:bg-primary hover:text-white shadow-btnshdw mb-0.5' : 'rounded-xl dark:text-white/70 text-slate-600 hover:text-primary hover:bg-slate-100 dark:hover:bg-white/5 transition-all duration-200 mb-0.5'}
 
         renderChevronIcon={(theme, open) => {
           const IconComponent = open
