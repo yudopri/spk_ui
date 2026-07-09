@@ -25,25 +25,23 @@ const NavItems: React.FC<NavItemsProps> = ({ item }) => {
         as={Link}
         className={`${
           item.url == pathname
-            ? "text-white bg-primary rounded-xl  hover:text-white hover:bg-primary dark:hover:text-white shadow-btnshdw active"
-            : "text-link bg-transparent group/link "
-        } `}
+            ? "text-white bg-primary rounded-xl hover:text-white hover:bg-primary dark:hover:text-white shadow-btnshdw active"
+            : "text-slate-600 dark:text-white/70 bg-transparent hover:bg-slate-100 dark:hover:bg-white/5 hover:text-primary rounded-xl transition-all duration-200"
+        } mb-0.5`}
       >
         <span onClick={handleMobileSidebar} className="flex gap-3 align-center items-center">
           {item.icon ? (
-            <Icon icon={item.icon} className={`${item.color}`} height={18} />
+            <Icon icon={item.icon} className={`${item.color || (item.url == pathname ? 'text-white' : 'text-slate-400 dark:text-white/50')}`} height={18} />
           ) : (
             <span
               className={`${
                 item.url == pathname
-                  ? "dark:bg-white rounded-full mx-1.5 group-hover/link:bg-primary !bg-primary h-[6px] w-[6px]"
-                  : "h-[6px] w-[6px] bg-black/40 dark:bg-white rounded-full mx-1.5 group-hover/link:bg-primary"
+                  ? "bg-white rounded-full mx-1.5 h-[6px] w-[6px]"
+                  : "h-[6px] w-[6px] bg-slate-300 dark:bg-white/30 rounded-full mx-1.5 group-hover/link:bg-primary"
               } `}
             ></span>
           )}
-          <span
-            className={`max-w-36 overflow-hidden `}
-          >
+          <span className="max-w-36 overflow-hidden text-[13px] font-medium">
             {t(`${item.name}`)}
           </span>
         </span> 

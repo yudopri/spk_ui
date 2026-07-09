@@ -95,28 +95,38 @@ export const Customizer = () => {
       <div>
         <Button
           color={"primary"}
-          className="h-14 w-14 flex justify-center items-center fixed bottom-6 end-6  rounded-full hover:bg-primaryemphasis"
+          className="h-12 w-12 sm:h-14 sm:w-14 flex justify-center items-center fixed bottom-5 end-5 sm:bottom-6 sm:end-6 rounded-xl hover:bg-primaryemphasis shadow-lg z-50"
           onClick={() => setIsOpen(true)}
         >
-          <IconSettings />
+          <IconSettings className="sm:hidden" width={20} />
+          <IconSettings className="hidden sm:block" />
         </Button>
       </div>
       <Drawer
         open={isOpen}
         onClose={handleClose}
         position={`${activeDir === "rtl" ? "left" : "right"}`}
-        className="dark:bg-darkgray max-w-[350px] w-full"
+        className="dark:bg-darkgray w-full sm:max-w-[350px]"
       >
-        <div className="border-ld  border-b">
+        <div className="border-ld border-b">
           <div className="flex justify-between items-center p-4">
-            <h5 className="text-xl">Settings</h5>
+            <div className="flex items-center gap-2">
+              <Icon icon="solar:settings-bold-duotone" className="text-primary" width={22} />
+              <h5 className="text-lg font-bold text-dark dark:text-white">Pengaturan Tampilan</h5>
+            </div>
+            <span
+              onClick={handleClose}
+              className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-lightprimary cursor-pointer text-slate-400 hover:text-primary transition-colors"
+            >
+              <Icon icon="solar:close-bold" width={18} />
+            </span>
           </div>
         </div>
-        <SimpleBar className="h-n80">
+        <SimpleBar className="h-[calc(100vh-60px)]">
           <div className="p-4">
             {/* Theme Option */}
-            <h4 className="text-base mb-2">Theme Option</h4>
-            <div className="flex gap-4 mb-7">
+            <h4 className="text-sm font-semibold mb-3 text-dark dark:text-white uppercase tracking-wider">Tema</h4>
+            <div className="flex gap-3 mb-7">
               <Button
                 color={"primary"}
                 className={`border bg-transparent text-darklink btn-shadow border-ld  dark:text-white  hover:bg-primary hover:text-white rounded-md py-3 px-3 dark:hover:text-white 
@@ -161,8 +171,8 @@ export const Customizer = () => {
             </div>
 
             {/* Theme direction */}
-            <h4 className="text-base mb-2">Theme Direction</h4>
-            <div className="flex gap-4 mb-7">
+            <h4 className="text-sm font-semibold mb-3 text-dark dark:text-white uppercase tracking-wider">Arah Layout</h4>
+            <div className="flex gap-3 mb-7">
               <Button
                 color={"primary"}
                 className={`border bg-transparent text-darklink dark:text-white border-ld  hover:bg-primary hover:text-white rounded-md py-3 px-3  dark:hover:text-white ${
@@ -206,7 +216,7 @@ export const Customizer = () => {
             </div>
 
             {/* Theme Colors */}
-            <h4 className="text-base mb-2">Theme Colors</h4>
+            <h4 className="text-sm font-semibold mb-3 text-dark dark:text-white uppercase tracking-wider">Warna Tema</h4>
             <div className="flex flex-row flex-wrap gap-4 mb-7">
               {themeColors.map((theme, index) => (
                 <span
@@ -234,8 +244,8 @@ export const Customizer = () => {
             </div>
 
             {/* Theme layout */}
-            <h4 className="text-base mb-2">Layout Type</h4>
-            <div className="flex flex-wrap  gap-4 mb-7">
+            <h4 className="text-sm font-semibold mb-3 text-dark dark:text-white uppercase tracking-wider">Jenis Layout</h4>
+            <div className="flex flex-wrap gap-3 mb-7">
               <Button
                 color={"primary"}
                 className={`border bg-transparent btn-shadow border-ld text-darklink dark:text-white hover:bg-primary hover:text-white rounded-md py-3 px-2  dark:hover:text-white ${
@@ -275,8 +285,8 @@ export const Customizer = () => {
             </div>
 
             {/* Sidebar Type */}
-            <h4 className="text-base mb-2">Container Option</h4>
-            <div className="flex flex-wrap  gap-4 mb-7">
+            <h4 className="text-sm font-semibold mb-3 text-dark dark:text-white uppercase tracking-wider">Container</h4>
+            <div className="flex flex-wrap gap-3 mb-7">
               <Button
                 color={"primary"}
                 className={`border bg-transparent btn-shadow border-ld text-darklink dark:text-white hover:bg-primary hover:text-white rounded-md py-3 px-2   dark:hover:text-white ${
@@ -316,8 +326,8 @@ export const Customizer = () => {
             </div>
 
             {/* Sidebar Type */}
-            <h4 className="text-base mb-2">Sidebar Type</h4>
-            <div className="flex flex-wrap  gap-4 mb-7">
+            <h4 className="text-sm font-semibold mb-3 text-dark dark:text-white uppercase tracking-wider">Tipe Sidebar</h4>
+            <div className="flex flex-wrap gap-3 mb-7">
               <Button
                 color={"primary"}
                 className={`border bg-transparent btn-shadow border-ld text-darklink dark:text-white hover:bg-primary hover:text-white rounded-md py-3 px-2   dark:hover:text-white ${
@@ -357,8 +367,8 @@ export const Customizer = () => {
             </div>
 
             {/* Card  With */}
-            <h4 className="text-base mb-2">Card With</h4>
-            <div className="flex flex-wrap  gap-4 mb-7">
+            <h4 className="text-sm font-semibold mb-3 text-dark dark:text-white uppercase tracking-wider">Tampilan Kartu</h4>
+            <div className="flex flex-wrap gap-3 mb-7">
               <Button
                 color={"primary"}
                 className={`border bg-transparent btn-shadow border-ld text-darklink dark:text-white hover:bg-primary hover:text-white rounded-md py-3 px-2  ${
@@ -398,7 +408,7 @@ export const Customizer = () => {
             </div>
 
             {/* Card  With */}
-            <h4 className="text-base mb-2">Theme Border Radius</h4>
+            <h4 className="text-sm font-semibold mb-3 text-dark dark:text-white uppercase tracking-wider">Border Radius</h4>
             <RangeSlider
               id="default-range"
               value={isBorderRadius}

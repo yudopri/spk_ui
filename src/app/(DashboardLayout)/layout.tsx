@@ -82,15 +82,15 @@ export default function Layout({
 
           <div
             className={`bg-lightgray dark:bg-dark h-full ${
-              activeLayout != "horizontal" ? "rounded-bb" : "rounded-none"
+              activeLayout != "horizontal" ? "rounded-none" : "rounded-none"
             } `}
           >
             {/* Body Content  */}
             <div
               className={` ${
                 isLayout == "full"
-                  ? "w-full py-5 px-3 sm:py-8 sm:px-5 md:py-30 md:px-30"
-                  : "container mx-auto py-5 px-3 sm:py-8 md:py-30"
+                  ? "w-full py-6 px-4 sm:py-8 sm:px-6 md:py-8 md:px-8"
+                  : "container mx-auto py-6 px-4 sm:py-8 md:py-8"
               } ${activeLayout == "horizontal" ? "xl:mt-3" : ""}`}
             >
               {children}

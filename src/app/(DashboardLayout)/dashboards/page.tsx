@@ -24,24 +24,26 @@ const DashboardPage = () => {
   ];
 
   return (
-    <div className="flex flex-col gap-30">
-      <div className="grid grid-cols-12 gap-30">
+    <div className="flex flex-col gap-6">
+      {/* Welcome Banner */}
+      <div className="grid grid-cols-12 gap-6">
         <div className="lg:col-span-12 col-span-12">
           <WelcomeBox />
         </div>
       </div>
 
-      <div className="grid grid-cols-12 gap-30">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {stats.map((stat, index) => (
-          <div key={index} className="lg:col-span-3 md:col-span-6 col-span-12">
-            <CardBox className="hover:shadow-lg transition-shadow duration-200 h-full">
+          <div key={index}>
+            <CardBox className="hover:shadow-lg transition-all duration-300 h-full border border-ld hover:border-primary/20 group">
               <Link href={stat.href} className="flex items-center gap-4 h-full">
-                <div className={`h-12 w-12 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center ${stat.color}`}>
-                  <Icon icon={stat.icon} height={28} />
+                <div className={`h-12 w-12 rounded-xl bg-lightgray dark:bg-white/5 flex items-center justify-center ${stat.color} group-hover:scale-110 transition-transform duration-200`}>
+                  <Icon icon={stat.icon} height={24} />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">{stat.title}</p>
-                  <h3 className="text-base font-bold text-dark dark:text-white">{stat.value}</h3>
+                  <p className="text-[13px] text-slate-400 dark:text-slate-500 font-medium">{stat.title}</p>
+                  <h3 className="text-[15px] font-bold text-dark dark:text-white">{stat.value}</h3>
                 </div>
               </Link>
             </CardBox>
@@ -49,31 +51,36 @@ const DashboardPage = () => {
         ))}
       </div>
 
-      <div className="grid grid-cols-12 gap-30">
+      {/* Trend Chart */}
+      <div className="grid grid-cols-12 gap-6">
         <div className="col-span-12">
           <TrendChart />
         </div>
       </div>
 
-      <div className="grid grid-cols-12 gap-30">
+      {/* Workflow & Tips */}
+      <div className="grid grid-cols-12 gap-6">
         <div className="lg:col-span-7 col-span-12">
            <CardBox>
-              <div className="flex justify-between items-center mb-4">
-                 <h4 className="text-lg font-bold">Alur Kerja Penilaian</h4>
+              <div className="flex justify-between items-center mb-5">
+                 <div>
+                   <h4 className="text-lg font-bold text-dark dark:text-white">Alur Kerja Penilaian</h4>
+                   <p className="text-sm text-slate-400 mt-1">Ikuti langkah-langkah berikut untuk proses penilaian</p>
+                 </div>
               </div>
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 {steps.map((step, idx) => (
                   <Link
                     key={step.label}
                     href={step.href}
-                    className="flex items-start gap-3 rounded-lg border border-ld p-4 hover:bg-lightprimary/50 transition-colors"
+                    className="flex items-start gap-3 rounded-xl border border-ld p-3.5 hover:bg-lightprimary/30 hover:border-primary/20 transition-all duration-200 group"
                   >
-                    <div className="h-7 w-7 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center mt-0.5">
+                    <div className="h-8 w-8 rounded-lg bg-primary/10 text-primary text-sm font-bold flex items-center justify-center mt-0.5 group-hover:bg-primary group-hover:text-white transition-colors duration-200">
                       {idx + 1}
                     </div>
                     <div>
-                      <h5 className="font-semibold text-dark dark:text-white">{step.label}</h5>
-                      <p className="text-sm text-bodytext mt-1">{step.desc}</p>
+                      <h5 className="font-semibold text-dark dark:text-white text-[15px]">{step.label}</h5>
+                      <p className="text-sm text-slate-400 mt-0.5">{step.desc}</p>
                     </div>
                   </Link>
                 ))}
@@ -82,16 +89,28 @@ const DashboardPage = () => {
         </div>
         <div className="lg:col-span-5 col-span-12">
            <CardBox>
-              <h4 className="text-lg font-bold mb-4">Tips Penggunaan</h4>
-              <div className="flex flex-col gap-4 text-sm text-bodytext">
-                <div className="rounded-lg bg-lightprimary p-3 text-primary">
-                  Gunakan satu periode aktif agar perhitungan perbandingan dan penilaian tetap konsisten.
+              <h4 className="text-lg font-bold mb-5 text-dark dark:text-white">Tips Penggunaan</h4>
+              <div className="flex flex-col gap-3 text-sm">
+                <div className="rounded-xl bg-lightprimary/50 p-3.5 border border-primary/10">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Icon icon="solar:lightbulb-bold" className="text-primary" height={16} />
+                    <span className="font-semibold text-primary">Periode Aktif</span>
+                  </div>
+                  <p className="text-slate-500 text-[13px]">Gunakan satu periode aktif agar perhitungan perbandingan dan penilaian tetap konsisten.</p>
                 </div>
-                <div className="rounded-lg bg-lightsuccess p-3 text-success">
-                  Pastikan semua nilai penilaian sudah terisi sebelum melakukan finalisasi ranking.
+                <div className="rounded-xl bg-lightsuccess/50 p-3.5 border border-success/10">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Icon icon="solar:check-circle-bold" className="text-success" height={16} />
+                    <span className="font-semibold text-success">Finalisasi</span>
+                  </div>
+                  <p className="text-slate-500 text-[13px]">Pastikan semua nilai penilaian sudah terisi sebelum melakukan finalisasi ranking.</p>
                 </div>
-                <div className="rounded-lg bg-lightinfo p-3 text-info">
-                  Menu Pengembang hanya untuk administrator guna memvalidasi perhitungan penilaian kinerja.
+                <div className="rounded-xl bg-lightinfo/50 p-3.5 border border-info/10">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Icon icon="solar:info-circle-bold" className="text-info" height={16} />
+                    <span className="font-semibold text-info">Menu Pengembang</span>
+                  </div>
+                  <p className="text-slate-500 text-[13px]">Menu Pengembang hanya untuk administrator guna memvalidasi perhitungan penilaian kinerja.</p>
                 </div>
               </div>
            </CardBox>

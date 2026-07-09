@@ -62,22 +62,22 @@ const Header = ({ layoutType }: HeaderPropsType) => {
   return (
     <>
       <header
-        className={`top-0 z-[5]  ${
+        className={`top-0 z-[5] transition-all duration-300 ${
           isSticky
-            ? "bg-white dark:bg-darkgray sticky shadow-sm"
-            : "bg-transparent"
+            ? "bg-white dark:bg-darkgray sticky shadow-sm border-b border-ld"
+            : "bg-white/80 dark:bg-darkgray/80 backdrop-blur-sm"
         }`}
       >
         <Navbar
           fluid
-          className={`rounded-none bg-transparent dark:bg-transparent py-3 sm:py-4 sm:px-[15px] px-2 ${
+          className={`rounded-none bg-transparent dark:bg-transparent py-3 sm:py-3 sm:px-[15px] px-2 ${
             layoutType == "horizontal" ? "container mx-auto !px-4 sm:!px-6" : ""
           }  ${isLayout == "full" ? "!max-w-full " : ""}`}
         >
           {/* Mobile Toggle Icon */}
           <span
             onClick={() => setIsMobileSidebar(true)}
-            className="h-10 w-10 flex text-black dark:text-white text-opacity-65 xl:hidden hover:text-primary hover:bg-lightprimary rounded-full justify-center items-center cursor-pointer touch-target no-select"
+            className="h-10 w-10 flex text-slate-500 dark:text-white dark:text-opacity-65 xl:hidden hover:text-primary hover:bg-lightprimary rounded-lg justify-center items-center cursor-pointer touch-target no-select transition-colors"
             aria-label="Open menu"
           >
             <Icon icon="solar:hamburger-menu-line-duotone" height={21} />
@@ -106,7 +106,7 @@ const Header = ({ layoutType }: HeaderPropsType) => {
           <div className="flex xl:hidden items-center gap-1">
             {/* Theme Toggle - Mobile */}
             <span
-              className="h-10 w-10 flex hover:text-primary hover:bg-lightprimary dark:hover:bg-darkminisidebar dark:hover:text-primary focus:ring-0 rounded-full justify-center items-center cursor-pointer text-darklink dark:text-white touch-target no-select"
+              className="h-10 w-10 flex hover:text-primary hover:bg-lightprimary dark:hover:bg-darkminisidebar dark:hover:text-primary focus:ring-0 rounded-lg justify-center items-center cursor-pointer text-slate-500 dark:text-white touch-target no-select transition-colors"
               onClick={toggleMode}
               aria-label="Toggle theme"
             >
@@ -119,7 +119,7 @@ const Header = ({ layoutType }: HeaderPropsType) => {
           </div>
 
           <Navbar.Collapse className="xl:block hidden">
-            <div className="flex gap-3 items-center">
+            <div className="flex gap-2 items-center">
               {/* Search   */}
 
               {/* Theme Toggle */}
@@ -127,7 +127,7 @@ const Header = ({ layoutType }: HeaderPropsType) => {
               {/* Light Mode Button */}
               {activeMode === "light" ? (
                 <div
-                  className="h-10 w-10 hover:text-primary hover:bg-lightprimary dark:hover:bg-darkminisidebar  dark:hover:text-primary focus:ring-0 rounded-full flex justify-center items-center cursor-pointer text-darklink  dark:text-white"
+                  className="h-10 w-10 hover:text-primary hover:bg-lightprimary dark:hover:bg-darkminisidebar dark:hover:text-primary focus:ring-0 rounded-lg flex justify-center items-center cursor-pointer text-slate-500 dark:text-white transition-colors"
                   onClick={toggleMode}
                 >
                   <span className="flex items-center">
@@ -137,7 +137,7 @@ const Header = ({ layoutType }: HeaderPropsType) => {
               ) : (
                 // Dark Mode Button
                 <div
-                  className="h-10 w-10 hover:text-primary hover:bg-lightprimary dark:hover:bg-darkminisidebar  dark:hover:text-primary focus:ring-0 rounded-full flex justify-center items-center cursor-pointer text-darklink  dark:text-white"
+                  className="h-10 w-10 hover:text-primary hover:bg-lightprimary dark:hover:bg-darkminisidebar dark:hover:text-primary focus:ring-0 rounded-lg flex justify-center items-center cursor-pointer text-slate-500 dark:text-white transition-colors"
                   onClick={toggleMode}
                 >
                   <span className="flex items-center">

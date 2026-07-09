@@ -7,3 +7,28 @@
     margin-left: 0;
     margin-right: 0;
 }
+
+/* Horizontal menu scrollbar hidden */
+.horizontal-nav .hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.horizontal-nav .hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Horizontal menu dropdown animation */
+.horizontal-nav [class*="absolute"] {
+  animation: dropdownFadeIn 0.15s ease-out;
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

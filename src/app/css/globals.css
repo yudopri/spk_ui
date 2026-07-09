@@ -35,9 +35,9 @@
   body {
     @apply text-sm text-bodytext;
     background:
-      radial-gradient(circle at 8% -10%, rgba(47, 157, 143, 0.16), transparent 35%),
-      radial-gradient(circle at 90% 5%, rgba(31, 79, 120, 0.14), transparent 28%),
-      linear-gradient(180deg, #f8fbfe 0%, #f2f6fa 100%);
+      radial-gradient(circle at 8% -10%, rgba(31, 79, 120, 0.08), transparent 35%),
+      radial-gradient(circle at 90% 5%, rgba(47, 157, 143, 0.06), transparent 28%),
+      linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
     /* Prevent iOS rubber-band scrolling */
     overscroll-behavior-y: none;
     /* Safe area for notched devices */
@@ -47,9 +47,9 @@
 
   .dark body {
     background:
-      radial-gradient(circle at 12% -10%, rgba(47, 157, 143, 0.2), transparent 35%),
-      radial-gradient(circle at 95% 5%, rgba(31, 79, 120, 0.2), transparent 30%),
-      linear-gradient(180deg, #12263a 0%, #142435 100%);
+      radial-gradient(circle at 12% -10%, rgba(47, 157, 143, 0.15), transparent 35%),
+      radial-gradient(circle at 95% 5%, rgba(31, 79, 120, 0.15), transparent 30%),
+      linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
   }
 
   .dropdown {

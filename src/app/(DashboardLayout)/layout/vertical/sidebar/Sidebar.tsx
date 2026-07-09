@@ -86,20 +86,20 @@ const SidebarLayout = () => {
     <>
       <div className="xl:block hidden">
         <Sidebar
-          className="fixed menu-sidebar  bg-white dark:bg-darkgray rtl:pe-4 rtl:ps-0 "
+          className="fixed menu-sidebar bg-white dark:bg-darkgray rtl:pe-4 rtl:ps-0 border-r-0 shadow-none"
           aria-label="Sidebar with multi-level dropdown example"
         >
-          <div className="px-6 py-4 flex items-center sidebarlogo">
+          <div className="px-5 py-5 flex items-center sidebarlogo border-b border-ld mx-4 mb-1">
             <FullLogo />
           </div>
-          <SimpleBar className="h-[calc(100vh_-_85px)]">
-            <Sidebar.Items className="pe-4 rtl:pe-0 rtl:ps-4 px-5 mt-2">
+          <SimpleBar className="h-[calc(100vh_-_90px)]">
+            <Sidebar.Items className="pe-4 rtl:pe-0 rtl:ps-4 px-4 mt-1">
               <Sidebar.ItemGroup className="sidebar-nav hide-menu">
                 {selectedContent &&
                   selectedContent.items?.filter((item) => hasAccess(item.permission)).map((item, index) => (
                     <div className="caption" key={item.heading}>
                       <React.Fragment key={index}>
-                        <h5 className="text-link dark:text-white/70 font-semibold caption font-semibold leading-6 tracking-widest text-xs text-sm  pb-2 uppercase">
+                        <h5 className="text-slate-400 dark:text-white/50 font-medium caption leading-6 tracking-wider text-[11px] pb-2 pt-1 uppercase">
                           {item.heading}
                         </h5>
                         {item.children?.filter((child) => hasAccess(child.permission, child.url)).map((child, index) => (
