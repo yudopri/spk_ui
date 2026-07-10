@@ -89,9 +89,9 @@ export const config = {
   ],
 };
 
-// ─── Proxy (Next.js 16 — menggantikan middleware.ts) ──────────
+// ─── Middleware (Next.js — auto-deteksi export名为 "middleware") ──
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Pass through assets without modification
