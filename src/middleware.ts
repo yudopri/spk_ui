@@ -83,13 +83,17 @@ export const config = {
      * Match semua request kecuali:
      * 1. _next/static, _next/image (static assets)
      * 2. favicon.ico, images
-     * 3. api/proxy/auth (login/refresh/logout — butuh cookie tanpa auth check)
+     * 3. api/proxy/auth/login, refresh, logout — butuh cookie tanpa auth check
+     *
+     * PERHATIAN: Jangan gunakan prefix "api/proxy/auth" karena akan
+     * mengecualikan SEMUA endpoint /auth/* (users, roles, permissions, dll).
+     * Gunakan pattern spesifik untuk login/refresh/logout saja.
      */
-    "/((?!_next/static|_next/image|favicon.ico|images|api/proxy/auth).*)",
+    "/((?!_next/static|_next/image|favicon.ico|images|api/proxy/auth/login|api/proxy/auth/refresh|api/proxy/auth/logout).*)",
   ],
 };
 
-// ─── Middleware (Next.js — auto-deteksi export名为 "middleware") ──
+// ─── Middleware ────────────────────────────────────────────────
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
