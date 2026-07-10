@@ -12,10 +12,10 @@ const WelcomeBox = () => {
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
         
-        <div className="relative grid grid-cols-12 gap-6 items-center">
+        <div className="relative grid grid-cols-12 gap-6 items-center p-1">
           <div className="md:col-span-8 col-span-12">
-            <div className="flex gap-4 items-center mb-4">
-              <div className="h-12 w-12 rounded-xl bg-white/15 backdrop-blur-sm flex items-center justify-center flex-shrink-0 border border-white/20">
+            <div className="flex gap-4 items-center mb-5">
+              <div className="h-12 w-12 rounded-xl bg-white/15 backdrop-blur-sm flex items-center justify-center shrink-0 border border-white/20">
                 <Icon icon="solar:chart-square-outline" className="text-white" height={24} />
               </div>
               <div>
@@ -24,7 +24,7 @@ const WelcomeBox = () => {
               </div>
             </div>
 
-            <p className="text-white/85 text-sm leading-6 max-w-xl">
+            <p className="text-white/85 text-sm leading-relaxed max-w-xl">
               Pantau proses penilaian kinerja dari data master, input penilaian, hingga
               laporan ranking. Gunakan menu di samping untuk melanjutkan alur kerja periode aktif.
             </p>

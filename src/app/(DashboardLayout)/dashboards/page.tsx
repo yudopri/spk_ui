@@ -24,10 +24,10 @@ const DashboardPage = () => {
   ];
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-7">
       {/* Welcome Banner */}
       <div className="grid grid-cols-12 gap-6">
-        <div className="lg:col-span-12 col-span-12">
+        <div className="col-span-12">
           <WelcomeBox />
         </div>
       </div>
@@ -36,12 +36,12 @@ const DashboardPage = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {stats.map((stat, index) => (
           <div key={index}>
-            <CardBox className="hover:shadow-lg transition-all duration-300 h-full border border-ld hover:border-primary/20 group">
+            <CardBox className="hover:shadow-lg transition-all duration-300 h-full border border-ld hover:border-primary/20 group p-5">
               <Link href={stat.href} className="flex items-center gap-4 h-full">
-                <div className={`h-12 w-12 rounded-xl bg-lightgray dark:bg-white/5 flex items-center justify-center ${stat.color} group-hover:scale-110 transition-transform duration-200`}>
+                <div className={`h-12 w-12 rounded-xl bg-lightgray dark:bg-white/5 flex items-center justify-center shrink-0 ${stat.color} group-hover:scale-110 transition-transform duration-200`}>
                   <Icon icon={stat.icon} height={24} />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <p className="text-[13px] text-slate-400 dark:text-slate-500 font-medium">{stat.title}</p>
                   <h3 className="text-[15px] font-bold text-dark dark:text-white">{stat.value}</h3>
                 </div>
@@ -61,14 +61,14 @@ const DashboardPage = () => {
       {/* Workflow & Tips */}
       <div className="grid grid-cols-12 gap-6">
         <div className="lg:col-span-7 col-span-12">
-           <CardBox>
-              <div className="flex justify-between items-center mb-5">
+           <CardBox className="p-0">
+              <div className="flex justify-between items-center p-6 pb-4">
                  <div>
                    <h4 className="text-lg font-bold text-dark dark:text-white">Alur Kerja Penilaian</h4>
                    <p className="text-sm text-slate-400 mt-1">Ikuti langkah-langkah berikut untuk proses penilaian</p>
                  </div>
               </div>
-              <div className="space-y-2.5">
+              <div className="space-y-2.5 px-6 pb-6">
                 {steps.map((step, idx) => (
                   <Link
                     key={step.label}
@@ -88,7 +88,7 @@ const DashboardPage = () => {
            </CardBox>
         </div>
         <div className="lg:col-span-5 col-span-12">
-           <CardBox>
+           <CardBox className="p-6">
               <h4 className="text-lg font-bold mb-5 text-dark dark:text-white">Tips Penggunaan</h4>
               <div className="flex flex-col gap-3 text-sm">
                 <div className="rounded-xl bg-lightprimary/50 p-3.5 border border-primary/10">

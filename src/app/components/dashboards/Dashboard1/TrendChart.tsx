@@ -177,31 +177,33 @@ const TrendChart = () => {
   ];
 
   return (
-    <CardBox>
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-        <div>
-          <h4 className="text-lg font-bold">Tren Performa Karyawan</h4>
-          <p className="text-sm text-gray-500">
-            {loading
-              ? "Memuat data..."
-              : topEmployeeName
-              ? `Peringkat teratas: ${topEmployeeName}`
-              : "Pilih minimal 1 periode untuk menampilkan tren"}
-          </p>
-        </div>
+    <CardBox className="p-0">
+      <div className="p-6 pb-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <h4 className="text-lg font-bold text-dark dark:text-white">Tren Performa Karyawan</h4>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              {loading
+                ? "Memuat data..."
+                : topEmployeeName
+                ? `Peringkat teratas: ${topEmployeeName}`
+                : "Pilih minimal 1 periode untuk menampilkan tren"}
+            </p>
+          </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <Button size="sm" color="light" onClick={handleSelectAll}>
-            Pilih Semua
-          </Button>
-          <Button size="sm" color="light" onClick={handleClearAll}>
-            Hapus
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button size="sm" color="light" onClick={handleSelectAll} className="dark:bg-white/10 dark:text-white dark:hover:bg-white/20">
+              Pilih Semua
+            </Button>
+            <Button size="sm" color="light" onClick={handleClearAll} className="dark:bg-white/10 dark:text-white dark:hover:bg-white/20">
+              Hapus
+            </Button>
+          </div>
         </div>
       </div>
 
       {/* Period filters */}
-      <div className="mb-6">
+      <div className="px-6 pb-5">
         <div className="flex flex-wrap gap-2">
           {periodeList.map((p) => {
             const active = selectedPeriodeIds.includes(p.id);
@@ -212,7 +214,7 @@ const TrendChart = () => {
                 className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
                   active
                     ? "bg-primary text-white border-primary"
-                    : "bg-white text-gray-700 border-gray-300 hover:border-primary hover:text-primary"
+                    : "bg-white dark:bg-white/5 text-gray-700 dark:text-slate-300 border-gray-200 dark:border-white/10 hover:border-primary hover:text-primary dark:hover:border-primary dark:hover:text-primary"
                 }`}
               >
                 {p.NamaPeriode} {p.Tahun ? `(${p.Tahun})` : ""}
@@ -222,18 +224,20 @@ const TrendChart = () => {
         </div>
       </div>
 
-      <div className="h-[360px] flex items-center justify-center">
-        {loading ? (
-          <Spinner size="xl" />
-        ) : selectedPeriodeIds.length === 0 ? (
-          <div className="text-gray-400 italic text-sm">Pilih minimal 1 periode untuk menampilkan tren</div>
-        ) : trendData.length === 0 ? (
-          <div className="text-gray-400 italic text-sm">Belum ada data penilaian tersedia</div>
-        ) : (
-          <div className="w-full">
-            <Chart options={chartOptions} series={chartSeries} type="area" height={360} />
-          </div>
-        )}
+      <div className="px-6 pb-6">
+        <div className="h-[360px] flex items-center justify-center rounded-xl bg-lightgray/30 dark:bg-white/[0.02]">
+          {loading ? (
+            <Spinner size="xl" />
+          ) : selectedPeriodeIds.length === 0 ? (
+            <div className="text-slate-400 dark:text-slate-500 text-sm">Pilih minimal 1 periode untuk menampilkan tren</div>
+          ) : trendData.length === 0 ? (
+            <div className="text-slate-400 dark:text-slate-500 text-sm">Belum ada data penilaian tersedia</div>
+          ) : (
+            <div className="w-full">
+              <Chart options={chartOptions} series={chartSeries} type="area" height={360} />
+            </div>
+          )}
+        </div>
       </div>
     </CardBox>
   );
