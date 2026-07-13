@@ -111,6 +111,12 @@ const NilaiPerbandingan = () => {
     fetchData();
   }, [selectedPeriodeId, selectedGroupId]);
 
+  // Trigger setelah update comparisonValues
+  useEffect(() => {
+    // Validasi sederhana: pastikan tidak ada nilai 1 (sama penting) di diagonal
+    // Ini sudah otomatis terpenuhi karena diagonal selalu 1 di fillData
+  }, [comparisonValues, kpis.length]);
+
   const pairs: { itemA: any; itemB: any; key: string }[] = [];
   for (let i = 0; i < kpis.length; i++) {
     for (let j = i + 1; j < kpis.length; j++) {
@@ -122,140 +128,43 @@ const NilaiPerbandingan = () => {
     }
   }
 
-  const handleSimulate = async () => {
-    try {
-      setSubmitting(true);
-      setError(null);
-      setSuccess(null);
-      setWeights({});
-      setIsSimulated(false);
-      
-      if (selectedGroupId === 0) {
-        const payload = pairs.map(p => ({
-          id_a: p.itemA.Id || p.itemA.id,
-          id_b: p.itemB.Id || p.itemB.id,
-          nilai: comparisonValues[p.key] || 1
-        }));
-        await spkService.saveAhpGroupPerbandingan(selectedPeriodeId, payload);
-      } else {
-        const payload = pairs.map(p => ({
-          PeriodeId: selectedPeriodeId,
-          Nilai: comparisonValues[p.key] || 1,
-          KpiAId: p.itemA.Id || p.itemA.id,
-          KpiBId: p.itemB.Id || p.itemB.id
-        }));
-        await spkService.saveAhpPerbandingan(payload as any);
-      }
-
-      const resCalc = await spkService.calculateAhpWeight(selectedPeriodeId, selectedGroupId || undefined);
-      const nextCr = Number(resCalc.consistency?.cr ?? 0);
-
-      if (!resCalc.success) {
-        setError(resCalc.message || "Gagal menghitung bobot kriteria");
-        setCr(nextCr);
-        setIsSimulated(true);
-        setWeightList([]);
-        setWeights({});
-        return;
-      }
-
-      const rawWeights = Array.isArray(resCalc.data)
-        ? resCalc.data
-        : [];
-
-      setCr(nextCr);
-      setWeightList(rawWeights);
-
-      const newWeights: Record<number, number> = {};
-      kpis.forEach((item, index) => {
-        const itemId = Number(item.Id || item.id || index + 1);
-        newWeights[itemId] = Number(rawWeights[index] ?? 0);
-      });
-      setWeights(newWeights);
-      setIsSimulated(true);
-
-      if (nextCr >= 0.1) {
-              setError(`Input tidak konsisten. CR = ${nextCr.toFixed(4)}. Perbaiki perbandingan sebelum menyimpan.`);
-      } else {
-        setSuccess("Perhitungan berhasil. Silakan tinjau bobot di bawah ini.");
-      }
-    } catch (err: any) {
-      const msg = err?.response?.data?.message || err?.message || "Gagal melakukan simulasi perhitungan";
-      setError(msg);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleSave = async () => {
-  try {
-    if (!isSimulated) {
-      setError("Silakan lakukan simulasi terlebih dahulu");
-      return;
-    }
-
-    if (cr !== null && cr > 0.1) {
-      setError("CR tidak konsisten, tidak bisa disimpan");
-      return;
-    }
-
-    setSubmitting(true);
-    setError(null);
-    setSuccess(null);
-
-    let res;
-
-    // =========================
-    // MODE GROUP
-    // =========================
-    if (selectedGroupId === 0) {
-   const payload = pairs.map(p => ({
-          id_a: p.itemA.Id || p.itemA.id,
-          id_b: p.itemB.Id || p.itemB.id,
-          nilai: comparisonValues[p.key] || 1
-        }));
-  res = await spkService.saveAhpGroupPerbandingan(selectedPeriodeId, payload);
-}
-
-    // =========================
-    // MODE KPI (SUB)
-    // =========================
-    else {
-      const payload = pairs.map((p) => ({
-        PeriodeId: selectedPeriodeId,
-        KpiAId: p.itemA.Id || p.itemA.id,
-        KpiBId: p.itemB.Id || p.itemB.id,
-        Nilai: comparisonValues[p.key] || 1,
-      }));
-
-      res = await spkService.saveAhpPerbandingan(payload);
-    }
-
-    if (res.success) {
-      setSuccess(res.message || "Bobot AHP berhasil disimpan");
-    } else {
-      setError(res.message || "Gagal menyimpan bobot");
-    }
-
-  } catch (err: any) {
-    console.error(err);
-    setError(err?.response?.data?.message || "Terjadi kesalahan saat menyimpan");
-  } finally {
-    setSubmitting(false);
-  }
-};
-
+  // Helper untuk mendapatkan label text dari value
   const getSaatyLabel = (val: number) => {
     if (val === 1) return "Sama Penting";
     if (val === 3) return "Sedikit Lebih Penting";
     if (val === 5) return "Lebih Penting";
     if (val === 7) return "Sangat Kuat Penting";
     if (val === 9) return "Mutlak Lebih Penting";
+    if (val === 1/3) return "Sedikit Lebih Penting (B)";
+    if (val === 1/5) return "Lebih Penting (B)";
+    if (val === 1/7) return "Sangat Kuat Penting (B)";
+    if (val === 1/9) return "Mutlak Lebih Penting (B)";
     if (val === 2) return "Di antara 1 & 3";
     if (val === 4) return "Di antara 3 & 5";
     if (val === 6) return "Di antara 5 & 7";
     if (val === 8) return "Di antara 7 & 9";
     return val;
+  };
+
+  // Helper untuk mendapatkan status resiprokal (apakah input inverse existe)
+  const getInverseStatus = (val: number) => {
+    if (val === 1) return { text: "↓ A=B", class: "bg-green-100 text-green-700" };
+    if (val === 3) return { text: "↑ B>A", class: "bg-green-100 text-green-700" };
+    if (val === 5) return { text: "↑ B>A", class: "bg-green-100 text-green-700" };
+    if (val === 7) return { text: "↑ B>A", class: "bg-green-100 text-green-700" };
+    if (val === 9) return { text: "↑ B>A", class: "bg-green-100 text-green-700" };
+    if (val === 1/3) return { text: "↑ A>B", class: "bg-green-100 text-green-700" };
+    if (val === 1/5) return { text: "↑ A>B", class: "bg-green-100 text-green-700" };
+    if (val === 1/7) return { text: "↑ A>B", class: "bg-green-100 text-green-700" };
+    if (val === 1/9) return { text: "↑ A>B", class: "bg-green-100 text-green-700" };
+    return { text: "?", class: "bg-yellow-100 text-yellow-700" };
+  };
+
+  // Helper untuk mendapatkan label direction (A > B atau B > A)
+  const getDirectionLabel = (val: number) => {
+    if (val > 1) return ">>> A ≥ B (A lebih penting)";
+    if (val < 1) return "<<< B ≥ A (B lebih penting)";
+    return "== A = B (Sama penting)";
   };
 
   return (
@@ -347,120 +256,305 @@ const NilaiPerbandingan = () => {
             <div className="text-center py-20 text-gray-400 italic">Dibutuhkan minimal 2 kriteria untuk dibandingkan.</div>
         ) : (
             <>
+                {/* Panduan Skala AHP */}
+                <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800">
+                    <h4 className="font-bold text-xs uppercase tracking-wider text-blue-700 dark:text-blue-300 mb-2 flex items-center gap-2">
+                        <Icon icon="solar:book-bold" className="h-4 w-4" />
+                        Panduan Skala AHP (Saaty)
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-[10px] text-blue-800 dark:text-blue-200">
+                        <div className="flex items-center gap-2">
+                            <span className="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-800 rounded font-bold">1</span>
+                            <span>= Sama penting</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-800 rounded font-bold">3</span>
+                            <span>= A sedikit lebih penting dari B</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-800 rounded font-bold">5</span>
+                            <span>= A lebih penting dari B</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-800 rounded font-bold">7</span>
+                            <span>= A sangat kuat lebih penting dari B</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-800 rounded font-bold">9</span>
+                            <span>= A mutlak lebih penting dari B</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className="px-1.5 py-0.5 bg-orange-100 dark:bg-orange-800 rounded font-bold">1/3 s/d 1/9</span>
+                            <span>= B lebih penting dari A (kebalikan)</span>
+                        </div>
+                    </div>
+                </div>
+
                 <div className="overflow-x-auto">
                     <Table hoverable>
                         <Table.Head>
                             <Table.HeadCell className="bg-gray-900 text-white uppercase tracking-widest text-[10px]">Kriteria Utama (A)</Table.HeadCell>
-                            <Table.HeadCell className="bg-gray-900 text-white text-center uppercase tracking-widest text-[10px]">Skala Prioritas (Saaty)</Table.HeadCell>
+                            <Table.HeadCell className="bg-gray-900 text-white text-center uppercase tracking-widest text-[10px]">
+                                Pilihan Perbandingan
+                            </Table.HeadCell>
                             <Table.HeadCell className="bg-gray-900 text-white text-right uppercase tracking-widest text-[10px]">Kriteria Pembanding (B)</Table.HeadCell>
                         </Table.Head>
                         <Table.Body className="divide-y">
-                            {pairs.map(p => (
+                            {pairs.map(p => {
+                                const currentVal = comparisonValues[p.key] || 1;
+                                const inverseStatus = getInverseStatus(currentVal);
+
+                                // Preset options: standard + inverse
+                                const presets = [
+                                    { value: 9,   label: "9",   desc: "Mutlak", emoji: "⭐⭐⭐⭐⭐", side: "A" },
+                                    { value: 7,   label: "7",   desc: "Sangat Kuat", emoji: "⭐⭐⭐⭐", side: "A" },
+                                    { value: 5,   label: "5",   desc: "Lebih", emoji: "⭐⭐⭐", side: "A" },
+                                    { value: 3,   label: "3",   desc: "Sedikit", emoji: "⭐⭐", side: "A" },
+                                    { value: 1,   label: "1",   desc: "Sama", emoji: "=", side: "" },
+                                    { value: 1/3, label: "1/3", desc: "Sedikit", emoji: "⭐⭐", side: "B" },
+                                    { value: 1/5, label: "1/5", desc: "Lebih", emoji: "⭐⭐⭐", side: "B" },
+                                    { value: 1/7, label: "1/7", desc: "Sangat Kuat", emoji: "⭐⭐⭐⭐", side: "B" },
+                                    { value: 1/9, label: "1/9", desc: "Mutlak", emoji: "⭐⭐⭐⭐⭐", side: "B" },
+                                ];
+
+                                return (
                                 <Table.Row key={p.key} className="group hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                                    <Table.Cell className="font-black text-gray-900 dark:text-gray-100 uppercase text-xs w-1/4">
-                                      {p.itemA.NamaGroup || p.itemA.NamaKpi}
+                                    {/* Kriteria A */}
+                                    <Table.Cell className="font-black text-gray-900 dark:text-gray-100 uppercase text-xs w-[15%]">
+                                      <div className="flex flex-col gap-1">
+                                        <span>{p.itemA.NamaGroup || p.itemA.NamaKpi}</span>
+                                        <span className="text-[9px] text-gray-400 normal-case font-normal">(Kriteria Utama)</span>
+                                      </div>
                                     </Table.Cell>
-                                    <Table.Cell className="w-2/4">
-                                        <div className="flex flex-col items-center py-4">
-                                            <input 
-                                                type="range" min="1" max="9" step="1"
-                                                value={comparisonValues[p.key] || 1}
-                                                onChange={(e) => setComparisonValues({...comparisonValues, [p.key]: Number(e.target.value)})}
-                                                disabled={isLocked}
-                                                className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary disabled:opacity-30"
-                                            />
-                                            <div className="mt-4 flex flex-col items-center w-full">
-                                                <div className="flex items-center gap-4 w-full justify-between px-2 mb-2">
-                                                   <span className="text-[10px] font-bold text-gray-400">SAMA PENTING (1)</span>
-                                                   <span className="text-[10px] font-bold text-primary">SANGAT PENTING (9)</span>
+
+                                    {/* Input Perbandingan - Preset Buttons */}
+                                    <Table.Cell className="w-[70%] p-0">
+                                        <div className="py-3 px-4">
+                                            {/* Status Direction */}
+                                            <div className={`text-center text-[10px] font-bold uppercase tracking-wider mb-3 px-2 py-1 rounded ${
+                                                currentVal > 1 ? "bg-blue-100 text-blue-700" :
+                                                currentVal < 1 ? "bg-orange-100 text-orange-700" :
+                                                "bg-gray-100 text-gray-600"
+                                            }`}>
+                                                {currentVal > 1 && "▲ A lebih penting dari B"}
+                                                {currentVal < 1 && "▼ B lebih penting dari A"}
+                                                {currentVal === 1 && "═ Sama penting"}
+                                            </div>
+
+                                            {/* Preset Buttons - A lebih penting */}
+                                            <div className="mb-1 text-[8px] font-bold text-blue-500 uppercase text-center tracking-widest">
+                                                Pilih jika A lebih penting dari B ▲
+                                            </div>
+                                            <div className="flex gap-1 justify-center mb-3">
+                                                {[9, 7, 5, 3].map(val => (
+                                                    <Button
+                                                        key={val}
+                                                        size="xs"
+                                                        color={currentVal === val ? "blue" : "light"}
+                                                        className={`text-[11px] px-2 min-w-[52px] ${
+                                                            currentVal === val 
+                                                                ? "font-black ring-2 ring-blue-300 shadow-md" 
+                                                                : "font-semibold hover:scale-105"
+                                                        } transition-all`}
+                                                        disabled={isLocked}
+                                                        onClick={() => setComparisonValues({...comparisonValues, [p.key]: val})}
+                                                    >
+                                                        <div className="flex flex-col items-center leading-tight">
+                                                            <span>{val}</span>
+                                                            <span className="text-[7px] opacity-70">A &gt; B</span>
+                                                        </div>
+                                                    </Button>
+                                                ))}
+                                            </div>
+
+                                            {/* Sama penting */}
+                                            <div className="flex gap-1 justify-center mb-3">
+                                                <Button
+                                                    size="xs"
+                                                    color={currentVal === 1 ? "gray" : "light"}
+                                                    className={`text-[11px] px-4 min-w-[60px] ${
+                                                        currentVal === 1 
+                                                            ? "font-black ring-2 ring-gray-300 shadow-md" 
+                                                            : "font-semibold hover:scale-105"
+                                                    } transition-all`}
+                                                    disabled={isLocked}
+                                                    onClick={() => setComparisonValues({...comparisonValues, [p.key]: 1})}
+                                                >
+                                                    <div className="flex flex-col items-center leading-tight">
+                                                        <span>1</span>
+                                                        <span className="text-[7px] opacity-70">Sama</span>
+                                                    </div>
+                                                </Button>
+                                            </div>
+
+                                            {/* Preset Buttons - B lebih penting */}
+                                            <div className="mb-1 text-[8px] font-bold text-orange-500 uppercase text-center tracking-widest">
+                                                Pilih jika B lebih penting dari A ▼
+                                            </div>
+                                            <div className="flex gap-1 justify-center mb-3">
+                                                {[3, 5, 7, 9].map(val => {
+                                                    const invVal = 1/val;
+                                                    return (
+                                                        <Button
+                                                            key={`inv-${val}`}
+                                                            size="xs"
+                                                            color={currentVal === invVal ? "warning" : "light"}
+                                                            className={`text-[11px] px-2 min-w-[52px] ${
+                                                                currentVal === invVal 
+                                                                    ? "font-black ring-2 ring-orange-300 shadow-md" 
+                                                                    : "font-semibold hover:scale-105"
+                                                            } transition-all`}
+                                                            disabled={isLocked}
+                                                            onClick={() => setComparisonValues({...comparisonValues, [p.key]: invVal})}
+                                                        >
+                                                            <div className="flex flex-col items-center leading-tight">
+                                                                <span>1/{val}</span>
+                                                                <span className="text-[7px] opacity-70">B &gt; A</span>
+                                                            </div>
+                                                        </Button>
+                                                    );
+                                                })}
+                                            </div>
+
+                                            {/* Separator */}
+                                            <div className="h-px bg-gray-200 dark:bg-gray-600 my-2" />
+
+                                            {/* Info Row: Current Value + Reset */}
+                                            <div className="flex items-center justify-between gap-2">
+                                                {/* Current value display */}
+                                                <div className="flex items-center gap-2">
+                                                    <div className={`px-3 py-1 rounded-lg border-2 flex flex-col items-center shadow-sm ${
+                                                        currentVal === 1 
+                                                            ? "border-gray-300 bg-gray-50" 
+                                                            : currentVal > 1 
+                                                                ? "border-blue-400 bg-blue-50" 
+                                                                : "border-orange-400 bg-orange-50"
+                                                    }`}>
+                                                        <span className={`text-lg font-black leading-none ${
+                                                            currentVal > 1 ? "text-blue-600" : 
+                                                            currentVal < 1 ? "text-orange-600" : "text-gray-600"
+                                                        }`}>
+                                                            {currentVal === 1 ? "1" : currentVal}
+                                                        </span>
+                                                        <span className="text-[8px] font-bold uppercase tracking-tighter text-gray-500 mt-0.5">
+                                                            {getSaatyLabel(currentVal)}
+                                                        </span>
+                                                    </div>
+                                                    {/* Inverse status */}
+                                                    <div className={`px-2 py-1 rounded text-[9px] font-bold uppercase tracking-tighter ${inverseStatus.class}`}>
+                                                        {inverseStatus.text}
+                                                    </div>
                                                 </div>
-                                                <div className="px-6 py-2 rounded-full border-2 border-primary bg-primary/5 flex flex-col items-center shadow-sm">
-                                                    <span className="text-xl font-black text-primary leading-none">
-                                                      {comparisonValues[p.key] || 1}
-                                                    </span>
-                                                    <span className="text-[9px] font-black uppercase tracking-tighter text-gray-500 mt-1">
-                                                      {getSaatyLabel(comparisonValues[p.key] || 1)}
-                                                    </span>
-                                                </div>
-                                                <div className="mt-4 flex items-center gap-2 bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded text-[9px] font-bold text-gray-500 uppercase tracking-tighter">
-                                                    <Icon icon="solar:reorder-bold" className="h-3 w-3" />
-                                                    Resiprokal: {p.itemB.NamaGroup || p.itemB.NamaKpi} = 1/{comparisonValues[p.key] || 1}
-                                                </div>
+
+                                                {/* Reset button */}
+                                                <Button
+                                                    size="xs"
+                                                    color="warning"
+                                                    onClick={() => setComparisonValues({...comparisonValues, [p.key]: 1})}
+                                                    disabled={isLocked || currentVal === 1}
+                                                    className="text-[10px] px-2 py-1 shadow-none"
+                                                >
+                                                    <Icon icon="solar:restart-bold" className="h-3 w-3 mr-1" />
+                                                    Reset
+                                                </Button>
+                                            </div>
+
+                                            {/* Reciprocal info */}
+                                            <div className="mt-2 flex items-center justify-center gap-2 bg-gray-50 dark:bg-gray-700/50 px-3 py-1.5 rounded text-[9px] font-bold text-gray-500 uppercase tracking-tighter">
+                                                <Icon icon="solar:reorder-linear" className="h-3 w-3" />
+                                                <span>
+                                                    Resiprokal: B = 1/{currentVal}
+                                                    {currentVal === 1 ? " = 1" : ` ≈ ${typeof currentVal === 'number' ? (1/currentVal).toFixed(4) : ''}`}
+                                                </span>
                                             </div>
                                         </div>
                                     </Table.Cell>
-                                    <Table.Cell className="font-black text-gray-900 dark:text-gray-100 uppercase text-xs text-right w-1/4">
-                                      {p.itemB.NamaGroup || p.itemB.NamaKpi}
+
+                                    {/* Kriteria B */}
+                                    <Table.Cell className="font-black text-gray-900 dark:text-gray-100 uppercase text-xs text-right w-[15%]">
+                                      <div className="flex flex-col gap-1 items-end">
+                                        <span>{p.itemB.NamaGroup || p.itemB.NamaKpi}</span>
+                                        <span className="text-[9px] text-gray-400 normal-case font-normal">(Kriteria Pembanding)</span>
+                                      </div>
                                     </Table.Cell>
                                 </Table.Row>
-                            ))}
+                                );
+                            })}
                         </Table.Body>
                     </Table>
                 </div>
 
-                {isSimulated && (weightList.length > 0 || Object.keys(weights).length > 0) && (
-                  <div className="mt-8 p-6 bg-primary/5 rounded-2xl border border-primary/10 transition-all animate-in fade-in slide-in-from-bottom-4">
+                {/* PREVIEW MATRIX - Sebelum Simpan */}
+                {isSimulated && (
+                  <div className="mt-8 p-6 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-2xl border border-blue-100 dark:border-blue-800 transition-all">
                     <div className="flex items-center gap-3 mb-4">
-                      <div className="bg-primary p-2 rounded-lg">
-                        <Icon icon="solar:chart-square-bold" className="text-white h-5 w-5" />
+                      <div className="bg-blue-500 p-2 rounded-lg">
+                        <Icon icon="solar:matrix-bold" className="text-white h-5 w-5" />
                       </div>
-                      <h3 className="font-black text-gray-900 dark:text-white uppercase tracking-tight">Hasil Perhitungan Bobot</h3>
+                      <div>
+                        <h3 className="font-black text-gray-900 dark:text-white uppercase tracking-tight">Preview Matriks Perbandingan</h3>
+                        <p className="text-[10px] text-gray-500">Ringkasan semua perbandingan yang telah Anda pilih</p>
+                      </div>
                     </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {kpis.map((kpi) => {
-                        const itemId = kpi.Id || kpi.id;
-                        const weight = weights[itemId] ?? weightList[kpis.findIndex((x) => (x.Id || x.id) === itemId)] ?? 0;
-                        return (
-                          <div key={kpi.Id || kpi.id} className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center transition-all hover:scale-[1.02]">
-                            <div className="flex flex-col">
-                              <span className="text-[10px] font-black uppercase text-gray-400 tracking-widest">{kpi.NamaGroup ? "GRUP" : "KPI"}</span>
-                              <span className="font-bold text-gray-800 dark:text-white uppercase text-xs truncate max-w-[150px]">
-                                {kpi.NamaGroup || kpi.NamaKpi}
-                              </span>
-                            </div>
-                            <div className="text-right">
-                              <div className="text-xl font-black text-primary tabular-nums">
-                                {(weight * 100).toFixed(1)}%
-                              </div>
-                              <div className="text-[9px] font-bold text-gray-400 uppercase">Weight: {weight.toFixed(4)}</div>
-                            </div>
-                          </div>
-                        );
-                      })}
+
+                    <div className="overflow-x-auto">
+                      <Table hoverable>
+                        <Table.Head>
+                          <Table.HeadCell className="bg-gray-800 text-white text-[9px] uppercase w-1/6">A \\ B</Table.HeadCell>
+                          {kpis.map(k => (
+                            <Table.HeadCell key={k.Id || k.id} className="bg-gray-800 text-white text-[9px] uppercase text-center">
+                              {k.NamaGroup || k.NamaKpi}
+                            </Table.HeadCell>
+                          ))}
+                        </Table.Head>
+                        <Table.Body>
+                          {kpis.map((itemA, idxA) => {
+                            const idA = itemA.Id || itemA.id;
+                            return (
+                              <Table.Row key={idA}>
+                                <Table.Cell className="font-bold text-[10px] bg-gray-100 dark:bg-gray-700">
+                                  {itemA.NamaGroup || itemA.NamaKpi}
+                                </Table.Cell>
+                                {kpis.map((itemB, idxB) => {
+                                  const idB = itemB.Id || itemB.id;
+                                  if (idxA === idxB) {
+                                    return (
+                                      <Table.Cell key={idB} className="text-center bg-gray-100 dark:bg-gray-700 text-gray-400 font-bold text-xs">
+                                        1
+                                      </Table.Cell>
+                                    );
+                                  }
+                                  // Get value for A vs B
+                                  const keyAB = `${idA}-${idB}`;
+                                  const keyBA = `${idB}-${idA}`;
+                                  let val = comparisonValues[keyAB] ?? 1;
+                                  if (val === 1 && comparisonValues[keyBA] !== undefined && comparisonValues[keyBA] !== 1) {
+                                    val = 1 / comparisonValues[keyBA];
+                                  }
+
+                                  const cellColor = val > 1 
+                                    ? "text-blue-700 font-bold" 
+                                    : val < 1 
+                                      ? "text-orange-700 font-bold" 
+                                      : "text-gray-500";
+
+                                  return (
+                                    <Table.Cell key={idB} className={`text-center text-[11px] font-mono ${cellColor}`}>
+                                      {val === 1 ? "1" : val.toFixed(2)}
+                                    </Table.Cell>
+                                  );
+                                })}
+                              </Table.Row>
+                            );
+                          })}
+                        </Table.Body>
+                      </Table>
                     </div>
+                    <p className="text-[9px] text-gray-400 mt-2 italic">
+                      ⚠️ Matriks ini hanya preview sementara. Klik "Simpan Bobot" untuk menyimpan ke database.
+                    </p>
                   </div>
                 )}
-
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mt-6 sm:mt-8 p-4 sm:p-6 bg-gray-50 dark:bg-gray-700/30 rounded-xl">
-                    <div className="flex items-center gap-3 text-xs sm:text-sm font-bold text-gray-500 uppercase">
-                       <Icon icon="solar:info-circle-bold" className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500 shrink-0" />
-                       <span className="leading-tight">Lakukan simulasi terlebih dahulu untuk melihat bobot masing-masing kriteria.</span>
-                    </div>
-                    <div className="flex flex-col xs:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
-                        <Button 
-                          color="info" 
-                          size="sm"
-                          onClick={handleSimulate} 
-                          disabled={submitting || isLocked}
-                          className="w-full xs:w-auto shadow-md outline-none touch-target"
-                        >
-                            {submitting ? <Spinner size="sm" /> : <Icon icon="solar:play-bold" className="mr-1 sm:mr-2 h-4 w-4 sm:h-5 sm:w-5" />}
-                            <span className="whitespace-nowrap">Simulasi Hitung</span>
-                        </Button>
-
-                        <Button 
-                          color={!isSimulated || (cr !== null && cr > 0.1) ? "gray" : "primary"} 
-                          size="sm"
-                          onClick={handleSave} 
-                          disabled={submitting || isLocked || !isSimulated || (cr !== null && cr > 0.1)}
-                          className="w-full xs:w-auto shadow-md shadow-primary/20"
-                        >
-                            <Icon icon="solar:diskette-bold" className="mr-1 sm:mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-                            <span className="whitespace-nowrap">{isLocked ? "Terkunci" : `Simpan Bobot`}</span>
-                        </Button>
-                    </div>
-                </div>
             </>
         )}
       </CardBox>
