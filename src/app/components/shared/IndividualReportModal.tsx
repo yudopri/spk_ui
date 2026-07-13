@@ -17,17 +17,20 @@ interface IndividualReportProps {
       Status?: string;
     };
     rincian: Array<{
-      Kriteria: string;
-      Nilai: string | number;
-      Satuan: string;
-      group_id?: number;
-      nama_grup?: string;
-      bobot_ahp?: number;
-      bobot_grup?: number;
+      group: string;
+      items: Array<{
+        Kriteria: string;
+        Realisasi: string | number;
+        Satuan: string;
+        group_id?: number;
+        nama_grup?: string;
+        Target?: string | number;
+      }>;
     }>;
     kesimpulan: {
       Ranking: number;
       Skor: string | number;
+      Status?: string;
     };
   } | null;
 }
@@ -123,23 +126,12 @@ const IndividualReportModal = ({ show, onClose, data }: IndividualReportProps) =
     : 0;
 
   const score = Number(finalScore.toFixed(2));
+  const ranking = data.kesimpulan.Ranking;
+  const status = data.kesimpulan.Status || data.metadata.Status || "Processed";
 
-  // Group rincian by group_id
-  const groupedRincian = data.rincian.reduce((acc, item) => {
-    const groupKey = item.group_id ?? 0;
-    const groupName = item.nama_grup || "Lainnya";
-    if (!acc[groupKey]) {
-      acc[groupKey] = { name: groupName, items: [] };
-    }
-    acc[groupKey].items.push(item);
-    return acc;
-  }, {} as Record<number, { name: string; items: typeof data.rincian }>);
-
-  const groupEntries = Object.entries(groupedRincian).map(([id, val]) => ({
-    id: Number(id),
-    name: val.name,
-    items: val.items,
-  }));
+  const groups = data.rincian || [];
+  const allItems = groups.flatMap((g) => g.items);
+  const totalKPI = allItems.length;
 
   const today = new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
 
@@ -181,10 +173,9 @@ const IndividualReportModal = ({ show, onClose, data }: IndividualReportProps) =
           {/* ── INFO KARYAWAN & PERIODE ── */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
             <div className="border border-border rounded-lg overflow-hidden">
-              <div className="bg-primary px-4 py-2">
-                <h3 className="text-[10px] font-bold uppercase tracking-widest text-white">
-                  Data Karyawan
-                </h3>
+              <div className="bg-primary px-4 py-2 flex items-center gap-2">
+                <Icon icon="solar:user-bold" className="h-3.5 w-3.5 text-white/80" />
+                <h3 className="text-[10px] font-bold uppercase tracking-widest text-white">Data Karyawan</h3>
               </div>
               <div className="p-4 space-y-3">
                 <div className="flex justify-between items-center">
@@ -199,10 +190,9 @@ const IndividualReportModal = ({ show, onClose, data }: IndividualReportProps) =
             </div>
 
             <div className="border border-border rounded-lg overflow-hidden">
-              <div className="bg-primary px-4 py-2">
-                <h3 className="text-[10px] font-bold uppercase tracking-widest text-white">
-                  Informasi Periode
-                </h3>
+              <div className="bg-primary px-4 py-2 flex items-center gap-2">
+                <Icon icon="solar:calendar-bold" className="h-3.5 w-3.5 text-white/80" />
+                <h3 className="text-[10px] font-bold uppercase tracking-widest text-white">Informasi Periode</h3>
               </div>
               <div className="p-4 space-y-3">
                 <div className="flex justify-between items-center">
@@ -213,28 +203,16 @@ const IndividualReportModal = ({ show, onClose, data }: IndividualReportProps) =
                   <span className="text-xs font-semibold text-muted">Tahun Buku</span>
                   <span className="text-xs font-bold text-dark text-right ml-4">: {data.metadata.Tahun}</span>
                 </div>
-                {data.metadata.Status && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs font-semibold text-muted">Status Dokumen</span>
-                    <span className="text-xs font-bold text-right ml-4">:{" "}
-                      <span className={`uppercase ${data.metadata.Status === "Final" ? "text-success" : "text-warning"}`}>
-                        {data.metadata.Status}
-                      </span>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-semibold text-muted">Status</span>
+                  <span className="text-xs font-bold text-right ml-4">:{" "}
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${
+                      status === "Final" ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"
+                    }`}>
+                      {status}
                     </span>
-                  </div>
-                )}
-                {data.metadata.DibuatOleh && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs font-semibold text-muted">Dibuat Oleh</span>
-                    <span className="text-xs font-bold text-dark text-right ml-4">: {data.metadata.DibuatOleh}</span>
-                  </div>
-                )}
-                {data.metadata.DisetujuiOleh && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs font-semibold text-muted">Disetujui Oleh</span>
-                    <span className="text-xs font-bold text-dark text-right ml-4">: {data.metadata.DisetujuiOleh}</span>
-                  </div>
-                )}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -244,18 +222,23 @@ const IndividualReportModal = ({ show, onClose, data }: IndividualReportProps) =
             <div className="flex items-center gap-2">
               <div className="w-1 h-5 bg-primary rounded-full" />
               <h3 className="text-xs font-black uppercase tracking-widest text-dark">
-                Rincian Penilaian per Grup KPI
+                Rincian Penilaian KPI
               </h3>
             </div>
 
-            {groupEntries.map((group, gIdx) => (
-              <div key={group.id} className="border border-border rounded-lg overflow-hidden">
-                <div className="bg-primary px-4 py-2 flex items-center justify-between">
-                  <h4 className="text-[11px] font-bold uppercase tracking-widest text-white">
-                    {group.name}
-                  </h4>
-                  <span className="text-[9px] font-bold text-white/70">
-                    Grup {gIdx + 1}
+            {groups.map((grp, gIdx) => (
+              <div key={gIdx} className="border border-border rounded-lg overflow-hidden">
+                <div className="bg-primary px-4 py-2.5 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-[10px] font-bold text-white">
+                      {gIdx + 1}
+                    </span>
+                    <h4 className="text-[11px] font-bold uppercase tracking-widest text-white">
+                      {grp.group}
+                    </h4>
+                  </div>
+                  <span className="text-[9px] font-semibold text-white/60 bg-white/10 px-2 py-0.5 rounded-full">
+                    {grp.items.length} KPI
                   </span>
                 </div>
                 <div className="overflow-x-auto">
@@ -264,18 +247,22 @@ const IndividualReportModal = ({ show, onClose, data }: IndividualReportProps) =
                       <tr className="bg-gray-50 text-dark">
                         <th className="p-2.5 text-center border-b border-r border-border w-10 font-bold text-[10px] uppercase tracking-widest">#</th>
                         <th className="p-2.5 text-left border-b border-r border-border font-bold text-[10px] uppercase tracking-widest">Kriteria Penilaian</th>
-                        <th className="p-2.5 text-center border-b border-r border-border w-28 font-bold text-[10px] uppercase tracking-widest">Nilai</th>
+                        <th className="p-2.5 text-center border-b border-r border-border w-24 font-bold text-[10px] uppercase tracking-widest">Target</th>
+                        <th className="p-2.5 text-center border-b border-r border-border w-24 font-bold text-[10px] uppercase tracking-widest">Realisasi</th>
                         <th className="p-2.5 text-center border-b border-border w-16 font-bold text-[10px] uppercase tracking-widest">Satuan</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {group.items.map((item, idx) => {
+                      {grp.items.map((item, idx) => {
                         const isCurrency =
-                          typeof item.Nilai === "string" &&
-                          (item.Satuan === "Rp" || parseFloat(item.Nilai) > 1000);
+                          typeof item.Realisasi === "string" &&
+                          (item.Satuan === "Rp" || parseFloat(item.Realisasi) > 1000);
                         const displayValue = isCurrency
-                          ? formatCurrency(item.Nilai)
-                          : formatNumber(item.Nilai, item.Satuan === "%" ? 1 : 4);
+                          ? formatCurrency(item.Realisasi)
+                          : formatNumber(item.Realisasi, item.Satuan === "%" ? 1 : 4);
+                        const targetDisplay = item.Target != null
+                          ? (item.Satuan === "%" ? `${parseFloat(String(item.Target)).toFixed(1)}` : formatNumber(item.Target, 4))
+                          : "-";
 
                         return (
                           <tr key={idx} className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}>
@@ -285,7 +272,10 @@ const IndividualReportModal = ({ show, onClose, data }: IndividualReportProps) =
                             <td className="p-2.5 border-b border-r border-border font-bold text-dark uppercase text-[11px] tracking-tight">
                               {item.Kriteria}
                             </td>
-                            <td className="p-2.5 text-center border-b border-r border-border font-black text-dark">
+                            <td className="p-2.5 text-center border-b border-r border-border font-mono text-gray-500">
+                              {targetDisplay}
+                            </td>
+                            <td className="p-2.5 text-center border-b border-r border-border font-black text-primary">
                               {displayValue}
                             </td>
                             <td className="p-2.5 text-center border-b border-border text-muted font-medium">
@@ -309,25 +299,38 @@ const IndividualReportModal = ({ show, onClose, data }: IndividualReportProps) =
                 Kesimpulan Penilaian
               </h3>
             </div>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="flex-1 border-2 border-primary rounded-lg p-4 bg-primary/5 text-center">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="relative border-2 border-primary rounded-lg p-4 bg-primary/5 text-center overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-1 bg-primary" />
                 <span className="block text-[9px] font-bold uppercase text-muted tracking-widest mb-1">
-                  Indeks Skor Akhir (Yi)
+                  Indeks Skor Akhir
                 </span>
-                <span className="block text-3xl font-black text-primary leading-none">
+                <span className="block text-2xl font-black text-primary leading-none">
                   {score}
                 </span>
+                <span className="block text-[9px] text-muted mt-1 uppercase tracking-wider">
+                  dari 100
+                </span>
               </div>
-              <div className="flex-1 border-2 border-primary rounded-lg p-4 bg-yellow-400 text-center">
-                <span className="block text-[9px] font-bold uppercase text-dark tracking-widest mb-1">
-                  Peringkat Karyawan
+              <div className="relative border-2 border-amber-400 rounded-lg p-4 bg-amber-50 text-center overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-1 bg-amber-400" />
+                <span className="block text-[9px] font-bold uppercase text-muted tracking-widest mb-1">
+                  Peringkat
                 </span>
                 <div className="flex items-center justify-center gap-1">
                   <span className="text-[10px] font-bold text-dark/50 uppercase">Rank</span>
-                  <span className="text-3xl font-black text-dark leading-none">
-                    {data.kesimpulan.Ranking}
-                  </span>
+                  <span className="text-3xl font-black text-dark leading-none">{ranking}</span>
                 </div>
+              </div>
+              <div className="relative border-2 border-border rounded-lg p-4 bg-gray-50 text-center overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gray-400" />
+                <span className="block text-[9px] font-bold uppercase text-muted tracking-widest mb-1">
+                  Total KPI
+                </span>
+                <span className="block text-3xl font-black text-dark leading-none">{totalKPI}</span>
+                <span className="block text-[9px] text-muted mt-1 uppercase tracking-wider">
+                  dinilai
+                </span>
               </div>
             </div>
           </div>
