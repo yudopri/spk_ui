@@ -167,6 +167,21 @@ const NilaiPerbandingan = () => {
     return "== A = B (Sama penting)";
   };
 
+  const handleSimulate = () => {
+    setIsSimulated(true);
+  };
+
+  const handleSave = () => {
+    if (cr !== null && cr > 0.1) {
+      setSubmitting(true);
+      // Simpan ke database
+      setTimeout(() => {
+        setSubmitting(false);
+        setSuccess("Bobot berhasil disimpan");
+      }, 1000);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-6">
       {/* Stepper Progress Tracker */}
@@ -558,6 +573,39 @@ const NilaiPerbandingan = () => {
             </>
         )}
       </CardBox>
+
+      {/* Action Buttons */}
+      <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-700/30 rounded-xl">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div className="flex items-center gap-3 text-xs sm:text-sm font-bold text-gray-500 uppercase">
+               <Icon icon="solar:info-circle-bold" className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500 shrink-0" />
+               <span className="leading-tight">Lakukan simulasi terlebih dahulu untuk melihat bobot masing-masing kriteria.</span>
+            </div>
+            <div className="flex flex-col xs:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
+                <Button 
+                  color="info" 
+                  size="sm"
+                  onClick={handleSimulate} 
+                  disabled={submitting || isLocked}
+                  className="w-full xs:w-auto shadow-md outline-none touch-target"
+                >
+                    {submitting ? <Spinner size="sm" /> : <Icon icon="solar:play-bold" className="mr-1 sm:mr-2 h-4 w-4 sm:h-5 sm:w-5" />}
+                    <span className="whitespace-nowrap">Simulasi Hitung</span>
+                </Button>
+
+                <Button 
+                  color={!isSimulated || (cr !== null && cr > 0.1) ? "gray" : "primary"} 
+                  size="sm"
+                  onClick={handleSave} 
+                  disabled={submitting || isLocked || !isSimulated || (cr !== null && cr > 0.1)}
+                  className="w-full xs:w-auto shadow-md shadow-primary/20"
+                >
+                    <Icon icon="solar:diskette-bold" className="mr-1 sm:mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+                    <span className="whitespace-nowrap">{isLocked ? "Terkunci" : `Simpan Bobot`}</span>
+                </Button>
+            </div>
+        </div>
+      </div>
     </div>
   );
 };
