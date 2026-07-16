@@ -1,9 +1,10 @@
 ﻿"use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Table, Badge, Spinner, Alert, TextInput } from "flowbite-react";
 import CardBox from "@/app/components/shared/CardBox";
 import { Icon } from "@iconify/react";
 import userService, { User } from "@/services/userService";
+import developerService, { AuditLog } from "@/services/developerService";
 import { usePermission } from "@/hooks/usePermission";
 
 const UserManagementPage = () => {
@@ -12,16 +13,34 @@ const UserManagementPage = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [search, setSearch] = useState("");
+    const [lastLoginMap, setLastLoginMap] = useState<Record<string, string>>({});
 
     useEffect(() => {
-        fetchUsers();
+        fetchData();
     }, []);
 
-    const fetchUsers = async () => {
+    const fetchData = async () => {
         setLoading(true);
         try {
-            const res = await userService.getAll();
-            setUsers(res.data || []);
+            const [usersRes, auditRes] = await Promise.all([
+                userService.getAll(),
+                developerService.getAuditLogs(1, 500),
+            ]);
+            setUsers(usersRes.data || []);
+
+            // Build last login map from LOGIN actions
+            const loginLogs = (auditRes.data || [])
+                .filter((log) => log.action === "LOGIN")
+                .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+            const map: Record<string, string> = {};
+            loginLogs.forEach((log) => {
+                if (log.email && !map[log.email]) {
+                    map[log.email] = log.createdAt;
+                }
+            });
+            setLastLoginMap(map);
+
             setError(null);
         } catch (err: any) {
             setError(err?.response?.data?.message || "Gagal mengambil data user (Mitra)");
@@ -30,10 +49,13 @@ const UserManagementPage = () => {
         }
     };
 
-    const filteredUsers = users.filter(u => 
-        u.name?.toLowerCase().includes(search.toLowerCase()) || 
-        u.email?.toLowerCase().includes(search.toLowerCase()) ||
-        u.role?.toLowerCase().includes(search.toLowerCase())
+    const filteredUsers = useMemo(() =>
+        users.filter(u =>
+            u.name?.toLowerCase().includes(search.toLowerCase()) ||
+            u.email?.toLowerCase().includes(search.toLowerCase()) ||
+            u.role?.toLowerCase().includes(search.toLowerCase())
+        ),
+        [users, search]
     );
 
     if (!hasPermission("user_manage")) {
@@ -70,6 +92,9 @@ const UserManagementPage = () => {
                             icon={() => <Icon icon="solar:magnifer-linear" className="text-xl" />}
                         />
                     </div>
+                    <div className="text-sm text-gray-500">
+                        Total: <b>{filteredUsers.length}</b> pengguna
+                    </div>
                 </div>
 
                 <div className="overflow-x-auto">
@@ -79,31 +104,41 @@ const UserManagementPage = () => {
                             <Table.HeadCell>Nama</Table.HeadCell>
                             <Table.HeadCell>Email</Table.HeadCell>
                             <Table.HeadCell>Role</Table.HeadCell>
+                            <Table.HeadCell>Terakhir Login</Table.HeadCell>
                         </Table.Head>
                         <Table.Body className="divide-y">
                             {loading ? (
                                 <Table.Row>
-                                    <Table.Cell colSpan={4} className="text-center py-10">
+                                    <Table.Cell colSpan={5} className="text-center py-10">
                                         <Spinner size="xl" />
                                     </Table.Cell>
                                 </Table.Row>
                             ) : filteredUsers.length === 0 ? (
                                 <Table.Row>
-                                    <Table.Cell colSpan={4} className="text-center py-10 text-gray-500">
+                                    <Table.Cell colSpan={5} className="text-center py-10 text-gray-500">
                                         Tidak ada data user yang sesuai.
                                     </Table.Cell>
                                 </Table.Row>
                             ) : (
-                                filteredUsers.map((user) => (
-                                    <Table.Row key={user.id}>
-                                        <Table.Cell className="font-medium">{user.id}</Table.Cell>
-                                        <Table.Cell>{user.name}</Table.Cell>
-                                        <Table.Cell>{user.email}</Table.Cell>
-                                        <Table.Cell>
-                                            <Badge color="info">{user.role}</Badge>
-                                        </Table.Cell>
-                                    </Table.Row>
-                                ))
+                                filteredUsers.map((user) => {
+                                    const lastLogin = lastLoginMap[user.email];
+                                    return (
+                                        <Table.Row key={user.id}>
+                                            <Table.Cell className="font-medium">{user.id}</Table.Cell>
+                                            <Table.Cell>{user.name}</Table.Cell>
+                                            <Table.Cell>{user.email}</Table.Cell>
+                                            <Table.Cell>
+                                                <Badge color="info">{user.role}</Badge>
+                                            </Table.Cell>
+                                            <Table.Cell className="text-sm text-gray-500 whitespace-nowrap">
+                                                {lastLogin
+                                                    ? new Date(lastLogin).toLocaleString("id-ID")
+                                                    : <span className="text-gray-300 italic">Belum pernah login</span>
+                                                }
+                                            </Table.Cell>
+                                        </Table.Row>
+                                    );
+                                })
                             )}
                         </Table.Body>
                     </Table>

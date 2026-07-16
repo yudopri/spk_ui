@@ -102,8 +102,11 @@ const AuditLogsPage = () => {
                   </Table.Row>
                 ) : auditLogs.length > 0 ? auditLogs.map(log => (
                   <Table.Row key={log.id}>
-                    <Table.Cell className="whitespace-nowrap">{new Date(log.timestamp).toLocaleString("id-ID")}</Table.Cell>
-                    <Table.Cell className="font-bold text-gray-900 dark:text-white">{log.username}</Table.Cell>
+                    <Table.Cell className="whitespace-nowrap">{new Date(log.createdAt).toLocaleString("id-ID")}</Table.Cell>
+                    <Table.Cell>
+                      <div className="font-bold text-gray-900 dark:text-white">{log.name !== '-' ? log.name : ""}</div>
+                      <div className="text-[11px] text-gray-400">{log.email}</div>
+                    </Table.Cell>
                     <Table.Cell>
                       <Badge color={
                         log.action === 'DELETE' ? 'failure' : 

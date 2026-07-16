@@ -157,12 +157,12 @@ const DeveloperPage = () => {
     {
       header: "Waktu",
       render: (item) => (
-        <span className="whitespace-nowrap text-sm">{new Date(item.timestamp).toLocaleString("id-ID")}</span>
+        <span className="whitespace-nowrap text-sm">{new Date(item.createdAt).toLocaleString("id-ID")}</span>
       ),
     },
     {
       header: "Pengguna",
-      render: (item) => <span className="font-bold text-gray-900 dark:text-white">{item.username}</span>,
+      render: (item) => <span className="font-bold text-gray-900 dark:text-white">{item.name}</span>,
     },
     {
       header: "Aksi",

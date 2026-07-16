@@ -50,14 +50,16 @@ export interface MooraDebugData {
 
 export interface AuditLog {
   id: number;
-  timestamp: string;
   userId: number;
-  username: string;
+  email: string;
+  name: string;
   action: string;
   entityName: string;
   details: string;
-  ipAddress?: string;
-  userAgent?: string;
+  ipAddress: string;
+  userAgent: string;
+  createdAt: string;
+  lastLogin: string | null;
 }
 
 export interface ApiBaseResponse<T = unknown> {
@@ -91,13 +93,15 @@ const developerService = {
     const mappedData = (response.data.data || []).map((item: any) => ({
       id: item.Id,
       userId: item.UserId,
-      username: item.Username,
-      action: item.Action,
-      entityName: item.EntityName,
-      details: item.Details,
-      ipAddress: item.IpAddress,
-      userAgent: item.UserAgent,
-      timestamp: item.CreatedAt != null ? item.CreatedAt : new Date().toISOString(),
+      email: item.Email || '',
+      name: item.Name || '-',
+      action: item.Action || '',
+      entityName: item.EntityName || '',
+      details: item.Details || '',
+      ipAddress: item.IpAddress || '',
+      userAgent: item.UserAgent || '',
+      createdAt: item.CreatedAt || new Date().toISOString(),
+      lastLogin: item.last_login ?? null,
     }));
     
     return {

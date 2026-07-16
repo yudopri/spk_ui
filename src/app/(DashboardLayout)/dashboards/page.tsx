@@ -45,6 +45,7 @@ const DashboardPage = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [totalKaryawan, setTotalKaryawan] = useState(0);
+  const [totalPeriode, setTotalPeriode] = useState(0);
   const [periodes, setPeriodes] = useState<Periode[]>([]);
   const [totalKpi, setTotalKpi] = useState(0);
   const [topPerformers, setTopPerformers] = useState<SpkReport[]>([]);
@@ -61,33 +62,41 @@ const DashboardPage = () => {
     try {
       isRefresh ? setRefreshing(true) : setLoading(true);
 
-      // 1. Parallel fetch: karyawan, periode, divisi
-      const [karyawanRes, periodeRes, divisiRes] = await Promise.all([
-        karyawanService.getAll({ pageSize: 1 }),
+      // 1. Parallel fetch: karyawan (all for divisi count), periode, divisi
+      const [karyawanAllRes, periodeRes, divisiRes] = await Promise.all([
+        karyawanService.getAll({ pageSize: 500 }),
         periodeService.getAll(1, 200),
         divisiService.getAll(1, 100),
       ]);
 
-      const kTotal = karyawanRes.meta?.total ?? karyawanRes.data?.length ?? 0;
+      const kTotal = karyawanAllRes.meta?.total ?? karyawanAllRes.data?.length ?? 0;
       setTotalKaryawan(kTotal);
 
       const periodeList = periodeRes.data || [];
       setPeriodes(periodeList);
+      setTotalPeriode(periodeRes.meta?.total ?? periodeList.length);
 
-      // Divisi list
+      // Divisi list — build ID→name map
       const divisiData = divisiRes.data || [];
       setDivisiList(divisiData);
-
-      // Karyawan per divisi count
-      const kPerDiv: Record<string, number> = {};
+      const divisiIdToName: Record<number, string> = {};
       divisiData.forEach((d) => {
+        const id = d.id ?? (d as any).Id ?? 0;
         const name = d.namaDivisi || d.name || "Lainnya";
-        kPerDiv[name] = d.karyawanCount ?? 0;
+        if (id) divisiIdToName[id] = name;
+      });
+
+      // Karyawan per divisi count — computed from actual karyawan data
+      const kPerDiv: Record<string, number> = {};
+      (karyawanAllRes.data || []).forEach((k) => {
+        const deptId = k.departemen_id ?? k.divisiId ?? 0;
+        const deptName = divisiIdToName[deptId] || k.department_name || "Lainnya";
+        kPerDiv[deptName] = (kPerDiv[deptName] || 0) + 1;
       });
       setKaryawanPerDivisi(kPerDiv);
 
-      // Active & locked periods
-      const active = periodeList.find((p) => p.Status === "open" || p.isAktif) || null;
+      // Active & locked periods — processed = active, locked = inactive
+      const active = periodeList.find((p) => p.Status === "processed" || p.status === "open") || null;
       setActivePeriode(active);
 
       const locked = periodeList
@@ -97,10 +106,10 @@ const DashboardPage = () => {
       const prevLocked = locked[1] || null;
       setLatestLockedPeriode(latestLocked);
 
-      // 2. KPI for active periode
+      // 2. KPI data (data KPI, bukan grup KPI) for active periode
       if (active) {
-        const kpiRes = await kpiService.getByPeriode(active.Id, 1, 100);
-        setTotalKpi(kpiRes.data?.length || 0);
+        const kpiRes = await kpiService.getByPeriode(active.Id, 1, 200);
+        setTotalKpi(kpiRes.meta?.total ?? (kpiRes.data?.length || 0));
       } else {
         setTotalKpi(0);
       }
@@ -178,9 +187,9 @@ const DashboardPage = () => {
       href: "/apps/karyawan",
     },
     {
-      title: "Periode Aktif",
-      value: activePeriode ? 1 : 0,
-      suffix: activePeriode ? activePeriode.NamaPeriode : "Tidak ada",
+      title: "Total Periode",
+      value: totalPeriode,
+      suffix: "periode",
       icon: "solar:calendar-bold-duotone",
       color: "text-secondary",
       bgCard: "bg-secondary/5 dark:bg-secondary/10",
@@ -205,7 +214,7 @@ const DashboardPage = () => {
       href: "/apps/report",
       trend: trendPct,
     },
-  ], [totalKaryawan, activePeriode, totalKpi, lockedReportCount, latestLockedPeriode, trendPct]);
+  ], [totalKaryawan, totalPeriode, totalKpi, lockedReportCount, latestLockedPeriode, trendPct]);
 
   // ── Workflow Steps ──
   const steps = [
