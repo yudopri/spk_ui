@@ -79,7 +79,7 @@ const developerService = {
     return response.data;
   },
 
-  getAuditLogs: async (page = 1, pageSize = 10, search = '', sort = '', filter = {}): Promise<ApiResponse<AuditLog[]>> => {
+  getAuditLogs: async (page = 1, pageSize = 10, search = '', sort = 'CreatedAt:desc', filter = {}): Promise<ApiResponse<AuditLog[]>> => {
     const response = await axiosServices.get<any>('/auth/audit-logs', {
       params: { 
         page, 
