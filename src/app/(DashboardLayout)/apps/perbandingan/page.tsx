@@ -169,6 +169,77 @@ const NilaiPerbandingan = () => {
 
   const handleSimulate = () => {
     setIsSimulated(true);
+
+    // Hitung CR dan bobot secara lokal dari matrix perbandingan
+    if (kpis.length === 0) return;
+
+    const n = kpis.length;
+    // Bangun matriks perbandingan
+    const matrix: number[][] = [];
+    for (let i = 0; i < n; i++) {
+      matrix[i] = [];
+      for (let j = 0; j < n; j++) {
+        if (i === j) {
+          matrix[i][j] = 1;
+        } else {
+          const idA = kpis[i].Id || kpis[i].id;
+          const idB = kpis[j].Id || kpis[j].id;
+          const keyAB = `${idA}-${idB}`;
+          const keyBA = `${idB}-${idA}`;
+          matrix[i][j] = comparisonValues[keyAB] ?? (comparisonValues[keyBA] !== undefined && comparisonValues[keyBA] !== 0 ? 1 / comparisonValues[keyBA] : 1);
+        }
+      }
+    }
+
+    // Hitung jumlah kolom
+    const colSums: number[] = [];
+    for (let j = 0; j < n; j++) {
+      let sum = 0;
+      for (let i = 0; i < n; i++) sum += matrix[i][j];
+      colSums.push(sum);
+    }
+
+    // Normalisasi matriks dan hitung bobot (rata-rata baris)
+    const normMatrix: number[][] = [];
+    const rowWeights: number[] = [];
+    for (let i = 0; i < n; i++) {
+      normMatrix[i] = [];
+      let rowSum = 0;
+      for (let j = 0; j < n; j++) {
+        normMatrix[i][j] = colSums[j] > 0 ? matrix[i][j] / colSums[j] : 0;
+        rowSum += normMatrix[i][j];
+      }
+      rowWeights.push(rowSum / n);
+    }
+
+    // Hitung lambda max
+    let lambdaMax = 0;
+    for (let i = 0; i < n; i++) {
+      let weightedSum = 0;
+      for (let j = 0; j < n; j++) weightedSum += matrix[i][j] * rowWeights[j];
+      lambdaMax += weightedSum / rowWeights[i];
+    }
+    lambdaMax /= n;
+
+    // Hitung CI dan CR
+    const ci = n > 1 ? (lambdaMax - n) / (n - 1) : 0;
+    // Random Index untuk n = 1..15
+    const riTable: Record<number, number> = { 1: 0, 2: 0, 3: 0.58, 4: 0.90, 5: 1.12, 6: 1.24, 7: 1.32, 8: 1.41, 9: 1.45, 10: 1.49 };
+    const ri = riTable[n] ?? (1.49 + (n - 10) * 0.03);
+    const crValue = ri > 0 ? ci / ri : 0;
+
+    setCr(Number(crValue.toFixed(4)));
+
+    // Update bobot
+    const newWeights: Record<number, number> = {};
+    const newWeightList: number[] = [];
+    kpis.forEach((k, i) => {
+      const id = k.Id || k.id;
+      newWeights[id] = rowWeights[i];
+      newWeightList.push(rowWeights[i]);
+    });
+    setWeights(newWeights);
+    setWeightList(newWeightList);
   };
 
   const handleSave = async () => {
@@ -210,7 +281,60 @@ const NilaiPerbandingan = () => {
       }
 
       if (res.success) {
-        setSuccess(res.message || "Bobot AHP berhasil disimpan");
+        // Hitung bobot AHP setelah perbandingan tersimpan
+        try {
+          const calcRes = await spkService.calculateAhpWeight(
+            selectedPeriodeId,
+            selectedGroupId === 0 ? undefined : selectedGroupId
+          );
+
+          if (calcRes.success && calcRes.data) {
+            // Update CR
+            const crValue = calcRes.data.cr ?? calcRes.consistency?.cr ?? null;
+            if (crValue !== null && crValue !== undefined) {
+              setCr(Number(crValue));
+            }
+
+            // Update bobot
+            const weightData = calcRes.data.weights ?? calcRes.data.ahp_weights ?? calcRes.data;
+            if (Array.isArray(weightData)) {
+              const newWeights: Record<number, number> = {};
+              const newWeightList: number[] = [];
+              weightData.forEach((w: any) => {
+                const id = Number(w.id ?? w.Id ?? w.kriteria_id ?? 0);
+                const bobot = Number(w.bobot ?? w.weight ?? w.nilai ?? 0);
+                if (id > 0) {
+                  newWeights[id] = bobot;
+                  newWeightList.push(bobot);
+                }
+              });
+              setWeights(newWeights);
+              setWeightList(newWeightList);
+            } else if (typeof weightData === "object" && weightData !== null) {
+              // Handle object format { id: weight, ... }
+              const newWeights: Record<number, number> = {};
+              const newWeightList: number[] = [];
+              Object.entries(weightData).forEach(([key, val]) => {
+                const id = Number(key);
+                const bobot = Number(val);
+                if (id > 0 && !isNaN(bobot)) {
+                  newWeights[id] = bobot;
+                  newWeightList.push(bobot);
+                }
+              });
+              setWeights(newWeights);
+              setWeightList(newWeightList);
+            }
+
+            setSuccess(calcRes.message || "Bobot AHP berhasil disimpan dan diproses");
+          } else {
+            setSuccess(res.message || "Bobot AHP berhasil disimpan");
+          }
+        } catch (calcErr) {
+          // Save berhasil tapi kalkulasi gagal — tetap tampilkan sukses save
+          console.error("Gagal menghitung bobot AHP:", calcErr);
+          setSuccess(res.message || "Bobot AHP berhasil disimpan (perhitungan gagal)");
+        }
       } else {
         setError(res.message || "Gagal menyimpan bobot");
       }
