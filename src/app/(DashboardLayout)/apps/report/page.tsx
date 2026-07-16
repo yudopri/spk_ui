@@ -88,7 +88,14 @@ const formatScore = (value?: number) => {
       header: "Rank",
       headerClasses: "text-center",
       cellClasses: "text-center font-bold text-lg text-primary",
-      render: (item: SpkReport) => (item as any).displayRank ?? item.rank ?? item.Ranking,
+      render: (item: SpkReport) => {
+        const rank = (item as any).displayRank ?? item.rank ?? item.Ranking;
+        const rankNum = Number(rank);
+        if (rankNum === 1) return <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-yellow-400 text-white font-black text-sm">1</span>;
+        if (rankNum === 2) return <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-gray-400 text-white font-black text-sm">2</span>;
+        if (rankNum === 3) return <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-orange-400 text-white font-black text-sm">3</span>;
+        return rank;
+      },
     },
     {
       header: "Nama",
@@ -96,19 +103,50 @@ const formatScore = (value?: number) => {
       render: (item: SpkReport) => item.nama || item.Karyawan?.name || item.Karyawan?.Nama,
     },
     {
-      header: "NIK",
-      headerClasses: "text-center",
-      cellClasses: "text-center font-mono text-xs text-gray-500",
-      render: (item: SpkReport) => item.nik || item.Karyawan?.nik || item.Karyawan?.Nik || "-",
+      header: "Divisi",
+      cellClasses: "text-left text-xs text-gray-600 dark:text-gray-300",
+      render: (item: SpkReport) => {
+        const divisi = item.divisi || item.Divisi || (item.Karyawan as any)?.Divisi || (item.Karyawan as any)?.divisi || "-";
+        return <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-medium">{divisi || "-"}</span>;
+      },
     },
     {
-      header: "Skor Akhir",
+      header: "Nilai",
       headerClasses: "text-center",
-      cellClasses: "text-center font-black text-primary text-xl tabular-nums",
+      cellClasses: "text-center font-mono text-xs font-bold text-primary tabular-nums",
       render: (item: SpkReport) => {
-        const val = item.nilai_akhir || item.totalScore || item.NilaiSkala || 0;
-        return val < 1 && val > 0 ? (val * 100).toFixed(0) : Math.round(val);
-      }
+        const yi = item.nilai_yi || item.NilaiYi || item.nilai_akhir || item.totalScore || item.NilaiSkala || 0;
+        return Number(yi).toFixed(6);
+      },
+    },
+    {
+      header: "Pencapaian KPI",
+      headerClasses: "text-center",
+      cellClasses: "text-center",
+      render: (item: SpkReport) => {
+        const rawPct = item.persentase_kpi || item.PersentaseKPI || 0;
+        const pct = rawPct > 0 && rawPct <= 1 ? rawPct * 100 : rawPct;
+        const predikat = getPredikat(pct);
+        return (
+          <div className="flex flex-col items-center gap-1">
+            <span className="font-black text-sm tabular-nums">{pct > 0 ? pct.toFixed(1) + "%" : "-"}</span>
+            <div className="w-20 h-1.5 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
+              <div className={`h-full rounded-full transition-all ${predikat.barColor}`} style={{ width: `${Math.min(pct, 100)}%` }} />
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      header: "Predikat",
+      headerClasses: "text-center",
+      cellClasses: "text-center",
+      render: (item: SpkReport) => {
+        const rawPct = item.persentase_kpi || item.PersentaseKPI || 0;
+        const pct = rawPct > 0 && rawPct <= 1 ? rawPct * 100 : rawPct;
+        const predikat = getPredikat(pct);
+        return <Badge color={predikat.bsColor} className="text-[10px] font-bold px-2.5 py-1">{predikat.label}</Badge>;
+      },
     },
     {
       header: "Status",
@@ -117,29 +155,11 @@ const formatScore = (value?: number) => {
       render: (item: SpkReport) => getStatusBadge(isFinal ? "locked" : (item.status || item.Status)),
     },
     {
-      header: "Catatan",
-      headerClasses: "text-center",
-      cellClasses: "text-center max-w-xs truncate text-xs italic text-gray-500",
-      render: (item: SpkReport) => {
-        const c = item.catatan || (item as any).Catatan;
-        if (typeof c === 'object' && c) {
-          return (c as any).p || (c as any).i || (c as any).s || "-";
-        }
-        if (typeof c === 'string' && c.startsWith('{')) {
-           try {
-             const parsed = JSON.parse(c);
-             return parsed.p || parsed.i || parsed.s || "-";
-           } catch(e) {}
-        }
-        return c || "-";
-      }
-    },
-    {
       header: "Aksi",
       headerClasses: "text-center",
       cellClasses: "text-center",
       render: (item: SpkReport) => (
-        <div className="flex justify-center gap-2">
+        <div className="flex justify-center gap-1.5">
           {isManagerUI && !isFinal && (
             <Button 
               color="info" 
@@ -148,7 +168,6 @@ const formatScore = (value?: number) => {
               onClick={() => {
                 setReviewReportId(Number(item.id || item.Id || 0));
                 
-                // Inisialisasi form review dari objek atau string
                 const c = item.catatan || (item as any).Catatan;
                 let p = "", i = "", s = "";
                 
@@ -180,13 +199,13 @@ const formatScore = (value?: number) => {
                 setShowReviewModal(true);
               }}
             >
-              <Icon icon="solar:notes-minimalistic-bold" className="h-4 w-4" />
-              <span className="ml-1">Review</span>
+              <Icon icon="solar:notes-minimalistic-bold" className="h-3.5 w-3.5" />
+              <span className="ml-1 text-[10px]">Review</span>
             </Button>
           )}
           <Button color="light" size="xs" pill onClick={() => handleFetchIndividual(getReportRowId(item))}>
-            {printingId === getReportRowId(item) ? <Spinner size="xs" /> : <Icon icon="solar:eye-bold" className="h-4 w-4" />}
-            <span className="ml-1">Lihat</span>
+            {printingId === getReportRowId(item) ? <Spinner size="xs" /> : <Icon icon="solar:eye-bold" className="h-3.5 w-3.5" />}
+            <span className="ml-1 text-[10px]">Lihat</span>
           </Button>
           <Button 
             color="dark" 
@@ -195,8 +214,8 @@ const formatScore = (value?: number) => {
             disabled={!isFinal || (printingId === getReportRowId(item))}
             onClick={() => handlePrintPdf(getReportRowId(item))}
           >
-            <Icon icon="solar:printer-bold" className="h-4 w-4" />
-            <span className="ml-1">Unduh PDF</span>
+            <Icon icon="solar:printer-bold" className="h-3.5 w-3.5" />
+            <span className="ml-1 text-[10px]">PDF</span>
           </Button>
         </div>
       ),
@@ -546,7 +565,15 @@ const formatScore = (value?: number) => {
 
   const bestEmployee = chartReports.length > 0 ? chartReports[0] : null;
 
-  const canExport = !selectedPeriodeId || !isFinal;
+  const getPredikat = (pct: number) => {
+    if (pct >= 90) return { label: "Sangat Baik", bsColor: "success" as const, barColor: "bg-emerald-500" };
+    if (pct >= 80) return { label: "Baik", bsColor: "info" as const, barColor: "bg-blue-500" };
+    if (pct >= 70) return { label: "Cukup", bsColor: "warning" as const, barColor: "bg-amber-500" };
+    if (pct >= 60) return { label: "Kurang", bsColor: "failure" as const, barColor: "bg-orange-500" };
+    return { label: "Sangat Kurang", bsColor: "failure" as const, barColor: "bg-rose-500" };
+  };
+
+  const canExport = selectedPeriodeId > 0 && isFinal;
 
   const getStatusBadge = (status?: string) => {
     const s = (status || 'Draft').toLowerCase();
@@ -659,7 +686,7 @@ const formatScore = (value?: number) => {
                     Buka Kembali
                   </Button>
                 )}
-                <Button color="dark" size="sm" className="flex items-center" onClick={handleExportSummary} disabled={Boolean(canExport)}>
+                <Button color="dark" size="sm" className="flex items-center" onClick={handleExportSummary} disabled={!canExport}>
                     {exporting ? <Spinner size="sm" className="mr-2" /> : <Icon icon="solar:file-send-bold" className="mr-2 h-4 w-4" />}
                     Unduh Rekap Excel
                 </Button>
@@ -703,7 +730,7 @@ const formatScore = (value?: number) => {
             <CardBox className="h-full">
                 <h4 className="text-lg font-bold mb-4 text-gray-800 dark:text-white text-center">🏆 Karyawan Terbaik</h4>
                 {bestEmployee ? (
-                  <div className="flex flex-col items-center justify-center space-y-4 py-6 text-center">
+                  <div className="flex flex-col items-center justify-center space-y-3 py-6 text-center">
                       <div className="relative">
                           <img 
                               src={`https://ui-avatars.com/api/?name=${bestEmployee.nama || bestEmployee.Karyawan?.name || bestEmployee.Karyawan?.Nama}&background=random&size=128`}
@@ -716,9 +743,27 @@ const formatScore = (value?: number) => {
                       </div>
                       <div>
                           <h2 className="text-xl font-black text-primary uppercase">{bestEmployee.nama || bestEmployee.Karyawan?.name || bestEmployee.Karyawan?.Nama}</h2>
+                          <p className="text-xs text-gray-500 mt-1">{bestEmployee.divisi || bestEmployee.Divisi || (bestEmployee.Karyawan as any)?.Divisi || (bestEmployee.Karyawan as any)?.divisi || "-"}</p>
                       </div>
-                      <div className="bg-primary/10 px-6 py-2 rounded-full">
-                          <span className="text-primary font-bold text-lg">Skor Akhir: {formatScore(bestEmployee.nilai_akhir || bestEmployee.totalScore || bestEmployee.NilaiSkala)}</span>
+                      <div className="flex flex-col gap-2 w-full px-4">
+                          <div className="flex justify-between text-xs bg-primary/5 px-3 py-1.5 rounded-lg">
+                              <span className="text-gray-500">Nilai Yi</span>
+                              <span className="font-bold text-primary">{(bestEmployee.nilai_yi || bestEmployee.NilaiYi || bestEmployee.nilai_akhir || bestEmployee.totalScore || bestEmployee.NilaiSkala || 0).toFixed(6)}</span>
+                          </div>
+                          {(() => {
+                            const rawPct = bestEmployee.persentase_kpi || bestEmployee.PersentaseKPI || 0;
+                            const pct = rawPct > 0 && rawPct <= 1 ? rawPct * 100 : rawPct;
+                            const pred = getPredikat(pct);
+                            return pct > 0 ? (
+                              <>
+                                <div className="flex justify-between text-xs bg-primary/5 px-3 py-1.5 rounded-lg">
+                                    <span className="text-gray-500">Pencapaian KPI</span>
+                                    <span className="font-bold text-primary">{pct.toFixed(1)}%</span>
+                                </div>
+                                <Badge color={pred.bsColor} className="text-xs font-bold mx-auto">{pred.label}</Badge>
+                              </>
+                            ) : null;
+                          })()}
                       </div>
                   </div>
                 ) : (

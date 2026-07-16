@@ -73,6 +73,16 @@ export interface SpkReport {
   nik?: string;
   Status?: string;
   status?: string;
+  divisi?: string;
+  Divisi?: string;
+  nilai_yi?: number;
+  NilaiYi?: number;
+  persentase_kpi?: number;
+  PersentaseKPI?: number;
+  predikat?: string;
+  Predikat?: string;
+  lokasi?: string;
+  Lokasi?: string;
 
   // Existing PascalCase fields
   Id: number;
@@ -96,6 +106,12 @@ export interface SpkReport {
     name?: string;
     Jabatan: string;
     jabatan?: string;
+    Divisi?: string;
+    divisi?: string;
+    DivisiId?: number;
+    divisiId?: number;
+    Lokasi?: string;
+    lokasi?: string;
   } | null;
 }
 
@@ -209,6 +225,16 @@ const spkService = {
         totalScore: Number(item.totalScore ?? item.nilai_akhir ?? item.NilaiSkala ?? item.nilai ?? 0),
         nilai_akhir: Number(item.nilai_akhir ?? item.totalScore ?? item.NilaiSkala ?? item.nilai ?? 0),
         nik: item.nik ?? item.Karyawan?.nik ?? item.Karyawan?.Nik ?? "-",
+        divisi: item.divisi ?? item.Divisi ?? item.Karyawan?.Divisi ?? item.Karyawan?.divisi ?? item.nama_divisi ?? item.NamaDivisi ?? "",
+        Divisi: item.Divisi ?? item.divisi ?? item.Karyawan?.Divisi ?? item.Karyawan?.divisi ?? item.nama_divisi ?? item.NamaDivisi ?? "",
+        nilai_yi: Number(item.nilai_yi ?? item.NilaiYi ?? item.nilai_akhir ?? item.totalScore ?? 0),
+        NilaiYi: Number(item.NilaiYi ?? item.nilai_yi ?? item.nilai_akhir ?? item.totalScore ?? 0),
+        persentase_kpi: Number(item.persentase_kpi ?? item.PersentaseKPI ?? item.persentase ?? 0),
+        PersentaseKPI: Number(item.PersentaseKPI ?? item.persentase_kpi ?? item.persentase ?? 0),
+        predikat: item.predikat ?? item.Predikat ?? "",
+        Predikat: item.Predikat ?? item.predikat ?? "",
+        lokasi: item.lokasi ?? item.Lokasi ?? item.Karyawan?.Lokasi ?? item.Karyawan?.lokasi ?? "",
+        Lokasi: item.Lokasi ?? item.lokasi ?? item.Karyawan?.Lokasi ?? item.Karyawan?.lokasi ?? "",
 
         Id: Number(item.Id ?? item.id ?? item.karyawan_id ?? 0),
         PeriodeId: Number(item.PeriodeId ?? item.periodeId ?? periodeId),
@@ -230,6 +256,12 @@ const spkService = {
               name: item.Karyawan.name ?? item.Karyawan.Nama ?? '',
               Jabatan: item.Karyawan.Jabatan ?? item.Karyawan.role ?? '',
               jabatan: item.Karyawan.jabatan ?? item.Karyawan.role ?? '',
+              Divisi: item.Karyawan.Divisi ?? item.Karyawan.divisi ?? item.nama_divisi ?? item.NamaDivisi ?? '',
+              divisi: item.Karyawan.divisi ?? item.Karyawan.Divisi ?? item.nama_divisi ?? item.NamaDivisi ?? '',
+              DivisiId: Number(item.Karyawan.DivisiId ?? item.Karyawan.divisiId ?? item.Karyawan.departemen_id ?? 0),
+              divisiId: Number(item.Karyawan.divisiId ?? item.Karyawan.DivisiId ?? item.Karyawan.departemen_id ?? 0),
+              Lokasi: item.Karyawan.Lokasi ?? item.Karyawan.lokasi ?? '',
+              lokasi: item.Karyawan.lokasi ?? item.Karyawan.Lokasi ?? '',
             }
           : {
               Id: Number(item.karyawan_id ?? item.id ?? 0),
@@ -240,6 +272,12 @@ const spkService = {
               name: item.name ?? item.nama ?? '',
               Jabatan: item.role ?? '',
               jabatan: item.role ?? '',
+              Divisi: item.nama_divisi ?? item.NamaDivisi ?? '',
+              divisi: item.nama_divisi ?? item.NamaDivisi ?? '',
+              DivisiId: Number(item.departemen_id ?? item.DeptId ?? 0),
+              divisiId: Number(item.departemen_id ?? item.DeptId ?? 0),
+              Lokasi: item.lokasi_kerja ?? '',
+              lokasi: item.lokasi_kerja ?? '',
             },
       }));
 
