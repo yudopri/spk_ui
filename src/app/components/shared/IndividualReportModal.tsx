@@ -1,13 +1,28 @@
 ﻿"use client";
-import React, { useState } from "react";
+import React, { useMemo } from "react";
 import { Modal, Badge, Button } from "flowbite-react";
 import { Icon } from "@iconify/react";
 
 /* --- Types --- */
+interface ReportItem {
+  No: number;
+  Group: string;
+  Kriteria: string;
+  Tipe: string;
+  Realisasi: number;
+  Achievement: number;
+  Predikat: string;
+  PersentaseKeberhasilan: string;
+  Satuan: string;
+  Target: string;
+}
+
 interface IndividualReportProps {
   show: boolean;
   onClose: () => void;
   data: {
+    title?: string;
+    columns?: string[];
     metadata: {
       Nama: string;
       NIK: string;
@@ -20,41 +35,7 @@ interface IndividualReportProps {
       Jabatan?: string;
       Lokasi?: string;
     };
-    rincian: Array<{
-      group: string;
-      group_id?: number;
-      nama_grup?: string;
-      BobotGroup?: number;
-      bobot_group?: number;
-      PencapaianGroup?: number;
-      pencapaian_group?: number;
-      KontribusiGroup?: number;
-      kontribusi_group?: number;
-      items: Array<{
-        Kriteria: string;
-        kriteria?: string;
-        Realisasi: string | number;
-        realisasi?: string | number;
-        Satuan: string;
-        satuan?: string;
-        group_id?: number;
-        nama_grup?: string;
-        Target?: string | number;
-        target?: string | number;
-        BobotAHP?: number;
-        bobot_ahp?: number;
-        Bobot?: number;
-        bobot?: number;
-        Jenis?: string;
-        jenis?: string;
-        Tipe?: string;
-        tipe?: string;
-        Kontribusi?: number;
-        kontribusi?: number;
-        Pencapaian?: number;
-        pencapaian?: number;
-      }>;
-    }>;
+    data: ReportItem[];
     kesimpulan: {
       Ranking: number;
       Skor: string | number;
@@ -64,22 +45,11 @@ interface IndividualReportProps {
       PersentaseKPI?: number;
       persentase_kpi?: number;
     };
-    perhitungan?: {
-      ahp_matrix?: number[][];
-      ahp_group_matrix?: number[][];
-      ahp_weights?: { nama: string; bobot: number }[];
-      ahp_group_weights?: { nama: string; bobot: number }[];
-      cr?: number;
-      cr_group?: number;
-      moora_normalization?: { kpi: string; nilai_normalisasi: number; tipe: string }[];
-      moora_weighted?: { kpi: string; nilai_terbobot: number; tipe: string }[];
-      yi_calculation?: { karyawan: string; yi: number };
-    };
   } | null;
 }
 
 /* --- Helpers --- */
-const getPredikat = (persentase: number): {
+const getPredikatByPct = (pct: number): {
   label: string;
   bsColor: "emerald" | "blue" | "amber" | "orange" | "rose";
   bgClass: string;
@@ -87,10 +57,10 @@ const getPredikat = (persentase: number): {
   dotColor: string;
   barColor: string;
 } => {
-  if (persentase >= 90) return { label: "Sangat Baik", bsColor: "emerald", bgClass: "bg-emerald-100 dark:bg-emerald-900/30", textClass: "text-emerald-700 dark:text-emerald-400", dotColor: "bg-emerald-500", barColor: "bg-emerald-500" };
-  if (persentase >= 80) return { label: "Baik", bsColor: "blue", bgClass: "bg-blue-100 dark:bg-blue-900/30", textClass: "text-blue-700 dark:text-blue-400", dotColor: "bg-blue-500", barColor: "bg-blue-500" };
-  if (persentase >= 70) return { label: "Cukup", bsColor: "amber", bgClass: "bg-amber-100 dark:bg-amber-900/30", textClass: "text-amber-700 dark:text-amber-400", dotColor: "bg-amber-500", barColor: "bg-amber-500" };
-  if (persentase >= 60) return { label: "Kurang", bsColor: "orange", bgClass: "bg-orange-100 dark:bg-orange-900/30", textClass: "text-orange-700 dark:text-orange-400", dotColor: "bg-orange-500", barColor: "bg-orange-500" };
+  if (pct >= 90) return { label: "Sangat Baik", bsColor: "emerald", bgClass: "bg-emerald-100 dark:bg-emerald-900/30", textClass: "text-emerald-700 dark:text-emerald-400", dotColor: "bg-emerald-500", barColor: "bg-emerald-500" };
+  if (pct >= 80) return { label: "Baik", bsColor: "blue", bgClass: "bg-blue-100 dark:bg-blue-900/30", textClass: "text-blue-700 dark:text-blue-400", dotColor: "bg-blue-500", barColor: "bg-blue-500" };
+  if (pct >= 70) return { label: "Cukup", bsColor: "amber", bgClass: "bg-amber-100 dark:bg-amber-900/30", textClass: "text-amber-700 dark:text-amber-400", dotColor: "bg-amber-500", barColor: "bg-amber-500" };
+  if (pct >= 60) return { label: "Kurang", bsColor: "orange", bgClass: "bg-orange-100 dark:bg-orange-900/30", textClass: "text-orange-700 dark:text-orange-400", dotColor: "bg-orange-500", barColor: "bg-orange-500" };
   return { label: "Sangat Kurang", bsColor: "rose", bgClass: "bg-rose-100 dark:bg-rose-900/30", textClass: "text-rose-700 dark:text-rose-400", dotColor: "bg-rose-500", barColor: "bg-rose-500" };
 };
 
@@ -111,18 +81,28 @@ const toNum = (v: any): number => {
   const n = typeof v === "string" ? parseFloat(v) : Number(v);
   return Number.isFinite(n) ? n : 0;
 };
+
+/** Group flat data items by Group field */
+const groupByGroup = (items: ReportItem[]): { name: string; items: ReportItem[] }[] => {
+  const map = new Map<string, ReportItem[]>();
+  for (const item of items) {
+    const key = item.Group || "Lainnya";
+    if (!map.has(key)) map.set(key, []);
+    map.get(key)!.push(item);
+  }
+  return Array.from(map.entries()).map(([name, items]) => ({ name, items }));
+};
+
 /* --- Component --- */
 const IndividualReportModal = ({ show, onClose, data }: IndividualReportProps) => {
-  const [showCalculation, setShowCalculation] = useState(false);
-
   if (!data || !data.kesimpulan) return null;
+
+  const items = data.data || [];
+  const grouped = useMemo(() => groupByGroup(items), [items]);
 
   /* Derived values */
   const skorRaw = toNum(data.kesimpulan.Skor);
-  const yiRaw = data.kesimpulan.NilaiYi ?? data.kesimpulan.nilai_yi;
-  const yiValue = yiRaw !== undefined && yiRaw !== null && toNum(yiRaw) > 0
-    ? toNum(yiRaw)
-    : (skorRaw > 0 && skorRaw <= 1 ? skorRaw : (skorRaw > 1 ? skorRaw / 100 : 0));
+  const yiValue = skorRaw > 0 && skorRaw <= 1 ? skorRaw : (skorRaw > 1 ? skorRaw / 100 : 0);
 
   const persentaseKPIRaw = data.kesimpulan.PersentaseKPI ?? data.kesimpulan.persentase_kpi;
   const persentaseKPI = persentaseKPIRaw !== undefined && persentaseKPIRaw !== null && toNum(persentaseKPIRaw) > 0
@@ -132,47 +112,24 @@ const IndividualReportModal = ({ show, onClose, data }: IndividualReportProps) =
   const score = Number(persentaseKPI.toFixed(2));
   const ranking = data.kesimpulan.Ranking;
   const status = data.kesimpulan.Status || data.metadata.Status || "Processed";
-  const predikat = getPredikat(score);
+  const predikat = getPredikatByPct(score);
 
-  const groups = data.rincian || [];
-  const allItems = groups.flatMap((g) => g.items);
-  const totalKPI = allItems.length;
+  const totalKPI = items.length;
 
   const today = new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
 
-  /* Group metrics */
-  const groupMetrics = groups.map((grp) => {
-    const items = grp.items || [];
-    const bobotGroup = grp.BobotGroup ?? grp.bobot_group ?? null;
-    const pencapaianGroup = grp.PencapaianGroup ?? grp.pencapaian_group ?? null;
-    const kontribusiGroup = grp.KontribusiGroup ?? grp.kontribusi_group ?? null;
-
-    let calculatedPencapaian = 0;
-    let calculatedBobot = 0;
-    let calculatedKontribusi = 0;
-    let totalBobotItems = 0;
-
-    items.forEach((item) => {
-      const target = toNum(item.Target ?? item.target);
-      const realisasi = toNum(item.Realisasi ?? item.realisasi);
-      const bobot = toNum(item.BobotAHP ?? item.bobot_ahp ?? item.Bobot ?? item.bobot);
-      const kontribusi = toNum(item.Kontribusi ?? item.kontribusi);
-      totalBobotItems += bobot;
-
-      if (target > 0) {
-        const isCost = (item.Jenis || item.jenis || item.Tipe || item.tipe || "").toLowerCase() === "cost";
-        const achievement = isCost ? Math.min(target / realisasi, 1) * 100 : Math.min(realisasi / target, 1) * 100;
-        calculatedPencapaian += achievement * bobot;
-      }
-      calculatedKontribusi += kontribusi;
-    });
-
+  /* Group metrics - computed from flat data */
+  const groupMetrics = grouped.map((grp) => {
+    const groupItems = grp.items;
+    const avgAchievement = groupItems.length > 0
+      ? groupItems.reduce((sum, item) => sum + Math.min(item.Achievement, 150), 0) / groupItems.length
+      : 0;
+    const cappedPct = Math.min(avgAchievement, 100);
     return {
-      name: grp.group,
-      bobot: bobotGroup ?? (totalBobotItems > 0 ? totalBobotItems : null),
-      pencapaian: pencapaianGroup ?? (totalBobotItems > 0 ? calculatedPencapaian / totalBobotItems : null),
-      kontribusi: kontribusiGroup ?? (calculatedKontribusi > 0 ? calculatedKontribusi : null),
-      itemCount: items.length,
+      name: grp.name,
+      pencapaian: cappedPct,
+      itemCount: groupItems.length,
+      predikat: getPredikatByPct(cappedPct),
     };
   });
 
@@ -275,21 +232,16 @@ const IndividualReportModal = ({ show, onClose, data }: IndividualReportProps) =
               <Icon icon="solar:chart-square-bold" className="h-5 w-5 text-primary" />
               <h4 className="text-sm font-black uppercase tracking-widest text-gray-500 dark:text-gray-400">Ringkasan Hasil</h4>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {/* Ranking */}
               <div className="bg-gradient-to-br from-primary/5 to-primary/10 dark:from-primary/10 dark:to-primary/20 rounded-xl p-4 text-center border border-primary/10">
                 <p className="text-[10px] font-bold uppercase text-gray-400 mb-1">Ranking</p>
                 <p className="text-3xl font-black text-primary">#{ranking}</p>
               </div>
-              {/* Nilai Yi */}
+              {/* Skor MOORA */}
               <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/10 rounded-xl p-4 text-center border border-blue-100 dark:border-blue-800/30">
-                <p className="text-[10px] font-bold uppercase text-gray-400 mb-1">Nilai Yi (MOORA)</p>
+                <p className="text-[10px] font-bold uppercase text-gray-400 mb-1">Skor (MOORA)</p>
                 <p className="text-2xl font-black text-blue-600 dark:text-blue-400 font-mono tabular-nums">{yiValue.toFixed(6)}</p>
-              </div>
-              {/* Pencapaian KPI */}
-              <div className={`bg-gradient-to-br rounded-xl p-4 text-center border ${predikat.bgClass} border-current/10`}>
-                <p className="text-[10px] font-bold uppercase text-gray-400 mb-1">Pencapaian KPI</p>
-                <p className={`text-3xl font-black ${predikat.textClass} tabular-nums`}>{score.toFixed(1)}%</p>
               </div>
               {/* Predikat */}
               <div className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-700 rounded-xl p-4 text-center border border-slate-200 dark:border-slate-600">
@@ -318,8 +270,7 @@ const IndividualReportModal = ({ show, onClose, data }: IndividualReportProps) =
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {groupMetrics.map((gm, idx) => {
-                  const grpPct = gm.pencapaian ?? 0;
-                  const grpPredikat = getPredikat(grpPct);
+                  const grpPct = gm.pencapaian;
                   const grpColors = [
                     { bg: "from-blue-500/10 to-blue-600/5", border: "border-blue-200 dark:border-blue-700/40", accent: "text-blue-600 dark:text-blue-400" },
                     { bg: "from-emerald-500/10 to-emerald-600/5", border: "border-emerald-200 dark:border-emerald-700/40", accent: "text-emerald-600 dark:text-emerald-400" },
@@ -334,20 +285,16 @@ const IndividualReportModal = ({ show, onClose, data }: IndividualReportProps) =
                       </div>
                       {/* Progress Bar */}
                       <div className="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden mb-3">
-                        <div className={`h-full rounded-full transition-all ${grpPredikat.barColor ?? "bg-primary"}`} style={{ width: `${Math.min(grpPct, 100)}%` }} />
+                        <div className={`h-full rounded-full transition-all ${gm.predikat.barColor ?? "bg-primary"}`} style={{ width: `${Math.min(grpPct, 100)}%` }} />
                       </div>
                       <div className="space-y-1.5">
-                        <div className="flex justify-between text-xs">
-                          <span className="text-gray-500">Bobot Grup</span>
-                          <span className={`font-bold ${c.accent}`}>{gm.bobot !== null ? (gm.bobot * 100).toFixed(1) + "%" : "-"}</span>
-                        </div>
                         <div className="flex justify-between text-xs">
                           <span className="text-gray-500">Pencapaian</span>
                           <span className={`font-bold ${c.accent}`}>{grpPct > 0 ? grpPct.toFixed(1) + "%" : "-"}</span>
                         </div>
                         <div className="flex justify-between text-xs">
-                          <span className="text-gray-500">Kontribusi</span>
-                          <span className={`font-bold ${c.accent}`}>{gm.kontribusi !== null ? (gm.kontribusi * 100).toFixed(2) + "%" : "-"}</span>
+                          <span className="text-gray-500">Predikat</span>
+                          <span className={`font-bold ${gm.predikat.textClass}`}>{gm.predikat.label}</span>
                         </div>
                       </div>
                     </div>
@@ -358,7 +305,7 @@ const IndividualReportModal = ({ show, onClose, data }: IndividualReportProps) =
           )}
 
           {/* ── Section 4: Detail KPI Table ── */}
-          {allItems.length > 0 && (
+          {items.length > 0 && (
             <div className="p-6">
               <div className="flex items-center gap-2 mb-4">
                 <Icon icon="solar:documents-bold" className="h-5 w-5 text-primary" />
@@ -372,56 +319,49 @@ const IndividualReportModal = ({ show, onClose, data }: IndividualReportProps) =
                       <th className="px-3 py-2.5 text-left font-black uppercase tracking-wider text-[10px] text-gray-500">#</th>
                       <th className="px-3 py-2.5 text-left font-black uppercase tracking-wider text-[10px] text-gray-500">KPI</th>
                       <th className="px-3 py-2.5 text-left font-black uppercase tracking-wider text-[10px] text-gray-500">Grup</th>
-                      <th className="px-3 py-2.5 text-center font-black uppercase tracking-wider text-[10px] text-gray-500">Bobot AHP</th>
-                      <th className="px-3 py-2.5 text-center font-black uppercase tracking-wider text-[10px] text-gray-500">Jenis</th>
+                      <th className="px-3 py-2.5 text-center font-black uppercase tracking-wider text-[10px] text-gray-500">Tipe</th>
                       <th className="px-3 py-2.5 text-right font-black uppercase tracking-wider text-[10px] text-gray-500">Target</th>
                       <th className="px-3 py-2.5 text-right font-black uppercase tracking-wider text-[10px] text-gray-500">Realisasi</th>
                       <th className="px-3 py-2.5 text-right font-black uppercase tracking-wider text-[10px] text-gray-500">Pencapaian</th>
-                      <th className="px-3 py-2.5 text-right font-black uppercase tracking-wider text-[10px] text-gray-500">Kontribusi</th>
+                      <th className="px-3 py-2.5 text-left font-black uppercase tracking-wider text-[10px] text-gray-500">Predikat</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                    {allItems.map((item, idx) => {
-                      const target = toNum(item.Target ?? item.target);
-                      const realisasi = toNum(item.Realisasi ?? item.realisasi);
-                      const bobot = toNum(item.BobotAHP ?? item.bobot_ahp ?? item.Bobot ?? item.bobot);
-                      const kontribusi = toNum(item.Kontribusi ?? item.kontribusi);
-                      const pencapaian = toNum(item.Pencapaian ?? item.pencapaian);
-                      const jenis = (item.Jenis || item.jenis || item.Tipe || item.tipe || "").toLowerCase();
-                      const isCost = jenis === "cost";
-                      const satuan = item.Satuan || item.satuan || "";
-
-                      let achievementPct = 0;
-                      if (target > 0) {
-                        achievementPct = isCost ? Math.min(target / realisasi, 1) * 100 : Math.min(realisasi / target, 1) * 100;
-                      }
+                    {items.map((item, idx) => {
+                      const isCost = (item.Tipe || "").toLowerCase() === "cost";
+                      const satuan = item.Satuan || "";
+                      const targetNum = toNum(item.Target);
+                      const realisasiNum = toNum(item.Realisasi);
+                      const achievementPct = Math.min(item.Achievement, 999999);
+                      const itemPredikat = getPredikatByPct(achievementPct);
 
                       return (
                         <tr key={idx} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors">
-                          <td className="px-3 py-2 text-gray-400 font-mono">{idx + 1}</td>
-                          <td className="px-3 py-2 font-semibold text-gray-800 dark:text-gray-100 max-w-[200px] truncate" title={item.Kriteria || item.kriteria || ""}>{item.Kriteria || item.kriteria || "-"}</td>
-                          <td className="px-3 py-2 text-gray-500 text-[10px]">{item.nama_grup || (item as any).group || "-"}</td>
-                          <td className="px-3 py-2 text-center font-mono tabular-nums">{formatNumber(bobot)}</td>
+                          <td className="px-3 py-2 text-gray-400 font-mono">{item.No}</td>
+                          <td className="px-3 py-2 font-semibold text-gray-800 dark:text-gray-100 max-w-[200px] truncate" title={item.Kriteria}>{item.Kriteria}</td>
+                          <td className="px-3 py-2 text-gray-500 text-[10px]">{item.Group}</td>
                           <td className="px-3 py-2 text-center">
                             <Badge color={isCost ? "failure" : "success"} className="text-[9px] font-bold px-2 py-0.5">
                               {isCost ? "Cost" : "Benefit"}
                             </Badge>
                           </td>
                           <td className="px-3 py-2 text-right font-mono tabular-nums">
-                            {satuan?.toLowerCase() === "rp" || satuan?.toLowerCase() === "idr" ? formatCurrency(target) : `${Number(target).toLocaleString("id-ID")} ${satuan}`}
+                            {satuan.toLowerCase() === "rp" || satuan.toLowerCase() === "idr" ? formatCurrency(targetNum) : `${Number(targetNum).toLocaleString("id-ID")} ${satuan}`}
                           </td>
                           <td className="px-3 py-2 text-right font-mono tabular-nums">
-                            {satuan?.toLowerCase() === "rp" || satuan?.toLowerCase() === "idr" ? formatCurrency(realisasi) : `${Number(realisasi).toLocaleString("id-ID")} ${satuan}`}
+                            {satuan.toLowerCase() === "rp" || satuan.toLowerCase() === "idr" ? formatCurrency(realisasiNum) : `${Number(realisasiNum).toLocaleString("id-ID")} ${satuan}`}
                           </td>
                           <td className="px-3 py-2 text-right">
                             <div className="flex items-center justify-end gap-1.5">
                               <div className="w-12 h-1.5 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
-                                <div className={`h-full rounded-full ${getPredikat(achievementPct).dotColor}`} style={{ width: `${Math.min(achievementPct, 100)}%` }} />
+                                <div className={`h-full rounded-full ${itemPredikat.dotColor}`} style={{ width: `${Math.min(achievementPct, 100)}%` }} />
                               </div>
-                              <span className="font-bold tabular-nums">{achievementPct.toFixed(1)}%</span>
+                              <span className="font-bold tabular-nums">{item.PersentaseKeberhasilan || achievementPct.toFixed(1) + "%"}</span>
                             </div>
                           </td>
-                          <td className="px-3 py-2 text-right font-bold text-primary tabular-nums">{(kontribusi * 100).toFixed(2)}%</td>
+                          <td className="px-3 py-2">
+                            <span className={`text-[10px] font-bold ${itemPredikat.textClass}`}>{item.Predikat || itemPredikat.label}</span>
+                          </td>
                         </tr>
                       );
                     })}
@@ -431,193 +371,6 @@ const IndividualReportModal = ({ show, onClose, data }: IndividualReportProps) =
             </div>
           )}
 
-          {/* ── Section 5: Detail Perhitungan (Collapsible) ── */}
-          {data.perhitungan && (
-            <div className="p-6" data-collapsible>
-              <button
-                onClick={() => setShowCalculation(!showCalculation)}
-                className="flex items-center gap-2 w-full text-left group"
-              >
-                <Icon icon="solar:calculator-bold" className="h-5 w-5 text-primary" />
-                <h4 className="text-sm font-black uppercase tracking-widest text-gray-500 dark:text-gray-400">Detail Perhitungan AHP-MOORA</h4>
-                <Icon
-                  icon={showCalculation ? "solar:alt-arrow-up-bold" : "solar:alt-arrow-down-bold"}
-                  className="h-4 w-4 text-gray-400 ml-auto transition-transform"
-                />
-              </button>
-
-              {showCalculation && (
-                <div className="mt-4 space-y-6">
-                  {/* AHP Group Matrix */}
-                  {data.perhitungan.ahp_group_matrix && data.perhitungan.ahp_group_weights && (
-                    <div className="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-                      <div className="bg-slate-50 dark:bg-slate-800/60 px-4 py-2.5 border-b border-gray-200 dark:border-gray-700">
-                        <h5 className="text-xs font-bold text-gray-700 dark:text-gray-200">Matriks Perbandingan Berpasangan Antar Grup KPI (AHP)</h5>
-                      </div>
-                      <div className="p-4 overflow-x-auto">
-                        <table className="w-full text-xs border-collapse">
-                          <thead>
-                            <tr>
-                              <th className="px-2 py-1.5 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-left font-bold text-gray-600"></th>
-                              {data.perhitungan.ahp_group_weights.map((w, i) => (
-                                <th key={i} className="px-2 py-1.5 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-center font-bold text-gray-600">{w.nama}</th>
-                              ))}
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {data.perhitungan.ahp_group_matrix.map((row, i) => (
-                              <tr key={i}>
-                                <td className="px-2 py-1.5 border border-gray-200 dark:border-gray-700 font-bold text-gray-700 dark:text-gray-200 bg-gray-50 dark:bg-gray-800">{data.perhitungan!.ahp_group_weights![i].nama}</td>
-                                {row.map((val, j) => (
-                                  <td key={j} className={`px-2 py-1.5 border border-gray-200 dark:border-gray-700 text-center font-mono ${i === j ? "bg-primary/5 text-primary font-bold" : ""}`}>
-                                    {typeof val === "number" ? val.toFixed(4) : val}
-                                  </td>
-                                ))}
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                        <div className="mt-2 flex flex-wrap gap-4 text-xs text-gray-500">
-                          {data.perhitungan.ahp_group_weights.map((w, i) => (
-                            <span key={i}><strong>{w.nama}:</strong> {w.bobot.toFixed(4)}</span>
-                          ))}
-                        </div>
-                        {data.perhitungan.cr_group !== undefined && (
-                          <div className={`mt-2 text-xs font-bold ${data.perhitungan.cr_group <= 0.1 ? "text-emerald-600" : "text-rose-600"}`}>
-                            CR Grup: {data.perhitungan.cr_group.toFixed(4)} {data.perhitungan.cr_group <= 0.1 ? "✓ Konsisten" : "✗ Tidak Konsisten"}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* AHP KPI Matrix */}
-                  {data.perhitungan.ahp_matrix && data.perhitungan.ahp_weights && (
-                    <div className="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-                      <div className="bg-slate-50 dark:bg-slate-800/60 px-4 py-2.5 border-b border-gray-200 dark:border-gray-700">
-                        <h5 className="text-xs font-bold text-gray-700 dark:text-gray-200">Matriks Perbandingan Berpasangan Antar KPI (AHP)</h5>
-                      </div>
-                      <div className="p-4 overflow-x-auto">
-                        <table className="w-full text-xs border-collapse">
-                          <thead>
-                            <tr>
-                              <th className="px-2 py-1.5 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-left font-bold text-gray-600"></th>
-                              {data.perhitungan.ahp_weights.map((w, i) => (
-                                <th key={i} className="px-2 py-1.5 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-center font-bold text-gray-600 max-w-[80px] truncate" title={w.nama}>{w.nama}</th>
-                              ))}
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {data.perhitungan.ahp_matrix.map((row, i) => (
-                              <tr key={i}>
-                                <td className="px-2 py-1.5 border border-gray-200 dark:border-gray-700 font-bold text-gray-700 dark:text-gray-200 bg-gray-50 dark:bg-gray-800 max-w-[80px] truncate" title={data.perhitungan!.ahp_weights![i].nama}>{data.perhitungan!.ahp_weights![i].nama}</td>
-                                {row.map((val, j) => (
-                                  <td key={j} className={`px-2 py-1.5 border border-gray-200 dark:border-gray-700 text-center font-mono ${i === j ? "bg-primary/5 text-primary font-bold" : ""}`}>
-                                    {typeof val === "number" ? val.toFixed(4) : val}
-                                  </td>
-                                ))}
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                        <div className="mt-2 flex flex-wrap gap-3 text-[10px] text-gray-500">
-                          {data.perhitungan.ahp_weights.map((w, i) => (
-                            <span key={i}><strong>{w.nama}:</strong> {w.bobot.toFixed(4)}</span>
-                          ))}
-                        </div>
-                        {data.perhitungan.cr !== undefined && (
-                          <div className={`mt-2 text-xs font-bold ${data.perhitungan.cr <= 0.1 ? "text-emerald-600" : "text-rose-600"}`}>
-                            CR: {data.perhitungan.cr.toFixed(4)} {data.perhitungan.cr <= 0.1 ? "✓ Konsisten" : "✗ Tidak Konsisten"}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* MOORA Normalization */}
-                  {data.perhitungan.moora_normalization && data.perhitungan.moora_normalization.length > 0 && (
-                    <div className="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-                      <div className="bg-slate-50 dark:bg-slate-800/60 px-4 py-2.5 border-b border-gray-200 dark:border-gray-700">
-                        <h5 className="text-xs font-bold text-gray-700 dark:text-gray-200">Matriks Normalisasi MOORA</h5>
-                      </div>
-                      <div className="p-4 overflow-x-auto">
-                        <table className="w-full text-xs border-collapse">
-                          <thead>
-                            <tr>
-                              <th className="px-2 py-1.5 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-left font-bold text-gray-600">KPI</th>
-                              <th className="px-2 py-1.5 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-center font-bold text-gray-600">Nilai Normalisasi</th>
-                              <th className="px-2 py-1.5 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-center font-bold text-gray-600">Tipe</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {data.perhitungan.moora_normalization.map((row, i) => (
-                              <tr key={i} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/30">
-                                <td className="px-2 py-1.5 border border-gray-200 dark:border-gray-700 font-semibold">{row.kpi}</td>
-                                <td className="px-2 py-1.5 border border-gray-200 dark:border-gray-700 text-center font-mono">{row.nilai_normalisasi.toFixed(4)}</td>
-                                <td className="px-2 py-1.5 border border-gray-200 dark:border-gray-700 text-center">
-                                  <Badge color={row.tipe.toLowerCase() === "cost" ? "failure" : "success"} className="text-[9px] font-bold">{row.tipe}</Badge>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* MOORA Weighted */}
-                  {data.perhitungan.moora_weighted && data.perhitungan.moora_weighted.length > 0 && (
-                    <div className="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-                      <div className="bg-slate-50 dark:bg-slate-800/60 px-4 py-2.5 border-b border-gray-200 dark:border-gray-700">
-                        <h5 className="text-xs font-bold text-gray-700 dark:text-gray-200">Matriks Terbobot MOORA</h5>
-                      </div>
-                      <div className="p-4 overflow-x-auto">
-                        <table className="w-full text-xs border-collapse">
-                          <thead>
-                            <tr>
-                              <th className="px-2 py-1.5 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-left font-bold text-gray-600">KPI</th>
-                              <th className="px-2 py-1.5 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-center font-bold text-gray-600">Nilai Terbobot</th>
-                              <th className="px-2 py-1.5 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-center font-bold text-gray-600">Tipe</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {data.perhitungan.moora_weighted.map((row, i) => (
-                              <tr key={i} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/30">
-                                <td className="px-2 py-1.5 border border-gray-200 dark:border-gray-700 font-semibold">{row.kpi}</td>
-                                <td className="px-2 py-1.5 border border-gray-200 dark:border-gray-700 text-center font-mono">{row.nilai_terbobot.toFixed(4)}</td>
-                                <td className="px-2 py-1.5 border border-gray-200 dark:border-gray-700 text-center">
-                                  <Badge color={row.tipe.toLowerCase() === "cost" ? "failure" : "success"} className="text-[9px] font-bold">{row.tipe}</Badge>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Yi Calculation */}
-                  {data.perhitungan.yi_calculation && (
-                    <div className="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-                      <div className="bg-slate-50 dark:bg-slate-800/60 px-4 py-2.5 border-b border-gray-200 dark:border-gray-700">
-                        <h5 className="text-xs font-bold text-gray-700 dark:text-gray-200">Perhitungan Nilai Yi</h5>
-                      </div>
-                      <div className="p-4">
-                        <div className="bg-primary/5 rounded-lg p-4 border border-primary/10">
-                          <p className="text-xs text-gray-500 mb-1">Formula: Yi = Σ(Benefit) − Σ(Cost)</p>
-                          <div className="flex items-baseline gap-2">
-                            <span className="text-xs text-gray-500">Yi =</span>
-                            <span className="text-lg font-black text-primary font-mono tabular-nums">{data.perhitungan.yi_calculation.yi.toFixed(6)}</span>
-                            <span className="text-xs text-gray-400">({data.perhitungan.yi_calculation.karyawan})</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
         </div>
       </Modal.Body>
 
