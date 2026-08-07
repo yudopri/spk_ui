@@ -102,14 +102,15 @@ const IndividualReportModal = ({ show, onClose, data }: IndividualReportProps) =
 
   /* Derived values */
   const skorRaw = toNum(data.kesimpulan.Skor);
+  // Yi is MOORA optimization score (small decimal, NOT a percentage)
   const yiValue = skorRaw > 0 && skorRaw <= 1 ? skorRaw : (skorRaw > 1 ? skorRaw / 100 : 0);
 
-  const persentaseKPIRaw = data.kesimpulan.PersentaseKPI ?? data.kesimpulan.persentase_kpi;
-  const persentaseKPI = persentaseKPIRaw !== undefined && persentaseKPIRaw !== null && toNum(persentaseKPIRaw) > 0
-    ? toNum(persentaseKPIRaw) > 100 ? toNum(persentaseKPIRaw) : toNum(persentaseKPIRaw) * 100
-    : (yiValue > 0 ? yiValue * 100 : 0);
+  // Compute average achievement from item data for predikat
+  const avgAchievement = items.length > 0
+    ? items.reduce((sum, item) => sum + Math.min(item.Achievement, 150), 0) / items.length
+    : 0;
+  const score = Number(avgAchievement.toFixed(2));
 
-  const score = Number(persentaseKPI.toFixed(2));
   const ranking = data.kesimpulan.Ranking;
   const status = data.kesimpulan.Status || data.metadata.Status || "Processed";
   const predikat = getPredikatByPct(score);

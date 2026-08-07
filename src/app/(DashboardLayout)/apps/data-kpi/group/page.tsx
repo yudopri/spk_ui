@@ -131,7 +131,6 @@ const KPIGroupPage = () => {
                     <Table hoverable striped>
                         <Table.Head>
                             <Table.HeadCell>Nama Grup KPI</Table.HeadCell>
-                            <Table.HeadCell className="text-center">Bobot Global (Level 1)</Table.HeadCell>
                             <Table.HeadCell className="text-center">Aksi</Table.HeadCell>
                         </Table.Head>
                 <Table.Body className="divide-y">
@@ -140,13 +139,6 @@ const KPIGroupPage = () => {
                     ) : (groups || []).length > 0 ? (groups || []).map((group) => (
                             <Table.Row key={group.Id || group.id} className="bg-white">
                                 <Table.Cell className="font-bold text-gray-900">{group.NamaGroup}</Table.Cell>
-                                <Table.Cell className="text-center">
-                                    {group.BobotGrup ? (
-                                        <Badge color="info">{(Number(group.BobotGrup) * 100).toFixed(2)}%</Badge>
-                                    ) : (
-                                        <span className="text-gray-400 italic text-xs">Belum dihitung</span>
-                                    )}
-                                </Table.Cell>
                                 <Table.Cell className="text-center">
                                     <div className="flex justify-center gap-2">
                                         <Button

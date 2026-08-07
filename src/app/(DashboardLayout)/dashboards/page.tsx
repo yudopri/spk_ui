@@ -168,7 +168,7 @@ const DashboardPage = () => {
   const scoreDistribution = useMemo(() => {
     return scoreRanges.map((range) => {
       const count = allReportItems.filter((item) => {
-        const raw = item.nilai_akhir ?? item.totalScore ?? item.NilaiSkala ?? 0;
+        const raw = item.persentase_kpi ?? item.PersentaseKPI ?? 0;
         const score = raw <= 1 ? raw * 100 : raw;
         return score >= range.min && score <= range.max;
       }).length;
@@ -356,8 +356,8 @@ const DashboardPage = () => {
             ) : (
               <div className="px-6 pb-6 space-y-2">
                 {topPerformers.map((item, idx) => {
-                  const score = item.nilai_akhir ?? item.totalScore ?? item.NilaiSkala ?? 0;
-                  const scorePct = score <= 1 ? score * 100 : score;
+                  const raw = item.persentase_kpi ?? item.PersentaseKPI ?? 0;
+                  const scorePct = raw <= 1 ? raw * 100 : raw;
                   const rank = item.rank ?? item.Ranking ?? (idx + 1);
                   const medalColors = [
                     "from-amber-400 to-amber-500",
