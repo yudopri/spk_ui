@@ -95,16 +95,25 @@ const DashboardPage = () => {
       });
       setKaryawanPerDivisi(kPerDiv);
 
-      // Active & locked periods — processed = active, locked = inactive
-      const active = periodeList.find((p) => p.Status === "processed" || p.status === "open") || null;
+      // Active & locked periods — open = active, processed = running, locked = done
+      const active = periodeList.find((p) => p.Status === "open")
+        || periodeList.find((p) => p.Status === "processed")
+        || null;
       setActivePeriode(active);
 
-      const locked = periodeList
-        .filter((p) => p.Status === "locked")
-        .sort((a, b) => (b.Tahun || 0) - (a.Tahun || 0) || b.Id - a.Id);
+      const sorted = [...periodeList].sort(
+        (a, b) => (b.Tahun || 0) - (a.Tahun || 0) || b.Id - a.Id
+      );
+      const locked = sorted.filter((p) => p.Status === "locked");
       const latestLocked = locked[0] || null;
       const prevLocked = locked[1] || null;
-      setLatestLockedPeriode(latestLocked);
+
+      // Fallback: if no locked periode, use the most recent processed/open periode for report data
+      const reportPeriode = latestLocked
+        || sorted.find((p) => p.Status === "processed")
+        || sorted.find((p) => p.Status === "open")
+        || null;
+      setLatestLockedPeriode(reportPeriode);
 
       // 2. KPI data (data KPI, bukan grup KPI) for active periode
       if (active) {
@@ -114,9 +123,9 @@ const DashboardPage = () => {
         setTotalKpi(0);
       }
 
-      // 3. Report data from latest locked period (full + top 5)
-      if (latestLocked) {
-        const reportRes = await spkService.getReport(latestLocked.Id, 1, 200);
+      // 3. Report data from best available periode (full + top 5)
+      if (reportPeriode) {
+        const reportRes = await spkService.getReport(reportPeriode.Id, 1, 200);
         const items = reportRes.data || [];
         setAllReportItems(items);
         setTopPerformers(items.slice(0, 5));
@@ -127,9 +136,12 @@ const DashboardPage = () => {
         setLockedReportCount(0);
       }
 
-      // 4. Previous locked period count for trend comparison
-      if (prevLocked) {
-        const prevRes = await spkService.getReport(prevLocked.Id, 1, 1);
+      // 4. Previous periode count for trend comparison (locked preferred, fallback to processed)
+      const prevReportPeriode = prevLocked
+        || sorted.filter((p) => p.Id !== reportPeriode?.Id && (p.Status === "processed" || p.Status === "locked"))[0]
+        || null;
+      if (prevReportPeriode) {
+        const prevRes = await spkService.getReport(prevReportPeriode.Id, 1, 1);
         setPrevLockedReportCount(prevRes.data?.length || 0);
       } else {
         setPrevLockedReportCount(0);

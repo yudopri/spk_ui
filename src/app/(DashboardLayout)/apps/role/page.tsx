@@ -133,7 +133,23 @@ const RolePage = () => {
                     permissions: assignedPerms,
                 });
             }
-            setSelectedPermIds(assignedPerms.map(p => p.id));
+
+            // Build selectedPermIds: try IDs first, fallback to name matching
+            const validPermIds = assignedPerms
+                .filter((p: any) => p.id > 0)
+                .map((p: any) => p.id);
+
+            if (validPermIds.length > 0) {
+                setSelectedPermIds(validPermIds);
+            } else if (role.permissions && role.permissions.length > 0 && permissions.length > 0) {
+                // API returned permission names as strings — match by name against full permission list
+                const matchedIds = permissions
+                    .filter(p => role.permissions!.includes(p.permission_name))
+                    .map(p => p.id);
+                setSelectedPermIds(matchedIds);
+            } else {
+                setSelectedPermIds([]);
+            }
         } catch {
             setDetailRole(null);
         } finally {

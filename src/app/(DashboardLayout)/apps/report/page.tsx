@@ -334,12 +334,12 @@ const formatScore = (value?: number) => {
       setReportLoading(true);
       setReportError(null);
       const res = await spkService.getIndividualReport(selectedPeriodeId, karyawanId);
-      const payload = res?.data ?? res;
-      if (res.success && payload?.metadata && payload?.kesimpulan) {
-        setIndividualData(payload);
+      // res is already the full API response {success, title, columns, data, metadata, kesimpulan}
+      if (res?.success && res?.metadata && res?.kesimpulan) {
+        setIndividualData(res);
         setShowPrintModal(true);
       } else {
-        setReportError(res.message || "Gagal mengambil data laporan individual");
+        setReportError(res?.message || "Gagal mengambil data laporan individual");
       }
     } catch (err: any) {
       const msg = err?.response?.data?.message || err?.message || "Gagal mengambil data laporan individual";

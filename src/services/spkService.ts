@@ -217,8 +217,25 @@ const spkService = {
     const rawList = response.data.data || [];
     const meta = response.data.meta;
 
-    const mapped: SpkReport[] = rawList.map((item: any): SpkReport => ({
-        // New top-level fields for flat response
+    const mapped: SpkReport[] = rawList.map((item: any): SpkReport => {
+        // Compute average achievement from catatan.details
+        const details = item.catatan?.details || [];
+        const avgAchievement = details.length > 0
+          ? details.reduce((sum: number, d: any) => sum + (d.achievement || 0), 0) / details.length
+          : 0;
+        const computedPct = Number(item.persentase_kpi ?? item.PersentaseKPI ?? (avgAchievement > 0 ? avgAchievement : 0));
+
+        // Derive predikat from achievement percentage
+        const derivePredikat = (pct: number): string => {
+          if (pct >= 90) return "Sangat Baik";
+          if (pct >= 80) return "Baik";
+          if (pct >= 70) return "Cukup";
+          if (pct >= 60) return "Kurang";
+          return "Sangat Kurang";
+        };
+        const computedPredikat = item.predikat ?? item.Predikat ?? (computedPct > 0 ? derivePredikat(computedPct) : "");
+
+        return {
         id: Number(item.id ?? item.Id ?? item.karyawan_id ?? 0),
         rank: Number(item.rank ?? item.Ranking ?? item.ranking ?? 0),
         nama: item.nama || item.name || item.Karyawan?.Nama || item.Karyawan?.name || "Tanpa Nama",
@@ -227,14 +244,14 @@ const spkService = {
         nik: item.nik ?? item.Karyawan?.nik ?? item.Karyawan?.Nik ?? "-",
         divisi: item.divisi ?? item.Divisi ?? item.Karyawan?.Divisi ?? item.Karyawan?.divisi ?? item.nama_divisi ?? item.NamaDivisi ?? "",
         Divisi: item.Divisi ?? item.divisi ?? item.Karyawan?.Divisi ?? item.Karyawan?.divisi ?? item.nama_divisi ?? item.NamaDivisi ?? "",
-        nilai_yi: Number(item.nilai_yi ?? item.NilaiYi ?? item.nilai_akhir ?? item.totalScore ?? 0),
-        NilaiYi: Number(item.NilaiYi ?? item.nilai_yi ?? item.nilai_akhir ?? item.totalScore ?? 0),
-        persentase_kpi: Number(item.persentase_kpi ?? item.PersentaseKPI ?? item.persentase ?? 0),
-        PersentaseKPI: Number(item.PersentaseKPI ?? item.persentase_kpi ?? item.persentase ?? 0),
-        predikat: item.predikat ?? item.Predikat ?? "",
-        Predikat: item.Predikat ?? item.predikat ?? "",
-        lokasi: item.lokasi ?? item.Lokasi ?? item.Karyawan?.Lokasi ?? item.Karyawan?.lokasi ?? "",
-        Lokasi: item.Lokasi ?? item.lokasi ?? item.Karyawan?.Lokasi ?? item.Karyawan?.lokasi ?? "",
+        nilai_yi: Number(item.nilai_yi ?? item.NilaiYi ?? item.catatan?.yi ?? item.nilai_akhir ?? item.totalScore ?? 0),
+        NilaiYi: Number(item.NilaiYi ?? item.nilai_yi ?? item.catatan?.yi ?? item.nilai_akhir ?? item.totalScore ?? 0),
+        persentase_kpi: computedPct,
+        PersentaseKPI: computedPct,
+        predikat: computedPredikat,
+        Predikat: computedPredikat,
+        lokasi: item.lokasi ?? item.Lokasi ?? item.Karyawan?.Lokasi ?? item.Karyawan?.lokasi ?? item.Karyawan?.lokasi_kerja ?? "",
+        Lokasi: item.Lokasi ?? item.lokasi ?? item.Karyawan?.Lokasi ?? item.Karyawan?.lokasi ?? item.Karyawan?.lokasi_kerja ?? "",
 
         Id: Number(item.Id ?? item.id ?? item.karyawan_id ?? 0),
         PeriodeId: Number(item.PeriodeId ?? item.periodeId ?? periodeId),
@@ -260,8 +277,8 @@ const spkService = {
               divisi: item.Karyawan.divisi ?? item.Karyawan.Divisi ?? item.nama_divisi ?? item.NamaDivisi ?? '',
               DivisiId: Number(item.Karyawan.DivisiId ?? item.Karyawan.divisiId ?? item.Karyawan.departemen_id ?? 0),
               divisiId: Number(item.Karyawan.divisiId ?? item.Karyawan.DivisiId ?? item.Karyawan.departemen_id ?? 0),
-              Lokasi: item.Karyawan.Lokasi ?? item.Karyawan.lokasi ?? '',
-              lokasi: item.Karyawan.lokasi ?? item.Karyawan.Lokasi ?? '',
+              Lokasi: item.Karyawan.Lokasi ?? item.Karyawan.lokasi ?? item.Karyawan.lokasi_kerja ?? '',
+              lokasi: item.Karyawan.lokasi ?? item.Karyawan.Lokasi ?? item.Karyawan.lokasi_kerja ?? '',
             }
           : {
               Id: Number(item.karyawan_id ?? item.id ?? 0),
@@ -279,7 +296,8 @@ const spkService = {
               Lokasi: item.lokasi_kerja ?? '',
               lokasi: item.lokasi_kerja ?? '',
             },
-      }));
+      };
+      });
 
     return {
       success: true,
