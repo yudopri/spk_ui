@@ -21,6 +21,9 @@ const NilaiPerbandingan = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [cr, setCr] = useState<number | null>(null);
+  const [ci, setCi] = useState<number | null>(null);
+  const [lambdaMax, setLambdaMax] = useState<number | null>(null);
+  const [riValue, setRiValue] = useState<number | null>(null);
   const [weights, setWeights] = useState<Record<number, number>>({});
   const [weightList, setWeightList] = useState<number[]>([]);
   const [isSimulated, setIsSimulated] = useState(false);
@@ -65,6 +68,9 @@ const NilaiPerbandingan = () => {
       try {
           setLoading(true);
           setCr(null);
+          setCi(null);
+          setLambdaMax(null);
+          setRiValue(null);
           setWeights({});
           setWeightList([]);
           setIsSimulated(false);
@@ -228,6 +234,9 @@ const NilaiPerbandingan = () => {
     const ri = riTable[n] ?? (1.49 + (n - 10) * 0.03);
     const crValue = ri > 0 ? ci / ri : 0;
 
+    setLambdaMax(Number(lambdaMax.toFixed(4)));
+    setCi(Number(ci.toFixed(4)));
+    setRiValue(Number(ri.toFixed(4)));
     setCr(Number(crValue.toFixed(4)));
 
     // Update bobot
@@ -407,23 +416,43 @@ const NilaiPerbandingan = () => {
           </div>
           <div className="flex-1">
             <h4 className="font-black text-sm uppercase tracking-wider">
-              Status Konsistensi Matriks
+              Indeks Konsistensi Saaty
             </h4>
-            <div className="flex items-center gap-2 mt-0.5">
-              <span className="text-2xl font-black tabular-nums">CR: {cr.toFixed(2)}</span>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2">
+              <div className="rounded-lg bg-white/70 dark:bg-gray-900/40 px-3 py-2 border border-white/50">
+                <p className="text-[10px] uppercase font-bold text-gray-500">Lambda max</p>
+                <p className="text-lg font-black tabular-nums">{lambdaMax !== null ? lambdaMax.toFixed(4) : "-"}</p>
+              </div>
+              <div className="rounded-lg bg-white/70 dark:bg-gray-900/40 px-3 py-2 border border-white/50">
+                <p className="text-[10px] uppercase font-bold text-gray-500">CI</p>
+                <p className="text-lg font-black tabular-nums">{ci !== null ? ci.toFixed(4) : "-"}</p>
+              </div>
+              <div className="rounded-lg bg-white/70 dark:bg-gray-900/40 px-3 py-2 border border-white/50">
+                <p className="text-[10px] uppercase font-bold text-gray-500">RI</p>
+                <p className="text-lg font-black tabular-nums">{riValue !== null ? riValue.toFixed(4) : "-"}</p>
+              </div>
+              <div className="rounded-lg bg-white/70 dark:bg-gray-900/40 px-3 py-2 border border-white/50">
+                <p className="text-[10px] uppercase font-bold text-gray-500">CR</p>
+                <p className="text-lg font-black tabular-nums">{cr.toFixed(4)}</p>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 mt-3">
               <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${
                 cr <= 0.1 ? "bg-green-200 text-green-700" : "bg-red-200 text-red-700"
               }`}>
-                {cr <= 0.1 ? "Input Konsisten. Siap Disimpan" : "Input Tidak Konsisten! Pilihan Simpan Dikunci"}
+                {cr <= 0.1 ? "Konsisten" : "Tidak Konsisten"}
+              </span>
+              <span className="text-xs font-medium text-gray-600 dark:text-gray-300">
+                Syarat umum: CR &le; 0.10
               </span>
             </div>
           </div>
           {cr > 0.1 && (
             <div className="text-[10px] font-bold italic opacity-70 max-w-[200px] text-right">
-              <span className="italic">Nilai CR harus {"<= 0.1"} agar perbandingan dinilai konsisten.</span>
-            </div>
-          )}
-        </div>
+              <span className="italic">Nilai CR harus {"<= 0.1"} agar perbandingan dinilai konsisten dan bobot AHP layak dipakai.</span>
+          </div>
+        )}
+      </div>
       )}
 
       {error && <Alert color="failure" onDismiss={() => setError(null)}>{error}</Alert>}
@@ -465,6 +494,103 @@ const NilaiPerbandingan = () => {
                             <span className="px-1.5 py-0.5 bg-orange-100 dark:bg-orange-800 rounded font-bold">1/3 s/d 1/9</span>
                             <span>= B lebih penting dari A (kebalikan)</span>
                         </div>
+                        <div className="mt-2 md:col-span-2 text-[10px] text-blue-700 dark:text-blue-200 bg-blue-100/60 dark:bg-blue-900/20 rounded-lg px-3 py-2">
+                          Indeks konsistensi dihitung dari matriks perbandingan dengan rumus: CI = (lambda max - n) / (n - 1), lalu CR = CI / RI.
+                        </div>
+                    </div>
+                    <div className="mt-4 overflow-x-auto">
+                      <table className="w-full text-[10px] text-blue-900 dark:text-blue-100">
+                        <thead>
+                          <tr className="border-b border-blue-200 dark:border-blue-700">
+                            <th className="py-2 text-left">Nilai</th>
+                            <th className="py-2 text-left">Makna</th>
+                            <th className="py-2 text-left">Resiprokal</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-blue-100 dark:divide-blue-800/60">
+                          <tr>
+                            <td className="py-2">
+                              <span className="inline-flex rounded-full bg-slate-900 text-white px-2 py-0.5 font-bold">1</span>
+                            </td>
+                            <td className="py-2">Sama penting</td>
+                            <td className="py-2">
+                              <span className="inline-flex rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 font-mono font-bold">1</span>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td className="py-2">
+                              <span className="inline-flex rounded-full bg-blue-600 text-white px-2 py-0.5 font-bold">3</span>
+                            </td>
+                            <td className="py-2">Sedikit lebih penting</td>
+                            <td className="py-2">
+                              <span className="inline-flex rounded-full bg-blue-100 dark:bg-blue-900/40 px-2 py-0.5 font-mono font-bold">1/3</span>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td className="py-2">
+                              <span className="inline-flex rounded-full bg-sky-500 text-white px-2 py-0.5 font-bold">2</span>
+                            </td>
+                            <td className="py-2">Di antara sama penting dan sedikit lebih penting</td>
+                            <td className="py-2">
+                              <span className="inline-flex rounded-full bg-sky-100 dark:bg-sky-900/40 px-2 py-0.5 font-mono font-bold">1/2</span>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td className="py-2">
+                              <span className="inline-flex rounded-full bg-amber-500 text-white px-2 py-0.5 font-bold">5</span>
+                            </td>
+                            <td className="py-2">Lebih penting</td>
+                            <td className="py-2">
+                              <span className="inline-flex rounded-full bg-amber-100 dark:bg-amber-900/40 px-2 py-0.5 font-mono font-bold">1/5</span>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td className="py-2">
+                              <span className="inline-flex rounded-full bg-amber-400 text-white px-2 py-0.5 font-bold">4</span>
+                            </td>
+                            <td className="py-2">Di antara sedikit lebih penting dan lebih penting</td>
+                            <td className="py-2">
+                              <span className="inline-flex rounded-full bg-amber-100 dark:bg-amber-900/40 px-2 py-0.5 font-mono font-bold">1/4</span>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td className="py-2">
+                              <span className="inline-flex rounded-full bg-orange-500 text-white px-2 py-0.5 font-bold">7</span>
+                            </td>
+                            <td className="py-2">Sangat kuat lebih penting</td>
+                            <td className="py-2">
+                              <span className="inline-flex rounded-full bg-orange-100 dark:bg-orange-900/40 px-2 py-0.5 font-mono font-bold">1/7</span>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td className="py-2">
+                              <span className="inline-flex rounded-full bg-orange-400 text-white px-2 py-0.5 font-bold">6</span>
+                            </td>
+                            <td className="py-2">Di antara lebih penting dan sangat kuat lebih penting</td>
+                            <td className="py-2">
+                              <span className="inline-flex rounded-full bg-orange-100 dark:bg-orange-900/40 px-2 py-0.5 font-mono font-bold">1/6</span>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td className="py-2">
+                              <span className="inline-flex rounded-full bg-rose-600 text-white px-2 py-0.5 font-bold">9</span>
+                            </td>
+                            <td className="py-2">Mutlak lebih penting</td>
+                            <td className="py-2">
+                              <span className="inline-flex rounded-full bg-rose-100 dark:bg-rose-900/40 px-2 py-0.5 font-mono font-bold">1/9</span>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td className="py-2">
+                              <span className="inline-flex rounded-full bg-rose-500 text-white px-2 py-0.5 font-bold">8</span>
+                            </td>
+                            <td className="py-2">Di antara sangat kuat lebih penting dan mutlak lebih penting</td>
+                            <td className="py-2">
+                              <span className="inline-flex rounded-full bg-rose-100 dark:bg-rose-900/40 px-2 py-0.5 font-mono font-bold">1/8</span>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
                     </div>
                 </div>
 
