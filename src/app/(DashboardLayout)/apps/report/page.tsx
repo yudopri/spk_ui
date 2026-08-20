@@ -10,7 +10,6 @@ import karyawanService from "@/services/karyawanService";
 import kpiService from "@/services/kpiService";
 import { usePermission } from "@/hooks/usePermission";
 import IndividualReportModal from "@/app/components/shared/IndividualReportModal";
-import { isManagerRole } from "@/utils/accessControl";
 
 // Shared Components
 import DataTable, { Column } from "@/app/components/shared/DataTable";
@@ -21,7 +20,7 @@ import DataFilter from "@/app/components/shared/DataFilter";
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
 const ReportHasil = () => {
-  const { user, isKaryawan, isAdminLike, isManager } = usePermission();
+  const { user, isKaryawan, isManager } = usePermission();
   const [selectedPeriodeId, setSelectedPeriodeId] = useState<number>(0);
   const [selectedLokasi, setSelectedLokasi] = useState<string>("");
   const [selectedGroupId, setSelectedGroupId] = useState<number>(0);
@@ -36,14 +35,6 @@ const ReportHasil = () => {
   const [error, setError] = useState<string | null>(null);
 
   const [selectedPeriode, setSelectedPeriode] = useState<Periode | null>(null);
-
-  // Manager UI state - must be declared early since columns use it
-  const [isManagerUI, setIsManagerUI] = useState(false);
-  
-  useEffect(() => {
-    const role = localStorage.getItem('userRole');
-    setIsManagerUI(isManagerRole(role));
-  }, []);
 
   // Pagination & Search
   const [reportPage, setReportPage] = useState(1);
@@ -161,7 +152,7 @@ const formatScore = (value?: number) => {
       cellClasses: "text-center",
       render: (item: SpkReport) => (
         <div className="flex justify-center gap-1.5">
-          {isManagerUI && !isFinal && (
+          {isManager && !isFinal && (
             <Button 
               color="info" 
               size="xs" 
@@ -273,20 +264,10 @@ const formatScore = (value?: number) => {
         const rawReports = res.data || [];
         setTotalReports(res.meta?.total || (res as any).totalCount || 0);
         
-          const isManagerUI_Local = isManagerRole(localStorage.getItem('userRole'));
         const scoped = rawReports.filter((item: SpkReport) => {
           if (isKaryawan) {
             const employeeId = Number((item.id || item.Karyawan?.Id) ?? 0);
             return employeeId === Number(user?.employee_id ?? 0);
-          }
-
-          if (isAdminLike && user?.dept_id && !isManagerUI_Local) {
-            const currentDivisiId = (item as any)?.Periode?.DivisiId ?? (item as any)?.Periode?.departemen_id;
-            // Jika DivisiId null/undefined (Semua Divisi), maka semua Kadiv bisa melihat
-            if (currentDivisiId === null || currentDivisiId === undefined || currentDivisiId === 0) {
-              return true;
-            }
-            return Number(currentDivisiId) === Number(user.dept_id);
           }
 
           return true;
@@ -323,7 +304,7 @@ const formatScore = (value?: number) => {
       }
     };
     fetchReport();
-  }, [selectedPeriodeId, selectedLokasi, reportPage, search, selectedGroupId, isKaryawan, isAdminLike, isManager, user?.employee_id, user?.dept_id]);
+  }, [selectedPeriodeId, selectedLokasi, reportPage, search, selectedGroupId, isKaryawan, isManager, user?.employee_id]);
 
   const handleFetchIndividual = async (karyawanId: number) => {
     try {
@@ -660,14 +641,14 @@ const formatScore = (value?: number) => {
                     color="success" 
                     size="sm" 
                     onClick={() => handleUpdateStatus('locked')} 
-                    disabled={updating || !isManagerUI || !allReviewed}
-                    title={!isManagerUI ? "Hanya Manager yang dapat mengunci snapshot" : !allReviewed ? "Semua karyawan harus direview terlebih dahulu" : ""}
+                    disabled={updating || !isManager || !allReviewed}
+                    title={!isManager ? "Hanya Manager yang dapat mengunci snapshot" : !allReviewed ? "Semua karyawan harus direview terlebih dahulu" : ""}
                   >
                     {updating ? <Spinner size="sm" /> : <Icon icon="solar:check-read-linear" className="mr-2 h-4 w-4" />}
                     Kunci Periode
                   </Button>
                 )}
-                {isFinal && isManagerUI && (
+                {isFinal && isManager && (
                   <Button 
                     color="warning" 
                     size="sm" 
@@ -689,7 +670,7 @@ const formatScore = (value?: number) => {
       {!isFinal && !loading && (
         <Alert color="warning" className="mb-4" icon={() => <Icon icon="solar:info-circle-bold" className="h-5 w-5" />}>
           Periode ini masih berstatus <b>DRAFT</b>.
-          {isManagerUI ? " Kunci periode setelah semua karyawan direview." : " Menunggu persetujuan Manager."}
+          {isManager ? " Kunci periode setelah semua karyawan direview." : " Menunggu persetujuan Manager."}
         </Alert>
       )}
 
