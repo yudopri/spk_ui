@@ -267,7 +267,7 @@ const formatScore = (value?: number) => {
         if (latestP) setSelectedPeriode(latestP);
 
         // Ambil semua data sekali, lalu pagination dilakukan di frontend agar endpoint tidak dipanggil ganda.
-        const res = await spkService.getReport(selectedPeriodeId, 1, MAX_REPORT_LIMIT, selectedLokasi || undefined, search, {}, selectedGroupId || undefined);
+        const res = await spkService.getReport(selectedPeriodeId, 1, MAX_REPORT_LIMIT, selectedLokasi || undefined, search, '', {}, selectedGroupId || undefined);
         const rawReports = res.data || [];
         
         const scoped = rawReports.filter((item: SpkReport) => {
@@ -413,9 +413,19 @@ const formatScore = (value?: number) => {
         if (updatedP) setSelectedPeriode(updatedP);
         
         // Refresh laporan dengan filter & pagination saat ini
-        const resR = await spkService.getReport(selectedPeriodeId, 1, MAX_REPORT_LIMIT, selectedLokasi || undefined, search, {}, selectedGroupId || undefined);
+        const resR = await spkService.getReport(selectedPeriodeId, 1, MAX_REPORT_LIMIT, selectedLokasi || undefined, search, '', {}, selectedGroupId || undefined);
         const rawRefresh = resR.data || [];
-        const rankedRefresh = [...rawRefresh].sort((a, b) => {
+
+        const scopedRefresh = rawRefresh.filter((item: SpkReport) => {
+          if (isKaryawan) {
+            const employeeId = Number((item.id || item.Karyawan?.Id) ?? 0);
+            return employeeId === Number(user?.employee_id ?? 0);
+          }
+
+          return true;
+        });
+
+        const rankedRefresh = [...scopedRefresh].sort((a, b) => {
           const rankA = getRankValue(a);
           const rankB = getRankValue(b);
           if (rankA > 0 && rankB > 0 && rankA !== rankB) return rankA - rankB;
@@ -423,6 +433,9 @@ const formatScore = (value?: number) => {
         });
         setReports(rankedRefresh);
         setTotalReports(rankedRefresh.length);
+
+        const totalPages = Math.max(1, Math.ceil(rankedRefresh.length / reportPageSize));
+        setReportPage((prev) => (prev > totalPages ? totalPages : prev));
       }
     } catch (err: any) {
       setError(err?.response?.data?.message || `Gagal mengubah status menjadi ${status}`);
