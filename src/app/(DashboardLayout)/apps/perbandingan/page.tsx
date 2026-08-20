@@ -611,13 +611,21 @@ const NilaiPerbandingan = () => {
                                 // Preset options: standard + inverse
                                 const presets = [
                                     { value: 9,   label: "9",   desc: "Mutlak", emoji: "⭐⭐⭐⭐⭐", side: "A" },
+                                    { value: 8,   label: "8",   desc: "Di antara 7 & 9", emoji: "⭐⭐⭐⭐⭐", side: "A" },
                                     { value: 7,   label: "7",   desc: "Sangat Kuat", emoji: "⭐⭐⭐⭐", side: "A" },
+                                    { value: 6,   label: "6",   desc: "Di antara 5 & 7", emoji: "⭐⭐⭐⭐", side: "A" },
                                     { value: 5,   label: "5",   desc: "Lebih", emoji: "⭐⭐⭐", side: "A" },
+                                    { value: 4,   label: "4",   desc: "Di antara 3 & 5", emoji: "⭐⭐⭐", side: "A" },
                                     { value: 3,   label: "3",   desc: "Sedikit", emoji: "⭐⭐", side: "A" },
+                                    { value: 2,   label: "2",   desc: "Di antara 1 & 3", emoji: "⭐⭐", side: "A" },
                                     { value: 1,   label: "1",   desc: "Sama", emoji: "=", side: "" },
+                                    { value: 1/2, label: "1/2", desc: "Di antara 1 & 3", emoji: "⭐⭐", side: "B" },
                                     { value: 1/3, label: "1/3", desc: "Sedikit", emoji: "⭐⭐", side: "B" },
+                                    { value: 1/4, label: "1/4", desc: "Di antara 3 & 5", emoji: "⭐⭐⭐", side: "B" },
                                     { value: 1/5, label: "1/5", desc: "Lebih", emoji: "⭐⭐⭐", side: "B" },
+                                    { value: 1/6, label: "1/6", desc: "Di antara 5 & 7", emoji: "⭐⭐⭐⭐", side: "B" },
                                     { value: 1/7, label: "1/7", desc: "Sangat Kuat", emoji: "⭐⭐⭐⭐", side: "B" },
+                                    { value: 1/8, label: "1/8", desc: "Di antara 7 & 9", emoji: "⭐⭐⭐⭐⭐", side: "B" },
                                     { value: 1/9, label: "1/9", desc: "Mutlak", emoji: "⭐⭐⭐⭐⭐", side: "B" },
                                 ];
 
@@ -649,13 +657,13 @@ const NilaiPerbandingan = () => {
                                             <div className="mb-1 text-[8px] font-bold text-blue-500 uppercase text-center tracking-widest">
                                                 Pilih jika A lebih penting dari B ▲
                                             </div>
-                                            <div className="flex gap-1 justify-center mb-3">
-                                                {[9, 7, 5, 3].map(val => (
+                                            <div className="flex flex-wrap gap-1 justify-center mb-3">
+                                                {[9, 8, 7, 6, 5, 4, 3, 2].map(val => (
                                                     <Button
                                                         key={val}
                                                         size="xs"
                                                         color={currentVal === val ? "blue" : "light"}
-                                                        className={`text-[11px] px-2 min-w-[52px] ${
+                                                        className={`text-[11px] px-2 min-w-[44px] ${
                                                             currentVal === val 
                                                                 ? "font-black ring-2 ring-blue-300 shadow-md" 
                                                                 : "font-semibold hover:scale-105"
@@ -695,15 +703,15 @@ const NilaiPerbandingan = () => {
                                             <div className="mb-1 text-[8px] font-bold text-orange-500 uppercase text-center tracking-widest">
                                                 Pilih jika B lebih penting dari A ▼
                                             </div>
-                                            <div className="flex gap-1 justify-center mb-3">
-                                                {[3, 5, 7, 9].map(val => {
+                                            <div className="flex flex-wrap gap-1 justify-center mb-3">
+                                                    {[2, 3, 4, 5, 6, 7, 8, 9].map(val => {
                                                     const invVal = 1/val;
                                                     return (
                                                         <Button
                                                             key={`inv-${val}`}
                                                             size="xs"
                                                             color={currentVal === invVal ? "warning" : "light"}
-                                                            className={`text-[11px] px-2 min-w-[52px] ${
+                                                            className={`text-[11px] px-2 min-w-[44px] ${
                                                                 currentVal === invVal 
                                                                     ? "font-black ring-2 ring-orange-300 shadow-md" 
                                                                     : "font-semibold hover:scale-105"
