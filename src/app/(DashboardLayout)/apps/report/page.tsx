@@ -10,6 +10,7 @@ import karyawanService from "@/services/karyawanService";
 import kpiService from "@/services/kpiService";
 import { usePermission } from "@/hooks/usePermission";
 import IndividualReportModal from "@/app/components/shared/IndividualReportModal";
+import { isManagerRole } from "@/utils/accessControl";
 
 // Shared Components
 import DataTable, { Column } from "@/app/components/shared/DataTable";
@@ -20,7 +21,7 @@ import DataFilter from "@/app/components/shared/DataFilter";
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
 const ReportHasil = () => {
-  const { user, isKaryawan, isManager } = usePermission();
+  const { user, isKaryawan, isAdminLike, isManager } = usePermission();
   const [selectedPeriodeId, setSelectedPeriodeId] = useState<number>(0);
   const [selectedLokasi, setSelectedLokasi] = useState<string>("");
   const [selectedGroupId, setSelectedGroupId] = useState<number>(0);
@@ -28,6 +29,7 @@ const ReportHasil = () => {
   const [lokasiOptions, setLokasiOptions] = useState<{id: any, name: string}[]>([]);
   const [groups, setGroups] = useState<{id: number, NamaGroup: string}[]>([]);
   const [reports, setReports] = useState<SpkReport[]>([]);
+  const [chartReports, setChartReports] = useState<SpkReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [updating, setUpdating] = useState(false);
@@ -35,13 +37,19 @@ const ReportHasil = () => {
 
   const [selectedPeriode, setSelectedPeriode] = useState<Periode | null>(null);
 
+  // Manager UI state - must be declared early since columns use it
+  const [isManagerUI, setIsManagerUI] = useState(false);
+  
+  useEffect(() => {
+    const role = localStorage.getItem('userRole');
+    setIsManagerUI(isManagerRole(role));
+  }, []);
+
   // Pagination & Search
   const [reportPage, setReportPage] = useState(1);
   const [reportPageSize, setReportPageSize] = useState(10);
   const [totalReports, setTotalReports] = useState(0);
   const [search, setSearch] = useState("");
-
-  const MAX_REPORT_LIMIT = 1000;
 
   const isFinal = selectedPeriode?.Status === 'locked';
 
@@ -77,12 +85,6 @@ const formatScore = (value?: number) => {
     if (reports.length === 0) return false;
     return reports.every(r => r.status === 'Reviewed' || r.Status === 'Reviewed');
   }, [reports]);
-
-  const paginatedReports = useMemo(() => {
-    const start = (reportPage - 1) * reportPageSize;
-    const end = start + reportPageSize;
-    return reports.slice(start, end);
-  }, [reports, reportPage, reportPageSize]);
 
   const columns: Column<SpkReport>[] = [
     {
@@ -159,7 +161,7 @@ const formatScore = (value?: number) => {
       cellClasses: "text-center",
       render: (item: SpkReport) => (
         <div className="flex justify-center gap-1.5">
-          {isManager && !isFinal && (
+          {isManagerUI && !isFinal && (
             <Button 
               color="info" 
               size="xs" 
@@ -266,14 +268,24 @@ const formatScore = (value?: number) => {
         const latestP = resP_Single.data.find((p: any) => (p.id || p.Id) === selectedPeriodeId);
         if (latestP) setSelectedPeriode(latestP);
 
-        // Ambil semua data sekali, lalu pagination dilakukan di frontend agar endpoint tidak dipanggil ganda.
-        const res = await spkService.getReport(selectedPeriodeId, 1, MAX_REPORT_LIMIT, selectedLokasi || undefined, search, '', {}, selectedGroupId || undefined);
+        const res = await spkService.getReport(selectedPeriodeId, reportPage, reportPageSize, selectedLokasi || undefined, search, '', {}, selectedGroupId || undefined);
         const rawReports = res.data || [];
+        setTotalReports(res.meta?.total || (res as any).totalCount || 0);
         
+          const isManagerUI_Local = isManagerRole(localStorage.getItem('userRole'));
         const scoped = rawReports.filter((item: SpkReport) => {
           if (isKaryawan) {
             const employeeId = Number((item.id || item.Karyawan?.Id) ?? 0);
             return employeeId === Number(user?.employee_id ?? 0);
+          }
+
+          if (isAdminLike && user?.dept_id && !isManagerUI_Local) {
+            const currentDivisiId = (item as any)?.Periode?.DivisiId ?? (item as any)?.Periode?.departemen_id;
+            // Jika DivisiId null/undefined (Semua Divisi), maka semua Kadiv bisa melihat
+            if (currentDivisiId === null || currentDivisiId === undefined || currentDivisiId === 0) {
+              return true;
+            }
+            return Number(currentDivisiId) === Number(user.dept_id);
           }
 
           return true;
@@ -287,12 +299,22 @@ const formatScore = (value?: number) => {
         });
 
         setReports(ranked);
-        setTotalReports(ranked.length);
-
-        const totalPages = Math.max(1, Math.ceil(ranked.length / reportPageSize));
-        setReportPage((prev) => (prev > totalPages ? totalPages : prev));
-
         setError(null);
+
+        // Fetch all reports for chart (tanpa pagination)
+        try {
+          const resAll = await spkService.getReport(selectedPeriodeId, 1, 1000, selectedLokasi || undefined, search, '', {}, selectedGroupId || undefined);
+          const allRaw = resAll.data || [];
+          const allSorted = [...allRaw].sort((a, b) => {
+            const rankA = getRankValue(a);
+            const rankB = getRankValue(b);
+            if (rankA > 0 && rankB > 0 && rankA !== rankB) return rankA - rankB;
+            return getFinalScoreValue(b) - getFinalScoreValue(a);
+          });
+          setChartReports(allSorted);
+        } catch {
+          setChartReports(ranked); // fallback ke data paginated
+        }
       } catch (err: any) {
         setError(err?.response?.data?.message || "Gagal mengambil laporan hasil");
       } finally {
@@ -300,7 +322,7 @@ const formatScore = (value?: number) => {
       }
     };
     fetchReport();
-  }, [selectedPeriodeId, selectedLokasi, search, selectedGroupId, isKaryawan, user?.employee_id, reportPageSize]);
+  }, [selectedPeriodeId, selectedLokasi, reportPage, reportPageSize, search, selectedGroupId, isKaryawan, isAdminLike, isManager, user?.employee_id, user?.dept_id]);
 
   const handleFetchIndividual = async (karyawanId: number) => {
     try {
@@ -413,29 +435,31 @@ const formatScore = (value?: number) => {
         if (updatedP) setSelectedPeriode(updatedP);
         
         // Refresh laporan dengan filter & pagination saat ini
-        const resR = await spkService.getReport(selectedPeriodeId, 1, MAX_REPORT_LIMIT, selectedLokasi || undefined, search, '', {}, selectedGroupId || undefined);
+        const resR = await spkService.getReport(selectedPeriodeId, reportPage, reportPageSize, selectedLokasi || undefined, search, '', {}, selectedGroupId || undefined);
         const rawRefresh = resR.data || [];
-
-        const scopedRefresh = rawRefresh.filter((item: SpkReport) => {
-          if (isKaryawan) {
-            const employeeId = Number((item.id || item.Karyawan?.Id) ?? 0);
-            return employeeId === Number(user?.employee_id ?? 0);
-          }
-
-          return true;
-        });
-
-        const rankedRefresh = [...scopedRefresh].sort((a, b) => {
+        setTotalReports(resR.meta?.total || 0);
+        const rankedRefresh = [...rawRefresh].sort((a, b) => {
           const rankA = getRankValue(a);
           const rankB = getRankValue(b);
           if (rankA > 0 && rankB > 0 && rankA !== rankB) return rankA - rankB;
           return getFinalScoreValue(b) - getFinalScoreValue(a);
         });
         setReports(rankedRefresh);
-        setTotalReports(rankedRefresh.length);
 
-        const totalPages = Math.max(1, Math.ceil(rankedRefresh.length / reportPageSize));
-        setReportPage((prev) => (prev > totalPages ? totalPages : prev));
+        // Refresh chart data
+        try {
+          const resAllR = await spkService.getReport(selectedPeriodeId, 1, 1000, selectedLokasi || undefined, search, '', {}, selectedGroupId || undefined);
+          const allRawR = resAllR.data || [];
+          const allSortedR = [...allRawR].sort((a, b) => {
+            const rankA = getRankValue(a);
+            const rankB = getRankValue(b);
+            if (rankA > 0 && rankB > 0 && rankA !== rankB) return rankA - rankB;
+            return getFinalScoreValue(b) - getFinalScoreValue(a);
+          });
+          setChartReports(allSortedR);
+        } catch {
+          setChartReports(rankedRefresh);
+        }
       }
     } catch (err: any) {
       setError(err?.response?.data?.message || `Gagal mengubah status menjadi ${status}`);
@@ -489,7 +513,7 @@ const formatScore = (value?: number) => {
     },
     legend: { show: false },
     xaxis: {
-      categories: reports.map(r => r.nama || r.Karyawan?.name || r.Karyawan?.Nama || "Unknown"),
+      categories: chartReports.map(r => r.nama || r.Karyawan?.name || r.Karyawan?.Nama || "Unknown"),
       axisBorder: { show: false },
       axisTicks: { show: false },
       labels: {
@@ -523,14 +547,14 @@ const formatScore = (value?: number) => {
 
   const chartSeries = [{
   name: 'Nilai Akhir',
-    data: reports.map(r =>
+  data: chartReports.map(r =>
     formatScore(
       getFinalScoreValue(r)
     )
   )
 }];
 
-    const bestEmployee = reports.length > 0 ? reports[0] : null;
+  const bestEmployee = chartReports.length > 0 ? chartReports[0] : null;
 
   const getPredikat = (pct: number) => {
     if (pct >= 90) return { label: "Sangat Baik", bsColor: "success" as const, barColor: "bg-emerald-500" };
@@ -635,14 +659,14 @@ const formatScore = (value?: number) => {
                     color="success" 
                     size="sm" 
                     onClick={() => handleUpdateStatus('locked')} 
-                    disabled={updating || !isManager || !allReviewed}
-                    title={!isManager ? "Hanya Manager yang dapat mengunci snapshot" : !allReviewed ? "Semua karyawan harus direview terlebih dahulu" : ""}
+                    disabled={updating || !isManagerUI || !allReviewed}
+                    title={!isManagerUI ? "Hanya Manager yang dapat mengunci snapshot" : !allReviewed ? "Semua karyawan harus direview terlebih dahulu" : ""}
                   >
                     {updating ? <Spinner size="sm" /> : <Icon icon="solar:check-read-linear" className="mr-2 h-4 w-4" />}
                     Kunci Periode
                   </Button>
                 )}
-                {isFinal && isManager && (
+                {isFinal && isManagerUI && (
                   <Button 
                     color="warning" 
                     size="sm" 
@@ -664,7 +688,7 @@ const formatScore = (value?: number) => {
       {!isFinal && !loading && (
         <Alert color="warning" className="mb-4" icon={() => <Icon icon="solar:info-circle-bold" className="h-5 w-5" />}>
           Periode ini masih berstatus <b>DRAFT</b>.
-          {isManager ? " Kunci periode setelah semua karyawan direview." : " Menunggu persetujuan Manager."}
+          {isManagerUI ? " Kunci periode setelah semua karyawan direview." : " Menunggu persetujuan Manager."}
         </Alert>
       )}
 
@@ -679,7 +703,7 @@ const formatScore = (value?: number) => {
               </div>
               {loading ? (
                 <div className="flex justify-center p-20"><Spinner size="xl" /></div>
-              ) : reports.length > 0 ? (
+              ) : reports.length > 0 || chartReports.length > 0 ? (
                 <Chart
                   options={chartOptions}
                   series={chartSeries}
@@ -745,7 +769,7 @@ const formatScore = (value?: number) => {
             
             <DataTable
               loading={loading}
-              data={paginatedReports}
+              data={reports}
               columns={columns}
               rowKey={(item) => item.Id || item.id || 0}
             />
