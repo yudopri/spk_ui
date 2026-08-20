@@ -22,6 +22,12 @@ export interface AhpPerbandingan {
   cr?: number;
 }
 
+export interface AhpGroupComparisonPayloadItem {
+  group_a_id: number;
+  group_b_id: number;
+  nilai: number;
+}
+
 export interface AhpWeightResult {
   id: number;
   weight: number;
@@ -146,13 +152,9 @@ const spkService = {
     return response.data;
   },
 
-  saveAhpGroupPerbandingan: async (periodeId: number, comparisons: { id_a: number; id_b: number; nilai: number }[]) => {
+  saveAhpGroupPerbandingan: async (periodeId: number, comparisons: AhpGroupComparisonPayloadItem[]) => {
     const response = await axiosServices.post<{ message: string; success: boolean }>(`/spk/ahp-group/perbandingan/${periodeId}`, {
-      comparisons: comparisons.map(c => ({
-        group_a_id: c.id_a,
-        group_b_id: c.id_b,
-        nilai: c.nilai
-      }))
+      comparisons
     });
     return response.data;
   },

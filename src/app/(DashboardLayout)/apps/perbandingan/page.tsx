@@ -84,7 +84,11 @@ const NilaiPerbandingan = () => {
               const resComp = await spkService.getAhpGroupPerbandingan(selectedPeriodeId);
               if (resComp.success && resComp.data) {
                   resComp.data.forEach((item: any) => {
-                      nextValues[`${item.id_a || item.IdA}-${item.id_b || item.IdB}`] = item.nilai;
+                      const idA = item.group_a_id ?? item.groupAId ?? item.groupA_id ?? item.id_a ?? item.IdA ?? item.group_a?.id ?? item.group_a?.Id;
+                      const idB = item.group_b_id ?? item.groupBId ?? item.groupB_id ?? item.id_b ?? item.IdB ?? item.group_b?.id ?? item.group_b?.Id;
+                      if (idA && idB) {
+                        nextValues[`${idA}-${idB}`] = Number(item.nilai ?? item.Nilai ?? 1);
+                      }
                   });
               }
           } else {
@@ -274,8 +278,8 @@ const NilaiPerbandingan = () => {
       // MODE GROUP
       if (selectedGroupId === 0) {
         const payload = pairs.map(p => ({
-          id_a: p.itemA.Id || p.itemA.id,
-          id_b: p.itemB.Id || p.itemB.id,
+          group_a_id: p.itemA.Id || p.itemA.id,
+          group_b_id: p.itemB.Id || p.itemB.id,
           nilai: comparisonValues[p.key] || 1
         }));
         res = await spkService.saveAhpGroupPerbandingan(selectedPeriodeId, payload);
