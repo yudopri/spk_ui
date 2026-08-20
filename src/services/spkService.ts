@@ -32,9 +32,13 @@ export interface MooraDetailRow {
   kpiId: number;
   kpiNama?: string;
   nilaiAsli?: number;
+  target?: number;
+  achievement?: number;
   nilai_normalisasi?: number;
   nilai_terbobot?: number;
   bobot_ahp?: number;
+  bobot_group?: number;
+  bobot_global?: number;
   tipe?: string;
   yi?: number;
   rank?: number;
@@ -79,10 +83,15 @@ export interface SpkReport {
   NilaiYi?: number;
   persentase_kpi?: number;
   PersentaseKPI?: number;
+  achievement?: number;
+  Achievement?: number;
   predikat?: string;
   Predikat?: string;
   lokasi?: string;
   Lokasi?: string;
+  weight_ahp?: number;
+  weight_group?: number;
+  weight_global?: number;
 
   // Existing PascalCase fields
   Id: number;
@@ -218,12 +227,18 @@ const spkService = {
     const meta = response.data.meta;
 
     const mapped: SpkReport[] = rawList.map((item: any): SpkReport => {
-        // Compute average achievement from catatan.details
+        // Prefer backend snapshot fields; only fall back to derived averages when snapshot is absent.
         const details = item.catatan?.details || [];
         const avgAchievement = details.length > 0
-          ? details.reduce((sum: number, d: any) => sum + (d.achievement || 0), 0) / details.length
+          ? details.reduce((sum: number, d: any) => sum + Number(d.achievement ?? d.Achievement ?? 0), 0) / details.length
           : 0;
-        const computedPct = Number(item.persentase_kpi ?? item.PersentaseKPI ?? (avgAchievement > 0 ? avgAchievement : 0));
+        const computedAchievement = Number(
+          item.achievement ??
+          item.Achievement ??
+          item.persentase_kpi ??
+          item.PersentaseKPI ??
+          (avgAchievement > 0 ? avgAchievement : 0)
+        );
 
         // Derive predikat from achievement percentage
         const derivePredikat = (pct: number): string => {
@@ -233,7 +248,7 @@ const spkService = {
           if (pct >= 60) return "Kurang";
           return "Sangat Kurang";
         };
-        const computedPredikat = item.predikat ?? item.Predikat ?? (computedPct > 0 ? derivePredikat(computedPct) : "");
+        const computedPredikat = item.predikat ?? item.Predikat ?? (computedAchievement > 0 ? derivePredikat(computedAchievement) : "");
 
         return {
         id: Number(item.id ?? item.Id ?? item.karyawan_id ?? 0),
@@ -246,12 +261,17 @@ const spkService = {
         Divisi: item.Divisi ?? item.divisi ?? item.Karyawan?.Divisi ?? item.Karyawan?.divisi ?? item.nama_divisi ?? item.NamaDivisi ?? "",
         nilai_yi: Number(item.nilai_yi ?? item.NilaiYi ?? item.catatan?.yi ?? item.nilai_akhir ?? item.totalScore ?? 0),
         NilaiYi: Number(item.NilaiYi ?? item.nilai_yi ?? item.catatan?.yi ?? item.nilai_akhir ?? item.totalScore ?? 0),
-        persentase_kpi: computedPct,
-        PersentaseKPI: computedPct,
+        achievement: computedAchievement,
+        Achievement: computedAchievement,
+        persentase_kpi: computedAchievement,
+        PersentaseKPI: computedAchievement,
         predikat: computedPredikat,
         Predikat: computedPredikat,
         lokasi: item.lokasi ?? item.Lokasi ?? item.Karyawan?.Lokasi ?? item.Karyawan?.lokasi ?? item.Karyawan?.lokasi_kerja ?? "",
         Lokasi: item.Lokasi ?? item.lokasi ?? item.Karyawan?.Lokasi ?? item.Karyawan?.lokasi ?? item.Karyawan?.lokasi_kerja ?? "",
+        weight_ahp: Number(item.weight_ahp ?? item.weightAHP ?? item.BobotAhp ?? item.bobot_ahp ?? 0),
+        weight_group: Number(item.weight_group ?? item.weightGroup ?? item.bobot_group ?? 0),
+        weight_global: Number(item.weight_global ?? item.weightGlobal ?? item.bobot_global ?? 0),
 
         Id: Number(item.Id ?? item.id ?? item.karyawan_id ?? 0),
         PeriodeId: Number(item.PeriodeId ?? item.periodeId ?? periodeId),

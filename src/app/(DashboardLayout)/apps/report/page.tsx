@@ -78,6 +78,9 @@ const formatScore = (value?: number) => {
   return Number(score.toFixed(2));
 };
 
+  const getRankValue = (item: SpkReport) => Number(item.rank || item.Ranking || 0);
+  const getFinalScoreValue = (item: SpkReport) => Number(item.nilai_yi ?? item.NilaiYi ?? item.nilai_akhir ?? item.totalScore ?? item.NilaiSkala ?? 0);
+
   const allReviewed = useMemo(() => {
     if (reports.length === 0) return false;
     return reports.every(r => r.status === 'Reviewed' || r.Status === 'Reviewed');
@@ -111,11 +114,11 @@ const formatScore = (value?: number) => {
       },
     },
     {
-      header: "Nilai",
+      header: "Nilai Yi",
       headerClasses: "text-center",
       cellClasses: "text-center font-mono text-xs font-bold text-primary tabular-nums",
       render: (item: SpkReport) => {
-        const yi = item.nilai_yi || item.NilaiYi || item.nilai_akhir || item.totalScore || item.NilaiSkala || 0;
+        const yi = getFinalScoreValue(item);
         return Number(yi).toFixed(6);
       },
     },
@@ -124,8 +127,7 @@ const formatScore = (value?: number) => {
       headerClasses: "text-center",
       cellClasses: "text-center",
       render: (item: SpkReport) => {
-        const rawPct = item.persentase_kpi || item.PersentaseKPI || 0;
-        const pct = rawPct > 0 && rawPct <= 1 ? rawPct * 100 : rawPct;
+        const pct = Number(item.achievement ?? item.Achievement ?? item.persentase_kpi ?? item.PersentaseKPI ?? 0);
         const predikat = getPredikat(pct);
         return (
           <div className="flex flex-col items-center gap-1">
@@ -142,8 +144,7 @@ const formatScore = (value?: number) => {
       headerClasses: "text-center",
       cellClasses: "text-center",
       render: (item: SpkReport) => {
-        const rawPct = item.persentase_kpi || item.PersentaseKPI || 0;
-        const pct = rawPct > 0 && rawPct <= 1 ? rawPct * 100 : rawPct;
+        const pct = Number(item.achievement ?? item.Achievement ?? item.persentase_kpi ?? item.PersentaseKPI ?? 0);
         const predikat = getPredikat(pct);
         return <Badge color={predikat.bsColor} className="text-[10px] font-bold px-2.5 py-1">{predikat.label}</Badge>;
       },
@@ -291,17 +292,12 @@ const formatScore = (value?: number) => {
           return true;
         });
 
-        // Urutkan berdasarkan skor akhir tertinggi -> rank 1 di atas
-        const sorted = [...scoped].sort((a, b) => {
-          const scoreA = Number(a.nilai_akhir || a.totalScore || a.NilaiSkala || 0);
-          const scoreB = Number(b.nilai_akhir || b.totalScore || b.NilaiSkala || 0);
-          return scoreB - scoreA;
+        const ranked = [...scoped].sort((a, b) => {
+          const rankA = getRankValue(a);
+          const rankB = getRankValue(b);
+          if (rankA > 0 && rankB > 0 && rankA !== rankB) return rankA - rankB;
+          return getFinalScoreValue(b) - getFinalScoreValue(a);
         });
-
-        const ranked = sorted.map((item, idx) => ({
-          ...item,
-          displayRank: (reportPage - 1) * reportPageSize + idx + 1,
-        }));
 
         setReports(ranked);
         setError(null);
@@ -311,9 +307,10 @@ const formatScore = (value?: number) => {
           const resAll = await spkService.getReport(selectedPeriodeId, 1, 1000, selectedLokasi || undefined, search, {}, selectedGroupId || undefined);
           const allRaw = resAll.data || [];
           const allSorted = [...allRaw].sort((a, b) => {
-            const scoreA = Number(a.nilai_akhir || a.totalScore || a.NilaiSkala || 0);
-            const scoreB = Number(b.nilai_akhir || b.totalScore || b.NilaiSkala || 0);
-            return scoreB - scoreA;
+            const rankA = getRankValue(a);
+            const rankB = getRankValue(b);
+            if (rankA > 0 && rankB > 0 && rankA !== rankB) return rankA - rankB;
+            return getFinalScoreValue(b) - getFinalScoreValue(a);
           });
           setChartReports(allSorted);
         } catch {
@@ -442,16 +439,12 @@ const formatScore = (value?: number) => {
         const resR = await spkService.getReport(selectedPeriodeId, reportPage, reportPageSize, selectedLokasi || undefined, search, {}, selectedGroupId || undefined);
         const rawRefresh = resR.data || [];
         setTotalReports(resR.meta?.total || 0);
-        // Re-rank seperti fetchReport
-        const sortedRefresh = [...rawRefresh].sort((a, b) => {
-          const scoreA = Number(a.nilai_akhir || a.totalScore || a.NilaiSkala || 0);
-          const scoreB = Number(b.nilai_akhir || b.totalScore || b.NilaiSkala || 0);
-          return scoreB - scoreA;
+        const rankedRefresh = [...rawRefresh].sort((a, b) => {
+          const rankA = getRankValue(a);
+          const rankB = getRankValue(b);
+          if (rankA > 0 && rankB > 0 && rankA !== rankB) return rankA - rankB;
+          return getFinalScoreValue(b) - getFinalScoreValue(a);
         });
-        const rankedRefresh = sortedRefresh.map((item, idx) => ({
-          ...item,
-          displayRank: (reportPage - 1) * reportPageSize + idx + 1,
-        }));
         setReports(rankedRefresh);
 
         // Refresh chart data
@@ -459,9 +452,10 @@ const formatScore = (value?: number) => {
           const resAllR = await spkService.getReport(selectedPeriodeId, 1, 1000, selectedLokasi || undefined, search, {}, selectedGroupId || undefined);
           const allRawR = resAllR.data || [];
           const allSortedR = [...allRawR].sort((a, b) => {
-            const scoreA = Number(a.nilai_akhir || a.totalScore || a.NilaiSkala || 0);
-            const scoreB = Number(b.nilai_akhir || b.totalScore || b.NilaiSkala || 0);
-            return scoreB - scoreA;
+            const rankA = getRankValue(a);
+            const rankB = getRankValue(b);
+            if (rankA > 0 && rankB > 0 && rankA !== rankB) return rankA - rankB;
+            return getFinalScoreValue(b) - getFinalScoreValue(a);
           });
           setChartReports(allSortedR);
         } catch {
@@ -556,9 +550,7 @@ const formatScore = (value?: number) => {
   name: 'Nilai Akhir',
   data: chartReports.map(r =>
     formatScore(
-      r.nilai_akhir ||
-      r.totalScore ||
-      r.NilaiSkala
+      getFinalScoreValue(r)
     )
   )
 }];

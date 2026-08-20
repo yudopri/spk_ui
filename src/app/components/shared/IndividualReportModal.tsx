@@ -11,6 +11,9 @@ interface ReportItem {
   Tipe: string;
   Realisasi: number;
   Achievement: number;
+  weight_ahp?: number;
+  weight_group?: number;
+  weight_global?: number;
   Predikat: string;
   PersentaseKeberhasilan: string;
   Satuan: string;
@@ -239,9 +242,9 @@ const IndividualReportModal = ({ show, onClose, data }: IndividualReportProps) =
                 <p className="text-[10px] font-bold uppercase text-gray-400 mb-1">Ranking</p>
                 <p className="text-3xl font-black text-primary">#{ranking}</p>
               </div>
-              {/* Skor MOORA */}
+              {/* Skor MOORA / Yi */}
               <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/10 rounded-xl p-4 text-center border border-blue-100 dark:border-blue-800/30">
-                <p className="text-[10px] font-bold uppercase text-gray-400 mb-1">Skor (MOORA)</p>
+                <p className="text-[10px] font-bold uppercase text-gray-400 mb-1">Skor Akhir (Yi)</p>
                 <p className="text-2xl font-black text-blue-600 dark:text-blue-400 font-mono tabular-nums">{yiValue.toFixed(6)}</p>
               </div>
               {/* Predikat */}
@@ -323,7 +326,7 @@ const IndividualReportModal = ({ show, onClose, data }: IndividualReportProps) =
                       <th className="px-3 py-2.5 text-center font-black uppercase tracking-wider text-[10px] text-gray-500">Tipe</th>
                       <th className="px-3 py-2.5 text-right font-black uppercase tracking-wider text-[10px] text-gray-500">Target</th>
                       <th className="px-3 py-2.5 text-right font-black uppercase tracking-wider text-[10px] text-gray-500">Realisasi</th>
-                      <th className="px-3 py-2.5 text-right font-black uppercase tracking-wider text-[10px] text-gray-500">Pencapaian</th>
+                      <th className="px-3 py-2.5 text-right font-black uppercase tracking-wider text-[10px] text-gray-500">Achievement</th>
                       <th className="px-3 py-2.5 text-left font-black uppercase tracking-wider text-[10px] text-gray-500">Predikat</th>
                     </tr>
                   </thead>
