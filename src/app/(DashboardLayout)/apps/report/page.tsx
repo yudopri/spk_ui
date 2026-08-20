@@ -28,7 +28,6 @@ const ReportHasil = () => {
   const [lokasiOptions, setLokasiOptions] = useState<{id: any, name: string}[]>([]);
   const [groups, setGroups] = useState<{id: number, NamaGroup: string}[]>([]);
   const [reports, setReports] = useState<SpkReport[]>([]);
-  const [chartReports, setChartReports] = useState<SpkReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [updating, setUpdating] = useState(false);
@@ -41,6 +40,8 @@ const ReportHasil = () => {
   const [reportPageSize, setReportPageSize] = useState(10);
   const [totalReports, setTotalReports] = useState(0);
   const [search, setSearch] = useState("");
+
+  const MAX_REPORT_LIMIT = 1000;
 
   const isFinal = selectedPeriode?.Status === 'locked';
 
@@ -76,6 +77,12 @@ const formatScore = (value?: number) => {
     if (reports.length === 0) return false;
     return reports.every(r => r.status === 'Reviewed' || r.Status === 'Reviewed');
   }, [reports]);
+
+  const paginatedReports = useMemo(() => {
+    const start = (reportPage - 1) * reportPageSize;
+    const end = start + reportPageSize;
+    return reports.slice(start, end);
+  }, [reports, reportPage, reportPageSize]);
 
   const columns: Column<SpkReport>[] = [
     {
@@ -259,10 +266,9 @@ const formatScore = (value?: number) => {
         const latestP = resP_Single.data.find((p: any) => (p.id || p.Id) === selectedPeriodeId);
         if (latestP) setSelectedPeriode(latestP);
 
-        const res = await spkService.getReport(selectedPeriodeId, reportPage, reportPageSize, selectedLokasi || undefined, search, {}, selectedGroupId || undefined);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        // Ambil semua data sekali, lalu pagination dilakukan di frontend agar endpoint tidak dipanggil ganda.
+        const res = await spkService.getReport(selectedPeriodeId, 1, MAX_REPORT_LIMIT, selectedLokasi || undefined, search, {}, selectedGroupId || undefined);
         const rawReports = res.data || [];
-        setTotalReports(res.meta?.total || (res as any).totalCount || 0);
         
         const scoped = rawReports.filter((item: SpkReport) => {
           if (isKaryawan) {
@@ -281,22 +287,12 @@ const formatScore = (value?: number) => {
         });
 
         setReports(ranked);
-        setError(null);
+        setTotalReports(ranked.length);
 
-        // Fetch all reports for chart (tanpa pagination)
-        try {
-          const resAll = await spkService.getReport(selectedPeriodeId, 1, 1000, selectedLokasi || undefined, search, {}, selectedGroupId || undefined);
-          const allRaw = resAll.data || [];
-          const allSorted = [...allRaw].sort((a, b) => {
-            const rankA = getRankValue(a);
-            const rankB = getRankValue(b);
-            if (rankA > 0 && rankB > 0 && rankA !== rankB) return rankA - rankB;
-            return getFinalScoreValue(b) - getFinalScoreValue(a);
-          });
-          setChartReports(allSorted);
-        } catch {
-          setChartReports(ranked); // fallback ke data paginated
-        }
+        const totalPages = Math.max(1, Math.ceil(ranked.length / reportPageSize));
+        setReportPage((prev) => (prev > totalPages ? totalPages : prev));
+
+        setError(null);
       } catch (err: any) {
         setError(err?.response?.data?.message || "Gagal mengambil laporan hasil");
       } finally {
@@ -304,7 +300,7 @@ const formatScore = (value?: number) => {
       }
     };
     fetchReport();
-  }, [selectedPeriodeId, selectedLokasi, reportPage, search, selectedGroupId, isKaryawan, isManager, user?.employee_id]);
+  }, [selectedPeriodeId, selectedLokasi, search, selectedGroupId, isKaryawan, user?.employee_id, reportPageSize]);
 
   const handleFetchIndividual = async (karyawanId: number) => {
     try {
@@ -417,9 +413,8 @@ const formatScore = (value?: number) => {
         if (updatedP) setSelectedPeriode(updatedP);
         
         // Refresh laporan dengan filter & pagination saat ini
-        const resR = await spkService.getReport(selectedPeriodeId, reportPage, reportPageSize, selectedLokasi || undefined, search, {}, selectedGroupId || undefined);
+        const resR = await spkService.getReport(selectedPeriodeId, 1, MAX_REPORT_LIMIT, selectedLokasi || undefined, search, {}, selectedGroupId || undefined);
         const rawRefresh = resR.data || [];
-        setTotalReports(resR.meta?.total || 0);
         const rankedRefresh = [...rawRefresh].sort((a, b) => {
           const rankA = getRankValue(a);
           const rankB = getRankValue(b);
@@ -427,21 +422,7 @@ const formatScore = (value?: number) => {
           return getFinalScoreValue(b) - getFinalScoreValue(a);
         });
         setReports(rankedRefresh);
-
-        // Refresh chart data
-        try {
-          const resAllR = await spkService.getReport(selectedPeriodeId, 1, 1000, selectedLokasi || undefined, search, {}, selectedGroupId || undefined);
-          const allRawR = resAllR.data || [];
-          const allSortedR = [...allRawR].sort((a, b) => {
-            const rankA = getRankValue(a);
-            const rankB = getRankValue(b);
-            if (rankA > 0 && rankB > 0 && rankA !== rankB) return rankA - rankB;
-            return getFinalScoreValue(b) - getFinalScoreValue(a);
-          });
-          setChartReports(allSortedR);
-        } catch {
-          setChartReports(rankedRefresh);
-        }
+        setTotalReports(rankedRefresh.length);
       }
     } catch (err: any) {
       setError(err?.response?.data?.message || `Gagal mengubah status menjadi ${status}`);
@@ -495,7 +476,7 @@ const formatScore = (value?: number) => {
     },
     legend: { show: false },
     xaxis: {
-      categories: chartReports.map(r => r.nama || r.Karyawan?.name || r.Karyawan?.Nama || "Unknown"),
+      categories: reports.map(r => r.nama || r.Karyawan?.name || r.Karyawan?.Nama || "Unknown"),
       axisBorder: { show: false },
       axisTicks: { show: false },
       labels: {
@@ -529,14 +510,14 @@ const formatScore = (value?: number) => {
 
   const chartSeries = [{
   name: 'Nilai Akhir',
-  data: chartReports.map(r =>
+    data: reports.map(r =>
     formatScore(
       getFinalScoreValue(r)
     )
   )
 }];
 
-  const bestEmployee = chartReports.length > 0 ? chartReports[0] : null;
+    const bestEmployee = reports.length > 0 ? reports[0] : null;
 
   const getPredikat = (pct: number) => {
     if (pct >= 90) return { label: "Sangat Baik", bsColor: "success" as const, barColor: "bg-emerald-500" };
@@ -685,7 +666,7 @@ const formatScore = (value?: number) => {
               </div>
               {loading ? (
                 <div className="flex justify-center p-20"><Spinner size="xl" /></div>
-              ) : reports.length > 0 || chartReports.length > 0 ? (
+              ) : reports.length > 0 ? (
                 <Chart
                   options={chartOptions}
                   series={chartSeries}
@@ -751,7 +732,7 @@ const formatScore = (value?: number) => {
             
             <DataTable
               loading={loading}
-              data={reports}
+              data={paginatedReports}
               columns={columns}
               rowKey={(item) => item.Id || item.id || 0}
             />
