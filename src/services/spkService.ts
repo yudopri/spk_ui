@@ -227,7 +227,7 @@ const spkService = {
       params: {
         page,
         pageSize,
-        lokasi,
+        lokasi_kerja: lokasi,
         search,
         sort,
         filter: JSON.stringify(filter),

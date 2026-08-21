@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { TextInput } from "flowbite-react";
 import { Icon } from "@iconify/react";
 
@@ -20,13 +20,20 @@ const DataSearch: React.FC<DataSearchProps> = ({
 }) => {
   const [value, setValue] = useState(initialValue);
 
+  // Simpan onSearch terbaru di ref agar debounce hanya trigger saat teks berubah,
+  // bukan saat parent re-render (yang mengubah identitas fungsi inline).
+  const onSearchRef = useRef(onSearch);
+  useEffect(() => {
+    onSearchRef.current = onSearch;
+  }, [onSearch]);
+
   useEffect(() => {
     const timer = setTimeout(() => {
-      onSearch(value);
+      onSearchRef.current(value);
     }, debounceTime);
 
     return () => clearTimeout(timer);
-  }, [value, debounceTime, onSearch]);
+  }, [value, debounceTime]);
 
   return (
     <div className={className}>

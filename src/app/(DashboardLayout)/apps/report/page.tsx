@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Table, Button, Badge, Spinner, Alert, Modal, Label, Textarea, TextInput, Select } from "flowbite-react";
 import CardBox from "@/app/components/shared/CardBox";
 import { Icon } from "@iconify/react";
@@ -50,6 +50,26 @@ const ReportHasil = () => {
   const [reportPageSize, setReportPageSize] = useState(10);
   const [totalReports, setTotalReports] = useState(0);
   const [search, setSearch] = useState("");
+  const searchDebounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleSearchChange = useCallback((value: string) => {
+    if (searchDebounceTimer.current) {
+      clearTimeout(searchDebounceTimer.current);
+    }
+
+    searchDebounceTimer.current = setTimeout(() => {
+      setSearch(value);
+      setReportPage(1);
+    }, 400);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (searchDebounceTimer.current) {
+        clearTimeout(searchDebounceTimer.current);
+      }
+    };
+  }, []);
 
   const isFinal = selectedPeriode?.Status === 'locked';
 
@@ -584,10 +604,8 @@ const formatScore = (value?: number) => {
         <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
              <DataSearch 
                 placeholder="Cari Karyawan..." 
-                onSearch={(val) => {
-                  setSearch(val);
-                  setReportPage(1);
-                }}
+               debounceTime={0}
+               onSearch={handleSearchChange}
              />
              <DataFilter
                 value={selectedLokasi}
@@ -595,7 +613,7 @@ const formatScore = (value?: number) => {
                   setSelectedLokasi(val);
                   setReportPage(1);
                 }}
-                options={lokasiOptions.map(l => ({ value: l.id, label: l.name }))}
+                options={lokasiOptions.map(l => ({ value: String(l.name), label: l.name }))}
                 placeholder="Semua Lokasi"
                 className="w-full md:w-48"
              />
