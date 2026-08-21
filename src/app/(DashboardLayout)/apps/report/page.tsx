@@ -299,22 +299,9 @@ const formatScore = (value?: number) => {
         });
 
         setReports(ranked);
+        // Chart mengikuti data tabel (1 fetch saja, tanpa refetch terpisah)
+        setChartReports(ranked);
         setError(null);
-
-        // Fetch all reports for chart (tanpa pagination)
-        try {
-          const resAll = await spkService.getReport(selectedPeriodeId, 1, 1000, selectedLokasi || undefined, search, '', {}, selectedGroupId || undefined);
-          const allRaw = resAll.data || [];
-          const allSorted = [...allRaw].sort((a, b) => {
-            const rankA = getRankValue(a);
-            const rankB = getRankValue(b);
-            if (rankA > 0 && rankB > 0 && rankA !== rankB) return rankA - rankB;
-            return getFinalScoreValue(b) - getFinalScoreValue(a);
-          });
-          setChartReports(allSorted);
-        } catch {
-          setChartReports(ranked); // fallback ke data paginated
-        }
       } catch (err: any) {
         setError(err?.response?.data?.message || "Gagal mengambil laporan hasil");
       } finally {
@@ -445,21 +432,8 @@ const formatScore = (value?: number) => {
           return getFinalScoreValue(b) - getFinalScoreValue(a);
         });
         setReports(rankedRefresh);
-
-        // Refresh chart data
-        try {
-          const resAllR = await spkService.getReport(selectedPeriodeId, 1, 1000, selectedLokasi || undefined, search, '', {}, selectedGroupId || undefined);
-          const allRawR = resAllR.data || [];
-          const allSortedR = [...allRawR].sort((a, b) => {
-            const rankA = getRankValue(a);
-            const rankB = getRankValue(b);
-            if (rankA > 0 && rankB > 0 && rankA !== rankB) return rankA - rankB;
-            return getFinalScoreValue(b) - getFinalScoreValue(a);
-          });
-          setChartReports(allSortedR);
-        } catch {
-          setChartReports(rankedRefresh);
-        }
+        // Chart mengikuti data tabel (tanpa refetch terpisah)
+        setChartReports(rankedRefresh);
       }
     } catch (err: any) {
       setError(err?.response?.data?.message || `Gagal mengubah status menjadi ${status}`);
@@ -474,41 +448,50 @@ const formatScore = (value?: number) => {
       fontFamily: 'Plus Jakarta Sans, sans-serif',
       toolbar: { show: false },
       background: 'transparent',
+      stacked: false,
       animations: {
         enabled: true,
         easing: 'easeinout',
         speed: 800,
-        animateGradually: {
-            enabled: true,
-            delay: 150
-        },
-        dynamicAnimation: {
-            enabled: true,
-            speed: 350
-        }
+        animateGradually: { enabled: true, delay: 150 },
+        dynamicAnimation: { enabled: true, speed: 350 }
       }
     },
-    colors: ['#5D87FF', '#49BEFF', '#FFAE1F', '#FA896B', '#39B69A'],
+    colors: ['#5D87FF'],
     plotOptions: {
       bar: {
-        borderRadius: 4,
-        columnWidth: '45%',
-        distributed: true,
-        dataLabels: {
-          position: 'top',
-        },
+        horizontal: true,
+        borderRadius: 6,
+        borderRadiusApplication: 'end',
+        barHeight: '55%',
+        distributed: false,
+        dataLabels: { position: 'top' }
       }
     },
-    dataLabels: { 
+    fill: {
+      type: 'gradient',
+      gradient: {
+        shade: 'light',
+        type: 'horizontal',
+        shadeIntensity: 0.25,
+        gradientToColors: ['#49BEFF'],
+        inverseColors: false,
+        opacityFrom: 1,
+        opacityTo: 0.85,
+        stops: [0, 100]
+      }
+    },
+    dataLabels: {
       enabled: true,
       formatter: function (val: number) {
         return val.toFixed(2);
       },
-      offsetY: -20,
+      offsetX: 24,
+      textAnchor: 'start',
       style: {
-        fontSize: '10px',
-        fontWeight: 'bold',
-        colors: ["#5A6A85"]
+        fontSize: '11px',
+        fontWeight: 700,
+        colors: ['#5A6A85']
       }
     },
     legend: { show: false },
@@ -517,42 +500,30 @@ const formatScore = (value?: number) => {
       axisBorder: { show: false },
       axisTicks: { show: false },
       labels: {
-        style: {
-          colors: '#5A6A85',
-          fontSize: '11px'
-        }
+        style: { colors: '#5A6A85', fontSize: '11px' },
+        formatter: (val: string) => Number(val).toFixed(0)
       }
     },
     yaxis: {
       labels: {
-        style: {
-          colors: '#5A6A85',
-        }
+        style: { colors: '#5A6A85', fontSize: '12px', fontWeight: 600 }
       }
     },
-    grid: { 
+    grid: {
       borderColor: 'rgba(0,0,0,0.05)',
-      strokeDashArray: 3,
-      padding: { top: 20 }
+      strokeDashArray: 4,
+      padding: { left: 10, right: 20 }
     },
-    tooltip: { 
+    tooltip: {
       theme: 'light',
-      y: {
-        title: {
-          formatter: () => "Nilai Skala:"
-        }
-      }
+      y: { title: { formatter: () => "Nilai Skala:" } }
     }
   };
 
   const chartSeries = [{
-  name: 'Nilai Akhir',
-  data: chartReports.map(r =>
-    formatScore(
-      getFinalScoreValue(r)
-    )
-  )
-}];
+    name: 'Nilai Akhir',
+    data: chartReports.map(r => formatScore(getFinalScoreValue(r)))
+  }];
 
   const bestEmployee = chartReports.length > 0 ? chartReports[0] : null;
 
@@ -708,7 +679,7 @@ const formatScore = (value?: number) => {
                   options={chartOptions}
                   series={chartSeries}
                   type="bar"
-                  height="320px"
+                  height={Math.max(320, chartReports.length * 42)}
                   width="100%"
                 />
               ) : (
