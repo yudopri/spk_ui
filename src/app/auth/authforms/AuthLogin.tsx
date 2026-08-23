@@ -42,12 +42,17 @@ const AuthLogin = () => {
     setError(null);
 
     try {
-      const response = await axiosServices.post<LoginResponse>("/auth/login", {
-        email,
-        password,
-      });
+      const response = await axiosServices.post<LoginResponse>(
+        "/auth/login",
+        {
+          email,
+          password,
+        },
+        // Jangan picu auto-refresh/redirect saat login gagal (401 = email/password salah)
+        { _skipAuthRefresh: true } as any
+      );
 
-      const payload = response?.data || {};
+      const payload: any = response?.data || {};
       const body = payload?.data && typeof payload.data === "object" ? payload.data : payload;
 
       // Token sudah di HttpOnly cookie — tidak perlu di-response body lagi
