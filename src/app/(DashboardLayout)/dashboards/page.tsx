@@ -115,10 +115,15 @@ const DashboardPage = () => {
         || null;
       setLatestLockedPeriode(reportPeriode);
 
-      // 2. KPI data (data KPI, bukan grup KPI) for active periode
-      if (active) {
-        const kpiRes = await kpiService.getByPeriode(active.Id, 1, 200);
-        setTotalKpi(kpiRes.meta?.total ?? (kpiRes.data?.length || 0));
+      // 2. KPI data (data KPI, bukan grup KPI) — fetch from active periode, or fallback to latest periode
+      const kpiPeriode = active || latestLocked || sorted[0] || null;
+      if (kpiPeriode) {
+        try {
+          const kpiRes = await kpiService.getByPeriode(kpiPeriode.Id, 1, 200);
+          setTotalKpi(kpiRes.meta?.total ?? (kpiRes.data?.length || 0));
+        } catch {
+          setTotalKpi(0);
+        }
       } else {
         setTotalKpi(0);
       }
