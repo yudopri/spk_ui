@@ -658,17 +658,6 @@ const formatScore = (value?: number) => {
                     Kunci Periode
                   </Button>
                 )}
-                {isFinal && isManagerUI && (
-                  <Button 
-                    color="warning" 
-                    size="sm" 
-                    onClick={() => handleUpdateStatus('draft')} 
-                    disabled={updating}
-                  >
-                    {updating ? <Spinner size="sm" /> : <Icon icon="solar:undo-left-round-linear" className="mr-2 h-4 w-4" />}
-                    Buka Kembali
-                  </Button>
-                )}
                 <Button color="dark" size="sm" className="flex items-center" onClick={handleExportSummary} disabled={!canExport}>
                     {exporting ? <Spinner size="sm" className="mr-2" /> : <Icon icon="solar:file-send-bold" className="mr-2 h-4 w-4" />}
                     Unduh Rekap Excel
@@ -792,6 +781,7 @@ const formatScore = (value?: number) => {
                 value={reviewForm.status} 
                 onChange={(e) => setReviewForm({...reviewForm, status: e.target.value as any})}
               >
+                <option value="" disabled>Pilih Status</option>
                 <option value="Reviewed">SETUJUI</option>
                 <option value="Pending">TUNDA</option>
                 <option value="Draft">KEMBALIKAN KE DRAFT</option>

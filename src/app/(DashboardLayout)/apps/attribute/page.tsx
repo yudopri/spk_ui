@@ -107,15 +107,28 @@ const AttributePage = () => {
 
     try {
       setSaving(true);
+      setError(null);
+      
       if (mode === "create") {
-        await kpiService.createAttribute({ nama, simbol });
+        const res = await kpiService.createAttribute({ nama, simbol });
+        if (!res.success) {
+          throw new Error(res.message || "Gagal membuat attribute");
+        }
       } else {
-        await kpiService.updateAttribute(Number(selected.id), { nama, simbol });
+        const res = await kpiService.updateAttribute(Number(selected.id), { nama, simbol });
+        if (!res.success) {
+          throw new Error(res.message || "Gagal mengupdate attribute");
+        }
       }
+      
       setOpenModal(false);
-      fetchData();
+      setSelected(null);
+      setCurrentPage(1); // Reset ke halaman 1 setelah save
+      await fetchData();
     } catch (err: any) {
-      alert(err?.response?.data?.message || "Gagal menyimpan attribute");
+      const errorMsg = err?.response?.data?.message || err?.message || "Gagal menyimpan attribute";
+      setError(errorMsg);
+      alert(errorMsg);
     } finally {
       setSaving(false);
     }
@@ -124,10 +137,16 @@ const AttributePage = () => {
   const handleDelete = async (id: number) => {
     if (!confirm("Apakah Anda yakin ingin menghapus attribute ini?")) return;
     try {
-      await kpiService.deleteAttribute(id);
-      fetchData();
+      const res = await kpiService.deleteAttribute(id);
+      if (!res.success) {
+        throw new Error(res.message || "Gagal menghapus attribute");
+      }
+      setCurrentPage(1); // Reset ke halaman 1 setelah delete
+      await fetchData();
     } catch (err: any) {
-      alert(err?.response?.data?.message || "Gagal menghapus attribute");
+      const errorMsg = err?.response?.data?.message || err?.message || "Gagal menghapus attribute";
+      setError(errorMsg);
+      alert(errorMsg);
     }
   };
 
