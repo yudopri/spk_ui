@@ -95,7 +95,7 @@ export const config = {
 
 // ─── Middleware ────────────────────────────────────────────────
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Pass through assets without modification
