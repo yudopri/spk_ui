@@ -391,7 +391,10 @@ const formatScore = (value?: number) => {
         s: reviewForm.catatan_saran
       };
 
-      const res = await spkService.reviewMooraResult(reviewReportId, combinedNote, reviewForm.status);
+      // Capture selected status BEFORE resetting form (state updates are async)
+      const selectedStatus = reviewForm.status;
+
+      const res = await spkService.reviewMooraResult(reviewReportId, combinedNote, selectedStatus);
       if (res.success) {
         setShowReviewModal(false);
         setReviewForm({
@@ -408,8 +411,8 @@ const formatScore = (value?: number) => {
           if (rId === reviewReportId) {
             return {
               ...r,
-              status: reviewForm.status,
-              Status: reviewForm.status,
+              status: selectedStatus,
+              Status: selectedStatus,
               catatan: combinedNote,
               Catatan: combinedNote,
             };
