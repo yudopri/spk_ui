@@ -1,3 +1,5 @@
+"use client";
+
 import { Alert, Button, Checkbox, Label, TextInput, Spinner } from "flowbite-react";
 import Link from "next/link";
 import React, { useEffect, useRef, useState } from "react";
