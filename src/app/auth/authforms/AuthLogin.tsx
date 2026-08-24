@@ -2,7 +2,7 @@
 
 import { Button, Checkbox, Label, TextInput, Alert, Spinner } from "flowbite-react";
 import Link from "next/link";
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import axiosServices from "@/utils/axios";
 import { AuthUser, setSession } from "@/utils/authSession";
@@ -34,6 +34,23 @@ const AuthLogin = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const errorTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Hapus pesan error secara otomatis setelah beberapa detik
+  useEffect(() => {
+    if (!error) return;
+    if (errorTimer.current) clearTimeout(errorTimer.current);
+    errorTimer.current = setTimeout(() => setError(null), 5000);
+    return () => {
+      if (errorTimer.current) clearTimeout(errorTimer.current);
+    };
+  }, [error]);
+
+  // Sembunyikan pesan error saat user fokus ke field email/password
+  const clearError = () => {
+    if (errorTimer.current) clearTimeout(errorTimer.current);
+    setError(null);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -118,6 +135,7 @@ const AuthLogin = () => {
             className="form-control"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            onFocus={clearError}
             required
           />
         </div>
@@ -132,6 +150,7 @@ const AuthLogin = () => {
             className="form-control"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            onFocus={clearError}
             required
           />
         </div>
