@@ -261,18 +261,29 @@ const spkService = {
           return "Sangat Kurang";
         };
         const computedPredikat = item.predikat ?? item.Predikat ?? (computedAchievement > 0 ? derivePredikat(computedAchievement) : "");
+        const snapshotScore = [
+          item.nilai_yi,
+          item.NilaiYi,
+          item.nilai_akhir,
+          item.totalScore,
+          item.NilaiOptimasi,
+          item.NilaiSkala,
+          item.nilai,
+        ]
+          .map((value) => Number(value))
+          .find((value) => Number.isFinite(value) && value !== 0) ?? 0;
 
         return {
         id: Number(item.id ?? item.Id ?? item.karyawan_id ?? 0),
         rank: Number(item.rank ?? item.Ranking ?? item.ranking ?? 0),
         nama: item.nama || item.name || item.Karyawan?.Nama || item.Karyawan?.name || "Tanpa Nama",
-        totalScore: Number(item.totalScore ?? item.nilai_akhir ?? item.NilaiSkala ?? item.nilai ?? 0),
-        nilai_akhir: Number(item.nilai_akhir ?? item.totalScore ?? item.NilaiSkala ?? item.nilai ?? 0),
+        totalScore: snapshotScore,
+        nilai_akhir: snapshotScore,
         nik: item.nik ?? item.Karyawan?.nik ?? item.Karyawan?.Nik ?? "-",
         divisi: item.divisi ?? item.Divisi ?? item.Karyawan?.Divisi ?? item.Karyawan?.divisi ?? item.nama_divisi ?? item.NamaDivisi ?? "",
         Divisi: item.Divisi ?? item.divisi ?? item.Karyawan?.Divisi ?? item.Karyawan?.divisi ?? item.nama_divisi ?? item.NamaDivisi ?? "",
-        nilai_yi: Number(item.nilai_yi ?? item.NilaiYi ?? item.catatan?.yi ?? item.nilai_akhir ?? item.totalScore ?? 0),
-        NilaiYi: Number(item.NilaiYi ?? item.nilai_yi ?? item.catatan?.yi ?? item.nilai_akhir ?? item.totalScore ?? 0),
+        nilai_yi: snapshotScore,
+        NilaiYi: snapshotScore,
         achievement: computedAchievement,
         Achievement: computedAchievement,
         persentase_kpi: computedAchievement,

@@ -51,6 +51,7 @@ const ReportHasil = () => {
   const [totalReports, setTotalReports] = useState(0);
   const [search, setSearch] = useState("");
   const searchDebounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const reportRequestRef = useRef(0);
 
   const handleSearchChange = useCallback((value: string) => {
     if (searchDebounceTimer.current) {
@@ -99,7 +100,15 @@ const formatScore = (value?: number) => {
 };
 
   const getRankValue = (item: SpkReport) => Number(item.rank || item.Ranking || 0);
-  const getFinalScoreValue = (item: SpkReport) => Number(item.nilai_yi ?? item.NilaiYi ?? item.nilai_akhir ?? item.totalScore ?? item.NilaiSkala ?? 0);
+  const getFinalScoreValue = (item: SpkReport) => Number(
+    item.nilai_yi ??
+    item.NilaiYi ??
+    item.nilai_akhir ??
+    item.totalScore ??
+    item.NilaiOptimasi ??
+    item.NilaiSkala ??
+    0
+  );
 
   const allReviewed = useMemo(() => {
     if (reports.length === 0) return false;
@@ -280,16 +289,19 @@ const formatScore = (value?: number) => {
   useEffect(() => {
     const fetchReport = async () => {
       if (!selectedPeriodeId) return;
+      const requestId = ++reportRequestRef.current;
       try {
         setLoading(true);
         
         // Refresh detail periode dari DB untuk sinkronisasi status terbaru
         const resP_Single = await periodeService.getAll(1, 100);
+        if (requestId !== reportRequestRef.current) return;
         const latestP = resP_Single.data.find((p: any) => (p.id || p.Id) === selectedPeriodeId);
         if (latestP) setSelectedPeriode(latestP);
 
         const res = await spkService.getReport(selectedPeriodeId, reportPage, reportPageSize, selectedLokasi || undefined, search, '', {}, selectedGroupId || undefined);
         const rawReports = res.data || [];
+        if (requestId !== reportRequestRef.current) return;
         setTotalReports(res.meta?.total || (res as any).totalCount || 0);
         
           const isManagerUI_Local = isManagerRole(localStorage.getItem('userRole'));
@@ -323,9 +335,10 @@ const formatScore = (value?: number) => {
         setChartReports(ranked);
         setError(null);
       } catch (err: any) {
+        if (requestId !== reportRequestRef.current) return;
         setError(err?.response?.data?.message || "Gagal mengambil laporan hasil");
       } finally {
-        setLoading(false);
+        if (requestId === reportRequestRef.current) setLoading(false);
       }
     };
     fetchReport();
