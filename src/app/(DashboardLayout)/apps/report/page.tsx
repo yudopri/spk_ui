@@ -264,7 +264,14 @@ const formatScore = (value?: number) => {
         setPeriodes(resP.data);
         setLokasiOptions(resL.data);
         if (resP.data.length > 0) {
-          setSelectedPeriodeId(resP.data[0].id || resP.data[0].Id);
+          // Dukungan deep link ?periodeId= (dari halaman Periode KPI)
+          let target = resP.data[0];
+          if (typeof window !== 'undefined') {
+            const q = new URLSearchParams(window.location.search).get('periodeId');
+            const found = q ? resP.data.find((p: any) => Number(p.id || p.Id) === Number(q)) : null;
+            if (found) target = found;
+          }
+          setSelectedPeriodeId(Number(target.id || target.Id));
         }
       } catch (err: any) {
         setError("Gagal mengambil data filter");

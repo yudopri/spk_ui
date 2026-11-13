@@ -227,15 +227,17 @@ const NilaiPerbandingan = () => {
     for (let i = 0; i < n; i++) {
       let weightedSum = 0;
       for (let j = 0; j < n; j++) weightedSum += matrix[i][j] * rowWeights[j];
-      lambdaMax += weightedSum / rowWeights[i];
+      // Guard pembagian dengan nol agar tidak menghasilkan NaN/Infinity pada matriks degenerate
+      lambdaMax += rowWeights[i] > 0 ? weightedSum / rowWeights[i] : 0;
     }
     lambdaMax /= n;
+    if (!Number.isFinite(lambdaMax)) lambdaMax = n;
 
     // Hitung CI dan CR
     const ci = n > 1 ? (lambdaMax - n) / (n - 1) : 0;
-    // Random Index untuk n = 1..15
-    const riTable: Record<number, number> = { 1: 0, 2: 0, 3: 0.58, 4: 0.90, 5: 1.12, 6: 1.24, 7: 1.32, 8: 1.41, 9: 1.45, 10: 1.49 };
-    const ri = riTable[n] ?? (1.49 + (n - 10) * 0.03);
+    // Random Index (Saaty) untuk n = 1..15
+    const riTable: Record<number, number> = { 1: 0, 2: 0, 3: 0.58, 4: 0.90, 5: 1.12, 6: 1.24, 7: 1.32, 8: 1.41, 9: 1.45, 10: 1.49, 11: 1.51, 12: 1.54, 13: 1.56, 14: 1.57, 15: 1.59 };
+    const ri = riTable[n] ?? 1.59;
     const crValue = ri > 0 ? ci / ri : 0;
 
     setLambdaMax(Number(lambdaMax.toFixed(4)));

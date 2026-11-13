@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { Table, Button, Badge, Modal, Label, TextInput, Select, Spinner, Alert, Tooltip } from "flowbite-react";
 import CardBox from "@/app/components/shared/CardBox";
 import { Icon } from "@iconify/react";
+import { useRouter } from "next/navigation";
 import periodeService, { Periode } from "@/services/periodeService";
 import divisiService from "@/services/divisiService";
 import { usePermission } from "@/hooks/usePermission";
@@ -13,6 +14,7 @@ import DataSearch from "@/app/components/shared/DataSearch";
 import DataFilter from "@/app/components/shared/DataFilter";
 
 const PeriodeKPI = () => {
+  const router = useRouter();
   const { isReadOnly } = usePermission();
   const [openModal, setOpenModal] = useState(false);
   const [modalMode, setModalMode] = useState<"create" | "edit" | "detail">("create");
@@ -84,7 +86,7 @@ const PeriodeKPI = () => {
                 color="light" 
                 size="xs" 
                 className="hover:bg-primary/10"
-                onClick={() => window.location.href=`/apps/data-kpi?periodeId=${item.Id}`}
+                onClick={() => router.push(`/apps/data-kpi?periodeId=${item.Id}`)}
                 disabled={item.Status === 'locked'}
               >
               <Icon icon="solar:filters-bold" className={`h-4 w-4 ${item.Status === 'locked' ? 'text-gray-400' : 'text-primary'}`} />
@@ -95,7 +97,7 @@ const PeriodeKPI = () => {
                 color="light" 
                 size="xs" 
                 className="hover:bg-success/10"
-                onClick={() => window.location.href=`/apps/penilaian?periodeId=${item.Id}`}
+                onClick={() => router.push(`/apps/penilaian?periodeId=${item.Id}`)}
                 disabled={item.Status === 'locked'}
               >
               <Icon icon="solar:user-hand-up-bold" className={`h-4 w-4 ${item.Status === 'locked' ? 'text-gray-400' : 'text-green-600'}`} />
@@ -106,7 +108,7 @@ const PeriodeKPI = () => {
                 color="light" 
                 size="xs" 
                 className="hover:bg-secondary/10"
-                onClick={() => window.location.href=`/apps/report?periodeId=${item.Id}`}
+                onClick={() => router.push(`/apps/report?periodeId=${item.Id}`)}
             >
               <Icon icon="solar:chart-square-bold" className="h-4 w-4 text-secondary" />
             </Button>
@@ -286,10 +288,11 @@ const PeriodeKPI = () => {
               setCurrentPage(1);
             }}
             options={[
-              { value: "draft", label: "Draft" },
-              { value: "open", label: "Open" },
-              { value: "processed", label: "Processed" },
-              { value: "locked", label: "Locked" },
+              { value: "Draft", label: "Draft" },
+              // Nilai "Aktif" mengikuti casing yang disimpan di DB (map ke "open" di UI)
+              { value: "Aktif", label: "Open" },
+              { value: "Processed", label: "Processed" },
+              { value: "Locked", label: "Locked" },
             ]}
             placeholder="Semua Status"
           />

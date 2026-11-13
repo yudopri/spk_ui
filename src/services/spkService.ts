@@ -364,6 +364,10 @@ const spkService = {
   reviewMooraResult: async (id: number, catatan: { p: string; i: string; s: string }, status: 'Draft' | 'Pending' | 'Reviewed' = 'Reviewed') => {
     const response = await axiosServices.patch<{ message: string; success: boolean }>(`/spk/moora/hasil/${id}/review`, {
       status: status,
+      prestasi: catatan.p,
+      indisipliner: catatan.i,
+      saran: catatan.s,
+      // Backward compat untuk backend versi lama yang membaca objek Catatan
       Catatan: catatan
     });
     return response.data;

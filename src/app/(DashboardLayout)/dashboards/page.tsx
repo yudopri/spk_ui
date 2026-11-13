@@ -56,11 +56,13 @@ const DashboardPage = () => {
   const [prevLockedReportCount, setPrevLockedReportCount] = useState(0);
   const [divisiList, setDivisiList] = useState<Divisi[]>([]);
   const [karyawanPerDivisi, setKaryawanPerDivisi] = useState<Record<string, number>>({});
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // ── Refresh handler ──
   const fetchDashboardData = useCallback(async (isRefresh = false) => {
     try {
       isRefresh ? setRefreshing(true) : setLoading(true);
+      setLoadError(null);
 
       // 1. Parallel fetch: karyawan (all for divisi count), periode, divisi
       const [karyawanAllRes, periodeRes, divisiRes] = await Promise.all([
@@ -134,7 +136,7 @@ const DashboardPage = () => {
         const items = reportRes.data || [];
         setAllReportItems(items);
         setTopPerformers(items.slice(0, 5));
-        setLockedReportCount(items.length);
+        setLockedReportCount(reportRes.meta?.total ?? items.length);
       } else {
         setAllReportItems([]);
         setTopPerformers([]);
@@ -147,12 +149,13 @@ const DashboardPage = () => {
         || null;
       if (prevReportPeriode) {
         const prevRes = await spkService.getReport(prevReportPeriode.Id, 1, 1);
-        setPrevLockedReportCount(prevRes.data?.length || 0);
+        setPrevLockedReportCount(prevRes.meta?.total ?? prevRes.data?.length ?? 0);
       } else {
         setPrevLockedReportCount(0);
       }
     } catch (err) {
       console.error("Failed to load dashboard data", err);
+      setLoadError("Gagal memuat data dashboard. Coba refresh.");
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -284,6 +287,13 @@ const DashboardPage = () => {
           </button>
         </div>
       </div>
+
+      {loadError && (
+        <div className="bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 rounded-xl px-4 py-3 flex items-center justify-between">
+          <span className="text-sm text-rose-600 dark:text-rose-400 font-medium">{loadError}</span>
+          <button onClick={() => { setLoadError(null); fetchDashboardData(true); }} className="text-xs font-bold text-rose-600 hover:underline">Coba lagi</button>
+        </div>
+      )}
 
       {/* ══════════ 2. METRIC CARDS with Trend ══════════ */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">

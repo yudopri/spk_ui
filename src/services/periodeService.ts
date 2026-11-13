@@ -27,7 +27,9 @@ export interface Periode {
 
 const normalizePeriode = (item: any): Periode => {
   const id = Number(item.Id ?? item.id ?? 0);
-  const status = String(item.Status ?? item.status ?? 'draft').toLowerCase();
+  const rawStatus = String(item.Status ?? item.status ?? 'draft').toLowerCase();
+  // Backend DB menyimpan "Aktif" (bukan "open"); map agar dikenali sebagai periode berjalan
+  const status = rawStatus === 'aktif' ? 'open' : rawStatus;
   const lockStatus = ['draft', 'open', 'processed', 'locked'].includes(status) ? status as any : 'draft';
   const isAktif = lockStatus === 'open';
   
@@ -94,19 +96,15 @@ const periodeService = {
     const tahunRaw = data.Tahun ?? data.tahun;
     const divisiRaw = data.DivisiId ?? data.divisiId;
 
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
     const mulai = data.TanggalMulai ?? data.tanggalMulai;
     const selesai = data.TanggalSelesai ?? data.tanggalSelesai;
-    const startDate = mulai ? new Date(mulai) : null;
-    const endDate = selesai ? new Date(selesai) : null;
-    if (startDate) startDate.setHours(0, 0, 0, 0);
-    if (endDate) endDate.setHours(0, 0, 0, 0);
 
-    let calculatedStatus = String(data.Status || data.status || (data.isAktif ? 'open' : 'draft')).toLowerCase();
-    if (startDate && endDate && calculatedStatus !== 'locked') {
-      calculatedStatus = (now >= startDate && now <= endDate) ? 'open' : 'draft';
-    }
+    // Jika user secara eksplisit memilih status (mis. processed/open), hormati pilihan tersebut.
+    // Hanya hitung otomatis bila status tidak diberikan.
+    const explicitStatus = data.Status ?? data.status;
+    const calculatedStatus = explicitStatus
+      ? String(explicitStatus).toLowerCase()
+      : String(data.isAktif ? 'open' : 'draft').toLowerCase();
 
     const response = await axiosServices.post<{ Id?: number; success?: boolean; message?: string }>('/spk/periode', {
       NamaPeriode: data.NamaPeriode ?? data.namaPeriode,
@@ -126,19 +124,15 @@ const periodeService = {
     const tahunRaw = data.Tahun ?? data.tahun;
     const divisiRaw = data.DivisiId ?? data.divisiId;
 
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
     const mulai = data.TanggalMulai ?? data.tanggalMulai;
     const selesai = data.TanggalSelesai ?? data.tanggalSelesai;
-    const startDate = mulai ? new Date(mulai) : null;
-    const endDate = selesai ? new Date(selesai) : null;
-    if (startDate) startDate.setHours(0, 0, 0, 0);
-    if (endDate) endDate.setHours(0, 0, 0, 0);
 
-    let calculatedStatus = String(data.Status || data.status || (data.isAktif ? 'open' : 'draft')).toLowerCase();
-    if (startDate && endDate && calculatedStatus !== 'locked') {
-      calculatedStatus = (now >= startDate && now <= endDate) ? 'open' : 'draft';
-    }
+    // Jika user secara eksplisit memilih status (mis. processed/open), hormati pilihan tersebut.
+    // Hanya hitung otomatis bila status tidak diberikan.
+    const explicitStatus = data.Status ?? data.status;
+    const calculatedStatus = explicitStatus
+      ? String(explicitStatus).toLowerCase()
+      : String(data.isAktif ? 'open' : 'draft').toLowerCase();
 
     const response = await axiosServices.put<{ success?: boolean; message?: string }>(`/spk/periode/${targetId}`, {
       NamaPeriode: data.NamaPeriode ?? data.namaPeriode,

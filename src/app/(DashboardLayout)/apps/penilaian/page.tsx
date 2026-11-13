@@ -68,9 +68,20 @@ const PenilaianKaryawan = () => {
       setDepartments(divisiRes.data);
       setWorkLocations(locationRes.data || []);
 
-      const firstActive = periodeRes.data.find(p => p.Status !== 'locked' && (p as any).isAktif) || periodeRes.data[0];
+      // Dukungan deep link ?periodeId= (dari halaman Periode KPI)
+      let targetPeriode: Periode | undefined = undefined;
+      if (typeof window !== 'undefined') {
+        const q = new URLSearchParams(window.location.search).get('periodeId');
+        if (q) {
+          targetPeriode = periodeRes.data.find((p: Periode) => Number(p.Id || p.id) === Number(q));
+        }
+      }
+
+      const firstActive = targetPeriode
+        || periodeRes.data.find(p => p.Status !== 'locked' && (p as any).isAktif)
+        || periodeRes.data[0];
       if (firstActive) {
-        setSelectedPeriodeId(firstActive.Id || firstActive.id);
+        setSelectedPeriodeId(Number(firstActive.Id || firstActive.id));
       }
 
       if (divisiRes.data.length > 0) {
@@ -113,8 +124,9 @@ const PenilaianKaryawan = () => {
     if (selectedPeriodeId !== 0) {
       const fetchData = async () => {
         try {
+          // Ambil seluruh KPI untuk periode terpilih (tidak terikat pageSize tabel karyawan)
           const [resKpi, resGroup] = await Promise.all([
-            kpiService.getByPeriode(selectedPeriodeId, 1, pageSize),
+            kpiService.getByPeriode(selectedPeriodeId, 1, 1000),
             kpiService.getGroups(selectedPeriodeId)
           ]);
           setKpis(resKpi.data);
@@ -128,7 +140,12 @@ const PenilaianKaryawan = () => {
       setKpis([]);
       setGroups([]);
     }
-  }, [selectedPeriodeId, pageSize]);
+  }, [selectedPeriodeId]);
+
+  // Reset nilai input saat konteks (periode/divisi/lokasi/halaman) berubah agar tidak bocor antar konteks
+  useEffect(() => {
+    setScores({});
+  }, [selectedPeriodeId, selectedDeptId, selectedLocation, page]);
 
   useEffect(() => {
     fetchInitialData();
@@ -150,26 +167,39 @@ const PenilaianKaryawan = () => {
         for (const kpi of kpis) {
           const key = `${emp.id}-${kpi.Id || (kpi as any).id}`;
           const raw = scores[key];
-          
+
+          // Lewati sel yang tidak diisi agar tidak menimpa nilai yang sudah tersimpan di backend dengan 0
+          if (raw === "" || raw === undefined || raw === null || isNaN(Number(raw))) continue;
+
           payload.push({
             KaryawanId: emp.id,
             KpiId: kpi.Id || (kpi as any).id,
             PeriodeId: selectedPeriodeId,
-            Realisasi: raw === "" || raw === undefined ? 0 : Number(raw),
+            Realisasi: Number(raw),
           });
         }
       }
 
-      if (payload.length === 0 && employees.length > 0) {
+      if (payload.length === 0) {
         setError("Belum ada nilai yang diinput");
         return;
       }
 
       const res = await spkService.saveMooraRealisasi(payload as any);
-      
+
+      if (res?.success === false) {
+        setError(res?.message || "Gagal menyimpan penilaian");
+        return;
+      }
+
       // Hitung otomatis MOORA setelah simpan penilaian
-      await spkService.calculateMoora(selectedPeriodeId);
-      
+      const calcRes = await spkService.calculateMoora(selectedPeriodeId);
+
+      if (calcRes?.success === false) {
+        setError(`Penilaian tersimpan, namun perhitungan MOORA gagal: ${calcRes?.message || "unknown error"}`);
+        return;
+      }
+
       setSuccess("Penilaian berhasil disimpan (Draft) dan ranking diperbarui. Laporan kini menunggu persetujuan Manager.");
     } catch (err: any) {
       setError(err?.response?.data?.message || "Gagal menyimpan penilaian");
@@ -279,7 +309,7 @@ const PenilaianKaryawan = () => {
         </div>
       </div>
 
-      {error && <Alert color="failure" className="mb-4">{error}</Alert>}
+      {error && <Alert color="failure" className="mb-4" onDismiss={() => setError(null)}>{error}</Alert>}
       {success && (
         <Alert color="success" className="mb-4" icon={() => <Icon icon="solar:check-circle-bold" className="h-5 w-5" />}>
            <div>

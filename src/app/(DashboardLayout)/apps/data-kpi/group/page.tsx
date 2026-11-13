@@ -135,7 +135,7 @@ const KPIGroupPage = () => {
                         </Table.Head>
                 <Table.Body className="divide-y">
                     {loading ? (
-                        <Table.Row><Table.Cell colSpan={3} className="text-center py-10"><Spinner /></Table.Cell></Table.Row>
+                        <Table.Row><Table.Cell colSpan={2} className="text-center py-10"><Spinner /></Table.Cell></Table.Row>
                     ) : (groups || []).length > 0 ? (groups || []).map((group) => (
                             <Table.Row key={group.Id || group.id} className="bg-white">
                                 <Table.Cell className="font-bold text-gray-900">{group.NamaGroup}</Table.Cell>
@@ -161,7 +161,7 @@ const KPIGroupPage = () => {
                             </Table.Row>
                     )) : (
                         <Table.Row>
-                            <Table.Cell colSpan={3} className="text-center py-10 text-gray-400 italic">
+                            <Table.Cell colSpan={2} className="text-center py-10 text-gray-400 italic">
                                 Belum ada grup KPI. Silakan buat grup tingkat pertama.
                             </Table.Cell>
                         </Table.Row>

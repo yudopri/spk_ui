@@ -53,7 +53,7 @@ export interface Attribute {
 
 const normalizeKpi = (item: any): KPI => {
   const id = Number(item.Id ?? item.id ?? 0);
-  const tipe = (item.Tipe ?? item.tipe ?? 'Benefit') as 'Benefit' | 'Cost';
+  const tipe = String(item.Tipe ?? item.tipe ?? 'Benefit').toLowerCase() as 'benefit' | 'cost';
   return {
     ...item,
     Id: id,
@@ -62,7 +62,7 @@ const normalizeKpi = (item: any): KPI => {
     namaKpi: item.namaKpi ?? item.NamaKpi ?? '',
     Tipe: tipe,
     tipe,
-    IsBenefit: tipe === 'Benefit',
+    IsBenefit: tipe === 'benefit',
     PeriodeId: Number(item.PeriodeId ?? item.periodeId ?? 0),
     periodeId: Number(item.periodeId ?? item.PeriodeId ?? 0),
     Target: Number(item.Target ?? item.target ?? 0),
@@ -234,7 +234,8 @@ const kpiService = {
   updateGroup: async (id: number, data: { NamaGroup: string; BobotGrup?: number }) => {
     const response = await axiosServices.put<{ success: boolean; message: string }>(`/spk/kpi-group/${id}`, {
       nama_grup: data.NamaGroup,
-      bobot_grup: data.BobotGrup ?? 0
+      // Jangan kirim bobot bila tidak diubah agar nilai lama tidak ikut ter-reset
+      ...(data.BobotGrup !== undefined && data.BobotGrup !== null ? { bobot_grup: data.BobotGrup } : {}),
     });
     return response.data;
   },

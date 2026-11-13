@@ -89,10 +89,10 @@ const DataKPI = () => {
            </Button>
            {!isReadOnly && (
              <>
-               <Button color="primary" size="xs" onClick={() => handleOpenModal("edit", item)}>
+               <Button color="primary" size="xs" onClick={() => handleOpenModal("edit", item)} disabled={isLocked}>
                   <Icon icon="solar:pen-new-square-bold" className="text-base" />
                </Button>
-               <Button color="failure" size="xs" onClick={() => handleDelete(item.Id ?? item.id ?? 0)}>
+               <Button color="failure" size="xs" onClick={() => handleDelete(item.Id ?? item.id ?? 0)} disabled={isLocked}>
                   <Icon icon="solar:trash-bin-trash-bold" className="text-base" />
                </Button>
              </>
@@ -135,9 +135,16 @@ const DataKPI = () => {
       // If you strictly want ONLY active ones, use: res.data.filter(p => p.isAktif)
       const allPeriodes = res.data;
       setPeriodes(allPeriodes);
-      
+
       if (allPeriodes.length > 0) {
-        setSelectedPeriodeId(allPeriodes[0].id);
+        // Dukungan deep link ?periodeId= (dari halaman Periode KPI)
+        let target = allPeriodes[0];
+        if (typeof window !== 'undefined') {
+          const q = new URLSearchParams(window.location.search).get('periodeId');
+          const found = q ? allPeriodes.find((p: any) => Number(p.id || p.Id) === Number(q)) : null;
+          if (found) target = found;
+        }
+        setSelectedPeriodeId(Number(target.id || target.Id));
       }
     } catch (err: any) {
       setError("Gagal mengambil data periode");
