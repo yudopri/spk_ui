@@ -2,6 +2,7 @@
 
 import { Button, Checkbox, Label, TextInput, Alert, Spinner } from "flowbite-react";
 import Link from "next/link";
+import { Icon } from "@iconify/react";
 import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import axiosServices from "@/utils/axios";
@@ -33,6 +34,7 @@ const AuthLogin = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const router = useRouter();
   const errorTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -57,6 +59,7 @@ const AuthLogin = () => {
     if (loading) return;
     setLoading(true);
     setError(null);
+    setSuccess(null);
 
     try {
       const response = await axiosServices.post<LoginResponse>(
@@ -104,8 +107,12 @@ const AuthLogin = () => {
           permissions,
         });
 
-        router.replace("/dashboards");
-        router.refresh();
+        // Tampilkan pesan sukses sebelum redirect ke dashboard
+        setSuccess(`Login berhasil. Selamat datang${normalizedUser.name ? `, ${normalizedUser.name}` : ""}! Mengalihkan ke dashboard...`);
+        setTimeout(() => {
+          router.replace("/dashboards");
+          router.refresh();
+        }, 900);
       } else {
         setError(payload?.message || body?.message || "Gagal masuk. Periksa email dan password Anda.");
       }
@@ -122,6 +129,11 @@ const AuthLogin = () => {
         {error && (
           <Alert color="failure" className="mb-4">
             {error}
+          </Alert>
+        )}
+        {success && (
+          <Alert color="success" className="mb-4" icon={() => <Icon icon="solar:check-circle-bold" className="h-5 w-5" />}>
+            {success}
           </Alert>
         )}
         <div className="mb-4">
@@ -169,7 +181,7 @@ const AuthLogin = () => {
           color={"primary"}
           type="submit"
           className="rounded-md w-full"
-          disabled={loading}
+          disabled={loading || Boolean(success)}
         >
           {loading ? (
             <span className="flex items-center gap-2">
