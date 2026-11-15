@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
-import { Table, Button, Badge, Spinner, Alert, Modal, Label, Textarea, TextInput, Select } from "flowbite-react";
+import { Table, Button, Badge, Spinner, Alert, Modal, Label, Textarea, TextInput, Select, Tooltip } from "flowbite-react";
 import CardBox from "@/app/components/shared/CardBox";
 import { Icon } from "@iconify/react";
 import dynamic from "next/dynamic";
@@ -190,13 +190,15 @@ const formatScore = (value?: number) => {
       headerClasses: "text-center",
       cellClasses: "text-center",
       render: (item: SpkReport) => (
-        <div className="flex justify-center gap-1.5">
+        <div className="flex justify-center items-center gap-2">
           {isManagerUI && !isFinal && (
-            <Button 
-              color="info" 
-              size="xs" 
-              pill 
-              onClick={() => {
+            <Tooltip content="Review hasil penilaian">
+              <Button
+                color="primary"
+                size="xs"
+                pill
+                className="font-semibold shadow-sm"
+                onClick={() => {
                 setReviewReportId(Number(item.id || item.Id || 0));
                 
                 const c = item.catatan || (item as any).Catatan;
@@ -230,24 +232,32 @@ const formatScore = (value?: number) => {
                 setShowReviewModal(true);
               }}
             >
-              <Icon icon="solar:notes-minimalistic-bold" className="h-3.5 w-3.5" />
-              <span className="ml-1 text-[10px]">Review</span>
-            </Button>
+                <Icon icon="solar:notes-minimalistic-bold" className="mr-1 h-4 w-4" />
+                Review
+              </Button>
+            </Tooltip>
           )}
-          <Button color="light" size="xs" pill onClick={() => handleFetchIndividual(getReportRowId(item))}>
-            {printingId === getReportRowId(item) ? <Spinner size="xs" /> : <Icon icon="solar:eye-bold" className="h-3.5 w-3.5" />}
-            <span className="ml-1 text-[10px]">Lihat</span>
-          </Button>
-          <Button 
-            color="dark" 
-            size="xs" 
-            pill 
-            disabled={!isFinal || (printingId === getReportRowId(item))}
-            onClick={() => handlePrintPdf(getReportRowId(item))}
-          >
-            <Icon icon="solar:printer-bold" className="h-3.5 w-3.5" />
-            <span className="ml-1 text-[10px]">PDF</span>
-          </Button>
+          <Tooltip content="Lihat detail laporan">
+            <Button color="light" size="xs" pill className="font-semibold" onClick={() => handleFetchIndividual(getReportRowId(item))}>
+              {printingId === getReportRowId(item) ? <Spinner size="xs" className="mr-1" /> : <Icon icon="solar:eye-bold" className="mr-1 h-4 w-4" />}
+              Lihat
+            </Button>
+          </Tooltip>
+          <Tooltip content={isFinal ? "Unduh PDF" : "Kunci periode terlebih dahulu untuk mengunduh PDF"}>
+            <span>
+              <Button
+                color="dark"
+                size="xs"
+                pill
+                className="font-semibold"
+                disabled={!isFinal || (printingId === getReportRowId(item))}
+                onClick={() => handlePrintPdf(getReportRowId(item))}
+              >
+                <Icon icon="solar:file-download-bold" className="mr-1 h-4 w-4" />
+                PDF
+              </Button>
+            </span>
+          </Tooltip>
         </div>
       ),
     },
@@ -668,16 +678,20 @@ const formatScore = (value?: number) => {
              
              <div className="flex gap-2 w-full md:w-auto">
                 {!isFinal && (
-                  <Button 
-                    color="success" 
-                    size="sm" 
-                    onClick={() => handleUpdateStatus('locked')} 
-                    disabled={updating || !isManagerUI || !allReviewed}
-                    title={!isManagerUI ? "Hanya Manager yang dapat mengunci snapshot" : !allReviewed ? "Semua karyawan harus direview terlebih dahulu" : ""}
-                  >
-                    {updating ? <Spinner size="sm" /> : <Icon icon="solar:check-read-linear" className="mr-2 h-4 w-4" />}
-                    Kunci Periode
-                  </Button>
+                  <Tooltip content={!isManagerUI ? "Hanya Manager yang dapat mengunci snapshot" : !allReviewed ? "Semua karyawan harus direview terlebih dahulu" : "Kunci snapshot periode ini"}>
+                    <span>
+                      <Button
+                        color="success"
+                        size="sm"
+                        className="font-bold shadow-md shadow-success/20"
+                        onClick={() => handleUpdateStatus('locked')}
+                        disabled={updating || !isManagerUI || !allReviewed}
+                      >
+                        {updating ? <Spinner size="sm" className="mr-2" /> : <Icon icon="solar:lock-bold" className="mr-2 h-4 w-4" />}
+                        Kunci Periode
+                      </Button>
+                    </span>
+                  </Tooltip>
                 )}
                 <Button color="dark" size="sm" className="flex items-center" onClick={handleExportSummary} disabled={!canExport}>
                     {exporting ? <Spinner size="sm" className="mr-2" /> : <Icon icon="solar:file-send-bold" className="mr-2 h-4 w-4" />}

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import React, { useMemo } from "react";
 import { Modal, Badge, Button } from "flowbite-react";
 import { Icon } from "@iconify/react";
@@ -137,46 +137,6 @@ const IndividualReportModal = ({ show, onClose, data }: IndividualReportProps) =
     };
   });
 
-  /* Print handler */
-  const handlePrint = () => {
-    const printContent = document.getElementById("printable-report");
-    if (!printContent) return;
-
-    const printWindow = window.open("", "_blank", "width=900,height=700");
-    if (!printWindow) { window.print(); return; }
-
-    const stylesheets = Array.from(document.styleSheets)
-      .map((sheet) => { try { return Array.from(sheet.cssRules).map((r) => r.cssText).join("\n"); } catch { return ""; } })
-      .join("\n");
-
-    const clonedContent = printContent.cloneNode(true) as HTMLElement;
-    clonedContent.querySelectorAll("[data-collapsible]").forEach((el) => {
-      (el as HTMLElement).style.display = "block";
-    });
-
-    printWindow.document.write(`<!DOCTYPE html>
-<html lang="id">
-<head>
-  <meta charSet="UTF-8" />
-  <title>Laporan Hasil Penilaian Kinerja - ${data.metadata.Nama}</title>
-  <style>
-    @page { size: A4; margin: 15mm 20mm; }
-    * { box-sizing: border-box; }
-    body { margin: 0; padding: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #12263a; background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; font-size: 11px; }
-    table { border-collapse: collapse !important; width: 100%; }
-    th, td { border: 1px solid #d7e1ea !important; padding: 6px 10px; }
-    .bg-primary { background-color: #1f4f78 !important; color: #fff !important; }
-    .text-primary { color: #1f4f78 !important; }
-  </style>
-</head>
-<body></body>
-</html>`);
-    printWindow.document.body.appendChild(clonedContent);
-    printWindow.document.close();
-    printWindow.focus();
-    setTimeout(() => { printWindow.print(); printWindow.close(); }, 400);
-  };
-
   return (
     <Modal show={show} onClose={onClose} size="5xl" className="print-modal">
       {/* Modal Header */}
@@ -204,7 +164,7 @@ const IndividualReportModal = ({ show, onClose, data }: IndividualReportProps) =
       <Modal.Body className="p-0" id="printable-report">
         <div className="divide-y divide-gray-100 dark:divide-gray-700">
 
-          {/* ── Section 1: Informasi Karyawan ── */}
+          {/* -- Section 1: Informasi Karyawan -- */}
           <div className="p-6 bg-gradient-to-r from-slate-50 to-blue-50/30 dark:from-slate-900/40 dark:to-blue-900/10">
             <div className="flex items-center gap-2 mb-4">
               <Icon icon="solar:user-bold" className="h-5 w-5 text-primary" />
@@ -230,7 +190,7 @@ const IndividualReportModal = ({ show, onClose, data }: IndividualReportProps) =
             </div>
           </div>
 
-          {/* ── Section 2: Ringkasan Hasil ── */}
+          {/* -- Section 2: Ringkasan Hasil -- */}
           <div className="p-6">
             <div className="flex items-center gap-2 mb-4">
               <Icon icon="solar:chart-square-bold" className="h-5 w-5 text-primary" />
@@ -265,7 +225,7 @@ const IndividualReportModal = ({ show, onClose, data }: IndividualReportProps) =
             </div>
           </div>
 
-          {/* ── Section 3: Ringkasan Per Grup KPI ── */}
+          {/* -- Section 3: Ringkasan Per Grup KPI -- */}
           {groupMetrics.length > 0 && (
             <div className="p-6">
               <div className="flex items-center gap-2 mb-4">
@@ -308,7 +268,7 @@ const IndividualReportModal = ({ show, onClose, data }: IndividualReportProps) =
             </div>
           )}
 
-          {/* ── Section 4: Detail KPI Table ── */}
+          {/* -- Section 4: Detail KPI Table -- */}
           {items.length > 0 && (
             <div className="p-6">
               <div className="flex items-center gap-2 mb-4">
@@ -381,13 +341,10 @@ const IndividualReportModal = ({ show, onClose, data }: IndividualReportProps) =
       {/* Modal Footer */}
       <Modal.Footer className="print:hidden border-t border-border bg-slate-50 dark:bg-slate-900/30">
         <div className="flex items-center justify-between w-full">
-          <p className="text-[10px] text-gray-400">Dicetak: {today} | {data.metadata.DibuatOleh ? `Dibuat oleh: ${data.metadata.DibuatOleh}` : ""}</p>
+          <p className="text-[10px] text-gray-400">Tanggal: {today} | {data.metadata.DibuatOleh ? `Dibuat oleh: ${data.metadata.DibuatOleh}` : ""}</p>
           <div className="flex gap-2">
             <Button color="gray" size="sm" onClick={onClose}>
               <Icon icon="solar:close-circle-bold" className="mr-1 h-4 w-4" /> Tutup
-            </Button>
-            <Button color="dark" size="sm" onClick={handlePrint}>
-              <Icon icon="solar:printer-bold" className="mr-1 h-4 w-4" /> Cetak / PDF
             </Button>
           </div>
         </div>

@@ -213,7 +213,7 @@ const PeriodeKPI = () => {
       setBtnLoading(true);
 
       // Cleanup data before sending to backend
-      const { divisi, kpis, isAktif, ...payload } = selectedItem as any;
+      const { divisi, kpis, isAktif, status: _s, Status: _S, ...payload } = selectedItem as any;
 
       // Ensure numeric types with backend contract: Tahun nullable, DivisiId numeric/null
       const tahunRaw = payload.tahun ?? payload.Tahun;
@@ -224,14 +224,12 @@ const PeriodeKPI = () => {
       const namaPeriode = payload.namaPeriode || payload.NamaPeriode || "";
       const tanggalMulaiRaw = payload.tanggalMulai || payload.TanggalMulai || "";
       const tanggalSelesaiRaw = payload.tanggalSelesai || payload.TanggalSelesai || "";
-      const status = String(payload.Status || payload.status || "draft").toLowerCase();
 
       const body = {
         ...payload,
         NamaPeriode: namaPeriode,
         Tahun: tahunRaw === "" || tahunRaw === undefined || tahunRaw === null ? null : Number(tahunRaw),
-        DivisiId: divisiRaw === "" || divisiRaw === undefined || divisiRaw === null ? 0 : Number(divisiRaw),
-        Status: status,
+        DivisiId: divisiRaw === "" || divisiRaw === undefined || divisiRaw === null ? null : Number(divisiRaw),
         TanggalMulai: tanggalMulaiRaw
           ? (tanggalMulaiRaw.includes("T") ? tanggalMulaiRaw : `${tanggalMulaiRaw}T00:00:00.000Z`)
           : "",
