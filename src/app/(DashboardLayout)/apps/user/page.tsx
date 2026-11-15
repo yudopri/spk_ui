@@ -1,5 +1,6 @@
-﻿"use client";
+"use client";
 import React, { useState, useEffect, useMemo } from "react";
+import { formatDateTimeSafe } from "@/utils/formatDate";
 import { Table, Badge, Spinner, Alert, TextInput } from "flowbite-react";
 import CardBox from "@/app/components/shared/CardBox";
 import { Icon } from "@iconify/react";
@@ -132,7 +133,7 @@ const UserManagementPage = () => {
                                             </Table.Cell>
                                             <Table.Cell className="text-sm text-gray-500 whitespace-nowrap">
                                                 {lastLogin
-                                                    ? new Date(lastLogin).toLocaleString("id-ID")
+                                                    ? formatDateTimeSafe(lastLogin)
                                                     : <span className="text-gray-300 italic">Belum pernah login</span>
                                                 }
                                             </Table.Cell>

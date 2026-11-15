@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { getApiErrorMessage, getApiErrorStatus } from "@/utils/apiError";
 import { Table, Button, Badge, Modal, Label, TextInput, Select, Textarea, Spinner, Alert } from "flowbite-react";
 import CardBox from "@/app/components/shared/CardBox";
 import { Icon } from "@iconify/react";
@@ -173,7 +174,7 @@ const DataKPI = () => {
       setTotalItems(Number(res.meta?.total || (res as any).totalCount || 0));
       setError(null);
     } catch (err: any) {
-      setError(err.response?.data?.message || "Gagal mengambil data KPI");
+      setError(getApiErrorMessage(err, "Gagal mengambil data KPI"));
     } finally {
       setLoading(false);
     }
@@ -228,7 +229,7 @@ const DataKPI = () => {
       fetchKpis();
     } catch (err: any) {
       console.error("Submit Error:", err.response?.data || err.message);
-      alert(err.response?.data?.message || "Gagal menyimpan data");
+      alert(getApiErrorMessage(err, "Gagal menyimpan data"));
     } finally {
       setBtnLoading(false);
     }
@@ -240,10 +241,10 @@ const DataKPI = () => {
         await kpiService.delete(id);
         fetchKpis();
       } catch (err: any) {
-        if (err.status === 409 || err.response?.status === 409) {
-          alert("KPI tidak dapat dihapus karena sudah memiliki data penilaian terkait.");
+        if (getApiErrorStatus(err) === 409) {
+          alert(getApiErrorMessage(err, "KPI tidak dapat dihapus karena sudah memiliki data penilaian terkait."));
         } else {
-          alert(err.response?.data?.message || "Gagal menghapus kriteria");
+          alert(getApiErrorMessage(err, "Gagal menghapus kriteria"));
         }
       }
     }

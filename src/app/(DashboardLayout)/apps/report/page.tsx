@@ -5,6 +5,7 @@ import CardBox from "@/app/components/shared/CardBox";
 import { Icon } from "@iconify/react";
 import dynamic from "next/dynamic";
 import spkService, { SpkReport } from "@/services/spkService";
+import { getApiErrorMessage } from "@/utils/apiError";
 import periodeService, { Periode } from "@/services/periodeService";
 import karyawanService from "@/services/karyawanService";
 import kpiService from "@/services/kpiService";
@@ -343,7 +344,7 @@ const formatScore = (value?: number) => {
         setError(null);
       } catch (err: any) {
         if (requestId !== reportRequestRef.current) return;
-        setError(err?.response?.data?.message || "Gagal mengambil laporan hasil");
+        setError(getApiErrorMessage(err, "Gagal mengambil laporan hasil"));
       } finally {
         if (requestId === reportRequestRef.current) setLoading(false);
       }
@@ -365,7 +366,7 @@ const formatScore = (value?: number) => {
         setReportError(res?.message || "Gagal mengambil data laporan individual");
       }
     } catch (err: any) {
-      const msg = err?.response?.data?.message || err?.message || "Gagal mengambil data laporan individual";
+      const msg = getApiErrorMessage(err, "Gagal mengambil data laporan individual");
       setReportError(msg);
       setIndividualData(null);
     } finally {
@@ -441,7 +442,7 @@ const formatScore = (value?: number) => {
         }));
       }
     } catch (err: any) {
-      setError(err?.response?.data?.message || "Gagal menyimpan review");
+      setError(getApiErrorMessage(err, "Gagal menyimpan review"));
     } finally {
       setReviewLoading(false);
     }
@@ -479,7 +480,7 @@ const formatScore = (value?: number) => {
         setChartReports(rankedRefresh);
       }
     } catch (err: any) {
-      setError(err?.response?.data?.message || `Gagal mengubah status menjadi ${status}`);
+      setError(getApiErrorMessage(err, `Gagal mengubah status menjadi ${status}`));
     } finally {
       setUpdating(false);
     }

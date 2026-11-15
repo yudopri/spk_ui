@@ -10,6 +10,7 @@ import divisiService, { Divisi } from "@/services/divisiService";
 import spkService from "@/services/spkService";
 import { usePermission } from "@/hooks/usePermission";
 import { normalizeRole } from "@/utils/accessControl";
+import { getApiErrorMessage } from "@/utils/apiError";
 
 // Shared Components
 import DataSearch from "@/app/components/shared/DataSearch";
@@ -42,6 +43,7 @@ const PenilaianKaryawan = () => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [warning, setWarning] = useState<string | null>(null);
 
   const selectedPeriode = useMemo(() => 
     periodes.find(p => Number(p.Id || p.id) === Number(selectedPeriodeId)),
@@ -49,6 +51,8 @@ const PenilaianKaryawan = () => {
   );
 
   const isLocked = selectedPeriode?.Status === 'locked';
+  const isProcessed = selectedPeriode?.Status === 'processed' || selectedPeriode?.Status === 'Processed';
+  const isReadOnlyPeriode = isLocked || isProcessed;
 
   const filteredPeriodes = useMemo(() => {
     if (selectedDeptId === "all") return periodes;
@@ -88,7 +92,7 @@ const PenilaianKaryawan = () => {
         setSelectedDeptId(divisiRes.data[0].id);
       }
     } catch (err: any) {
-      setError(err?.response?.data?.message || "Gagal mengambil data awal");
+      setError(getApiErrorMessage(err, "Gagal mengambil data awal"));
     } finally {
       setLoading(false);
     }
@@ -111,7 +115,7 @@ const PenilaianKaryawan = () => {
         setAllEmployees(scopedEmployees);
         setTotalItems(res.meta?.total || 0);
       } catch (err: any) {
-        setError(err?.response?.data?.message || "Gagal mengambil data karyawan");
+        setError(getApiErrorMessage(err, "Gagal mengambil data karyawan"));
       } finally {
         setLoading(false);
       }
@@ -160,6 +164,7 @@ const PenilaianKaryawan = () => {
       setSubmitting(true);
       setError(null);
       setSuccess(null);
+      setWarning(null);
 
       const payload: any[] = [];
 
@@ -192,17 +197,23 @@ const PenilaianKaryawan = () => {
         return;
       }
 
-      // Hitung otomatis MOORA setelah simpan penilaian
-      const calcRes = await spkService.calculateMoora(selectedPeriodeId);
+      // Simpan berhasil → tampilkan sukses dulu sebelum mencoba hitung ranking
+      setSuccess("Penilaian berhasil disimpan (Draft).");
 
-      if (calcRes?.success === false) {
-        setError(`Penilaian tersimpan, namun perhitungan MOORA gagal: ${calcRes?.message || "unknown error"}`);
-        return;
+      // Hitung MOORA dalam try/catch terpisah; kegagalan hitung tidak menghilangkan info simpan sukses
+      try {
+        const calcRes = await spkService.calculateMoora(selectedPeriodeId);
+
+        if (calcRes?.success === false) {
+          setWarning(`Nilai tersimpan, tapi ranking belum dihitung (${calcRes?.message || "bobot AHP belum tersedia"})`);
+        } else {
+          setSuccess("Penilaian berhasil disimpan (Draft) dan ranking diperbarui. Laporan kini menunggu persetujuan Manager.");
+        }
+      } catch (calcErr: any) {
+        setWarning(`Nilai tersimpan, tapi ranking belum dihitung (${getApiErrorMessage(calcErr, "bobot AHP belum tersedia")})`);
       }
-
-      setSuccess("Penilaian berhasil disimpan (Draft) dan ranking diperbarui. Laporan kini menunggu persetujuan Manager.");
     } catch (err: any) {
-      setError(err?.response?.data?.message || "Gagal menyimpan penilaian");
+      setError(getApiErrorMessage(err, "Gagal menyimpan penilaian"));
     } finally {
       setSubmitting(false);
     }
@@ -299,17 +310,23 @@ const PenilaianKaryawan = () => {
               <Button
                 color="primary"
                 onClick={handleSaveAll}
-                disabled={submitting || !selectedPeriodeId || kpis.length === 0 || allEmployees.length === 0 || isLocked}
+                disabled={submitting || !selectedPeriodeId || kpis.length === 0 || allEmployees.length === 0 || isReadOnlyPeriode}
                 className="w-full md:w-auto"
               >
                  <Icon icon="solar:diskette-bold-duotone" className="mr-2 h-5 w-5" />
-                 {submitting ? "Menyimpan..." : isLocked ? "Terkunci" : "Simpan Realisasi"}
+                 {submitting ? "Menyimpan..." : isLocked ? "Terkunci" : isProcessed ? "Sudah Diproses" : "Simpan Realisasi"}
               </Button>
             )}
         </div>
       </div>
 
       {error && <Alert color="failure" className="mb-4" onDismiss={() => setError(null)}>{error}</Alert>}
+      {warning && <Alert color="warning" className="mb-4" onDismiss={() => setWarning(null)}>{warning}</Alert>}
+      {isProcessed && (
+        <Alert color="warning" className="mb-4" icon={() => <Icon icon="solar:lock-bold" className="h-5 w-5" />}>
+          Periode sudah diproses, nilai tidak dapat diubah.
+        </Alert>
+      )}
       {success && (
         <Alert color="success" className="mb-4" icon={() => <Icon icon="solar:check-circle-bold" className="h-5 w-5" />}>
            <div>
@@ -331,7 +348,11 @@ const PenilaianKaryawan = () => {
                  <Icon icon="solar:user-block-bold-duotone" className="h-12 w-12 text-gray-300" />
                </div>
                <p className="text-gray-500 font-bold max-w-xs uppercase tracking-tight">
-                 {selectedPeriodeId === 0 ? "Pilih Periode & Divisi untuk memulai" : "Karyawan tidak ditemukan untuk kriteria ini"}
+                 {selectedPeriodeId === 0
+                    ? "Pilih Periode & Divisi untuk memulai"
+                    : isProcessed
+                      ? "Periode sudah diproses, nilai tidak dapat diubah"
+                      : "Karyawan tidak ditemukan untuk kriteria ini"}
                </p>
              </div>
           ) : (
@@ -377,7 +398,7 @@ const PenilaianKaryawan = () => {
                                     rightIcon={() => <span className="text-[10px] font-bold text-gray-400 mr-2">{kpi.Attribute || kpi.simbol || ''}</span>}
                                     value={scores[key] ?? ""}
                                     onChange={(e) => setScores({...scores, [key]: e.target.value})}
-                                    disabled={isLocked}
+                                    disabled={isReadOnlyPeriode}
                                   />
                                 </div>
                               </Table.Cell>
@@ -449,7 +470,7 @@ const PenilaianKaryawan = () => {
                                           rightIcon={() => <span className="text-[9px] font-black text-gray-400 mr-2">{k.Attribute || k.simbol || ''}</span>}
                                           value={scores[key] ?? ""}
                                           onChange={(e) => setScores({...scores, [key]: e.target.value})}
-                                          disabled={selectedPeriode?.Status === 'locked'}
+                                          disabled={isReadOnlyPeriode}
                                         />
                                       </div>
                                     </Table.Cell>

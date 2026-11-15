@@ -7,6 +7,8 @@ import { useRouter } from "next/navigation";
 import periodeService, { Periode } from "@/services/periodeService";
 import divisiService from "@/services/divisiService";
 import { usePermission } from "@/hooks/usePermission";
+import { formatDateSafe } from "@/utils/formatDate";
+import { getApiErrorMessage, getApiErrorStatus } from "@/utils/apiError";
 
 import DataTable, { Column } from "@/app/components/shared/DataTable";
 import DataPagination from "@/app/components/shared/DataPagination";
@@ -53,13 +55,13 @@ const PeriodeKPI = () => {
     {
       header: "Mulai",
       render: (item: Periode) => (
-        <span className="text-sm">{new Date(item.TanggalMulai || item.tanggalMulai).toLocaleDateString("id-ID")}</span>
+        <span className="text-sm">{formatDateSafe(item.TanggalMulai || item.tanggalMulai)}</span>
       )
     },
     {
       header: "Selesai",
       render: (item: Periode) => (
-        <span className="text-sm">{new Date(item.TanggalSelesai || item.tanggalSelesai).toLocaleDateString("id-ID")}</span>
+        <span className="text-sm">{formatDateSafe(item.TanggalSelesai || item.tanggalSelesai)}</span>
       )
     },
     {
@@ -164,7 +166,7 @@ const PeriodeKPI = () => {
       setDivisis(divisiRes.data);
       setError(null);
     } catch (err: any) {
-      setError(err.response?.data?.message || "Gagal mengambil data");
+      setError(getApiErrorMessage(err, "Gagal mengambil data"));
     } finally {
       setLoading(false);
     }
@@ -244,7 +246,7 @@ const PeriodeKPI = () => {
       fetchData();
     } catch (err: any) {
       console.error("Submit Error:", err.response?.data || err.message);
-      alert(err?.response?.data?.message || err?.data?.message || err?.message || "Gagal menyimpan data. Periksa konsol untuk detail.");
+      alert(getApiErrorMessage(err, "Gagal menyimpan data."));
     } finally {
       setBtnLoading(false);
     }
@@ -256,11 +258,11 @@ const PeriodeKPI = () => {
         await periodeService.delete(id);
         fetchData();
       } catch (err: any) {
-        if (err?.response?.status === 409 || err?.status === 409) {
-          alert(err?.response?.data?.message || err?.data?.message || "Periode tidak dapat dihapus karena masih dipakai data lain.");
+        if (getApiErrorStatus(err) === 409) {
+          alert(getApiErrorMessage(err, "Periode tidak dapat dihapus karena masih dipakai data lain."));
           return;
         }
-        alert(err?.response?.data?.message || err?.data?.message || err?.message || "Gagal menghapus data");
+        alert(getApiErrorMessage(err, "Gagal menghapus data"));
       }
     }
   };

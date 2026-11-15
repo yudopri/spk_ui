@@ -9,6 +9,7 @@ import RoleGuard from "@/app/components/shared/RoleGuard";
 import DataTable, { Column } from "@/app/components/shared/DataTable";
 import DataPagination from "@/app/components/shared/DataPagination";
 import DataSearch from "@/app/components/shared/DataSearch";
+import { formatDateTimeSafe } from "@/utils/formatDate";
 
 const DeveloperPage = () => {
   const [selectedPeriodeId, setSelectedPeriodeId] = useState<number>(0);
@@ -157,7 +158,7 @@ const DeveloperPage = () => {
     {
       header: "Waktu",
       render: (item) => (
-        <span className="whitespace-nowrap text-sm">{new Date(item.createdAt).toLocaleString("id-ID")}</span>
+        <span className="whitespace-nowrap text-sm">{formatDateTimeSafe(item.createdAt)}</span>
       ),
     },
     {
