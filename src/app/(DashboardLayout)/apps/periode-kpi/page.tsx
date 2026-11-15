@@ -201,6 +201,9 @@ const PeriodeKPI = () => {
     const nama = (selectedItem.namaPeriode || selectedItem.NamaPeriode || "").trim();
     const mulai = selectedItem.tanggalMulai || selectedItem.TanggalMulai || "";
     const selesai = selectedItem.tanggalSelesai || selectedItem.TanggalSelesai || "";
+    // Divisi wajib dipilih (opsi lintas divisi sudah tidak tersedia)
+    const divisiRawVal = selectedItem.divisiId ?? selectedItem.DivisiId;
+    if (divisiRawVal === null || divisiRawVal === undefined || divisiRawVal === "" || divisiRawVal === "all" || Number(divisiRawVal) === 0) { alert("Target Divisi wajib dipilih."); return; }
     if (!nama) { alert("Nama Periode wajib diisi."); return; }
     if (!mulai) { alert("Tanggal Mulai wajib diisi."); return; }
     if (!selesai) { alert("Tanggal Selesai wajib diisi."); return; }
@@ -227,7 +230,7 @@ const PeriodeKPI = () => {
         ...payload,
         NamaPeriode: namaPeriode,
         Tahun: tahunRaw === "" || tahunRaw === undefined || tahunRaw === null ? null : Number(tahunRaw),
-        DivisiId: divisiRaw === "" || divisiRaw === undefined || divisiRaw === null ? null : Number(divisiRaw),
+        DivisiId: divisiRaw === "" || divisiRaw === undefined || divisiRaw === null ? 0 : Number(divisiRaw),
         Status: status,
         TanggalMulai: tanggalMulaiRaw
           ? (tanggalMulaiRaw.includes("T") ? tanggalMulaiRaw : `${tanggalMulaiRaw}T00:00:00.000Z`)
@@ -381,19 +384,18 @@ const PeriodeKPI = () => {
               </div>
             </div>
             <div>
-              <Label htmlFor="divisi" value="Target Divisi (Cakupan Penilaian)" className="text-[10px] font-black uppercase text-gray-500" />
+              <Label htmlFor="divisi" value="Target Divisi (Cakupan Penilaian) *" className="text-[10px] font-black uppercase text-gray-500" />
               <Select
                 id="divisi"
                 className="font-bold"
-                value={(selectedItem?.divisiId ?? selectedItem?.DivisiId) === null ? "all" : (selectedItem?.divisiId ?? selectedItem?.DivisiId ?? 0)}
+                value={(() => { const v = selectedItem?.divisiId ?? selectedItem?.DivisiId; return v === null || v === undefined || v === "all" ? 0 : v; })()}
                 onChange={(e) => {
-                  const val = e.target.value === "all" ? null : (e.target.value === "0" ? 0 : Number(e.target.value));
+                  const val = e.target.value === "0" ? 0 : Number(e.target.value);
                   setSelectedItem({ ...selectedItem!, divisiId: val, DivisiId: val });
                 }}
                 disabled={modalMode === "detail" || selectedItem?.Status === 'locked'}
               >
                 <option value={0}>Pilih Divisi</option>
-                <option value="all">Semua Divisi (Lintas Divisi)</option>
                 {divisis.map((d) => (
                   <option key={d.id} value={d.id}>{d.namaDivisi}</option>
                 ))}
