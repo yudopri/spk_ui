@@ -139,7 +139,7 @@ const formatScore = (value?: number) => {
       header: "Divisi",
       cellClasses: "text-left text-xs text-gray-600 dark:text-gray-300",
       render: (item: SpkReport) => {
-        const divisi = item.divisi || item.Divisi || (item.Karyawan as any)?.Divisi || (item.Karyawan as any)?.divisi || "-";
+        const divisi = item.divisi || item.Divisi || (item.Karyawan as any)?.Divisi || (item.Karyawan as any)?.divisi || (item.Karyawan as any)?.departemen || "-";
         return <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-medium">{divisi || "-"}</span>;
       },
     },
@@ -616,6 +616,7 @@ const formatScore = (value?: number) => {
     const s = (status || 'Draft').toLowerCase();
     if (s === 'reviewed') return <Badge color="success" icon={() => <Icon icon="solar:check-circle-bold" className="mr-1 h-3 w-3" />}>Reviewed</Badge>;
     if (s === 'pending') return <Badge color="warning" icon={() => <Icon icon="solar:clock-circle-bold" className="mr-1 h-3 w-3" />}>Pending</Badge>;
+    if (s === 'processed') return <Badge color="info" icon={() => <Icon icon="solar:refresh-circle-bold" className="mr-1 h-3 w-3" />}>Processed</Badge>;
     return <Badge color="gray" icon={() => <Icon icon="solar:file-text-bold" className="mr-1 h-3 w-3" />}>Draft</Badge>;
   };
 
@@ -830,7 +831,7 @@ const formatScore = (value?: number) => {
               const target = reports.find(r => Number(r.id || r.Id) === reviewReportId);
               if (!target) return null;
               const nama = target.nama || target.Karyawan?.name || target.Karyawan?.Nama || "-";
-              const divisi = target.divisi || target.Divisi || (target.Karyawan as any)?.Divisi || (target.Karyawan as any)?.divisi || "-";
+              const divisi = target.divisi || target.Divisi || (target.Karyawan as any)?.Divisi || (target.Karyawan as any)?.divisi || (target.Karyawan as any)?.departemen || "-";
               const jabatan = target.jabatan || target.Jabatan || (target.Karyawan as any)?.Jabatan || (target.Karyawan as any)?.jabatan || (target.Karyawan as any)?.role || "-";
               const lokasi = target.lokasi || target.Lokasi || (target.Karyawan as any)?.Lokasi || (target.Karyawan as any)?.lokasi || (target.Karyawan as any)?.lokasi_kerja || "-";
               return (
