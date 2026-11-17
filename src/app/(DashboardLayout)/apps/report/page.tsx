@@ -620,6 +620,7 @@ const formatScore = (value?: number) => {
 
   const getStatusBadge = (status?: string) => {
     const s = (status || 'Draft').toLowerCase();
+    if (s === 'locked' || s === 'final') return <Badge color="dark" icon={() => <Icon icon="solar:lock-bold" className="mr-1 h-3 w-3" />}>Final</Badge>;
     if (s === 'reviewed') return <Badge color="success" icon={() => <Icon icon="solar:check-circle-bold" className="mr-1 h-3 w-3" />}>Reviewed</Badge>;
     if (s === 'pending') return <Badge color="warning" icon={() => <Icon icon="solar:clock-circle-bold" className="mr-1 h-3 w-3" />}>Pending</Badge>;
     if (s === 'processed') return <Badge color="info" icon={() => <Icon icon="solar:refresh-circle-bold" className="mr-1 h-3 w-3" />}>Processed</Badge>;
