@@ -64,12 +64,26 @@ const DashboardPage = () => {
       isRefresh ? setRefreshing(true) : setLoading(true);
       setLoadError(null);
 
-      // 1. Parallel fetch: karyawan (all for divisi count), periode, divisi
-      const [karyawanAllRes, periodeRes, divisiRes] = await Promise.all([
-        karyawanService.getAll({ pageSize: 500 }),
+      // Ambil seluruh data karyawan (loop semua halaman) agar jumlah per divisi akurat,
+      // dan samakan scope dengan halaman Data Karyawan (include management roles).
+      const EMPLOYEES_PAGE_SIZE = 200;
+      const firstPage = await karyawanService.getAll({ page: 1, pageSize: EMPLOYEES_PAGE_SIZE, include_management_roles: true });
+      const totalEmp = firstPage.meta?.total ?? firstPage.data?.length ?? 0;
+      let allEmployees = [...(firstPage.data || [])];
+      const actualPageSize = firstPage.data?.length || EMPLOYEES_PAGE_SIZE;
+      if (allEmployees.length < totalEmp && actualPageSize > 0) {
+        const totalPages = Math.ceil(totalEmp / actualPageSize);
+        for (let p = 2; p <= totalPages; p++) {
+          const next = await karyawanService.getAll({ page: p, pageSize: actualPageSize, include_management_roles: true });
+          allEmployees = allEmployees.concat(next.data || []);
+        }
+      }
+
+      const [periodeRes, divisiRes] = await Promise.all([
         periodeService.getAll(1, 200),
         divisiService.getAll(1, 100),
       ]);
+      const karyawanAllRes = { data: allEmployees, meta: { ...firstPage.meta, total: totalEmp } };
 
       const kTotal = karyawanAllRes.meta?.total ?? karyawanAllRes.data?.length ?? 0;
       setTotalKaryawan(kTotal);
