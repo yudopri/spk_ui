@@ -30,6 +30,7 @@ const ReportHasil = () => {
   const [lokasiOptions, setLokasiOptions] = useState<{id: any, name: string}[]>([]);
   const [groups, setGroups] = useState<{id: number, NamaGroup: string}[]>([]);
   const [reports, setReports] = useState<SpkReport[]>([]);
+  const [reportRefreshKey, setReportRefreshKey] = useState(0);
   const [chartReports, setChartReports] = useState<SpkReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
@@ -240,7 +241,7 @@ const formatScore = (value?: number) => {
                 }
 
                 setReviewForm({
-                  status: ((item.status || item.Status) as any) || '',
+                  status: '',
                   catatan_prestasi: p,
                   catatan_indisipliner: i,
                   catatan_saran: s
@@ -376,7 +377,7 @@ const formatScore = (value?: number) => {
       }
     };
     fetchReport();
-  }, [selectedPeriodeId, selectedLokasi, reportPage, reportPageSize, search, selectedGroupId, isKaryawan, isAdminLike, isManager, user?.employee_id, user?.dept_id]);
+  }, [selectedPeriodeId, selectedLokasi, reportPage, reportPageSize, search, selectedGroupId, isKaryawan, isAdminLike, isManager, user?.employee_id, user?.dept_id, reportRefreshKey]);
 
   const handleFetchIndividual = async (karyawanId: number) => {
     try {
@@ -474,20 +475,8 @@ const formatScore = (value?: number) => {
         });
         setReviewReportId(null);
         
-        // Refresh data tanpa reload halaman - update status di reports array
-        setReports(prev => prev.map(r => {
-          const rId = r.id || r.Id;
-          if (rId === reviewReportId) {
-            return {
-              ...r,
-              status: selectedStatus,
-              Status: selectedStatus,
-              catatan: combinedNote,
-              Catatan: combinedNote,
-            };
-          }
-          return r;
-        }));
+        // Sync dengan server (sumber kebenaran status terbaru)
+        setReportRefreshKey(k => k + 1);
       }
     } catch (err: any) {
       setError(getApiErrorMessage(err, "Gagal menyimpan review"));
@@ -852,7 +841,8 @@ const formatScore = (value?: number) => {
               const jabatan = target.jabatan || target.Jabatan || (target.Karyawan as any)?.Jabatan || (target.Karyawan as any)?.jabatan || (target.Karyawan as any)?.role || "-";
               const lokasi = target.lokasi || target.Lokasi || (target.Karyawan as any)?.Lokasi || (target.Karyawan as any)?.lokasi || (target.Karyawan as any)?.lokasi_kerja || "-";
               return (
-                <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60 p-3 grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60 p-3 grid grid-cols-2 md:grid-cols-5 gap-3 text-xs">
+                  <div><p className="text-[10px] uppercase text-gray-400 font-bold">Status Saat Ini</p><p className="font-bold text-gray-800 dark:text-white">{String(target.status || target.Status || 'Draft')}</p></div>
                   <div><p className="text-[10px] uppercase text-gray-400 font-bold">Nama</p><p className="font-bold text-gray-800 dark:text-white">{nama}</p></div>
                   <div><p className="text-[10px] uppercase text-gray-400 font-bold">Divisi</p><p className="font-semibold text-gray-700 dark:text-gray-200">{divisi || "-"}</p></div>
                   <div><p className="text-[10px] uppercase text-gray-400 font-bold">Jabatan</p><p className="font-semibold text-gray-700 dark:text-gray-200">{jabatan || "-"}</p></div>
