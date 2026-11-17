@@ -8,7 +8,6 @@ interface ReportItem {
   No: number;
   Group: string;
   Kriteria: string;
-  Tipe: string;
   Realisasi: number;
   Achievement: number;
   weight_ahp?: number;
@@ -16,7 +15,10 @@ interface ReportItem {
   weight_global?: number;
   Predikat: string;
   PersentaseKeberhasilan: string;
-  Satuan: string;
+  Satuan?: string;
+  Tipe?: string;
+  jenis?: string;
+  tipe?: string;
   Target: string;
 }
 
@@ -292,7 +294,9 @@ const IndividualReportModal = ({ show, onClose, data }: IndividualReportProps) =
                   </thead>
                   <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                     {items.map((item, idx) => {
-                      const isCost = (item.Tipe || "").toLowerCase() === "cost";
+                      const tipeRaw = String((item as any).Tipe ?? (item as any).jenis ?? (item as any).tipe ?? "").toLowerCase();
+                      const isCost = tipeRaw === "cost";
+                      const tipeLabel = tipeRaw === "cost" ? "Cost" : tipeRaw === "benefit" ? "Benefit" : "-";
                       const satuan = item.Satuan || "";
                       const targetNum = toNum(item.Target);
                       const realisasiNum = toNum(item.Realisasi);
@@ -305,8 +309,8 @@ const IndividualReportModal = ({ show, onClose, data }: IndividualReportProps) =
                           <td className="px-3 py-2 font-semibold text-gray-800 dark:text-gray-100 max-w-[200px] truncate" title={item.Kriteria}>{item.Kriteria}</td>
                           <td className="px-3 py-2 text-gray-500 text-[10px]">{item.Group}</td>
                           <td className="px-3 py-2 text-center">
-                            <Badge color={isCost ? "failure" : "success"} className="text-[9px] font-bold px-2 py-0.5">
-                              {isCost ? "Cost" : "Benefit"}
+                            <Badge color={isCost ? "failure" : tipeRaw === "benefit" ? "success" : "gray"} className="text-[9px] font-bold px-2 py-0.5">
+                              {tipeLabel}
                             </Badge>
                           </td>
                           <td className="px-3 py-2 text-right font-mono tabular-nums">
