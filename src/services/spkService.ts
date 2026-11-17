@@ -95,6 +95,8 @@ export interface SpkReport {
   Predikat?: string;
   lokasi?: string;
   Lokasi?: string;
+  jabatan?: string;
+  Jabatan?: string;
   weight_ahp?: number;
   weight_group?: number;
   weight_global?: number;
@@ -290,8 +292,10 @@ const spkService = {
         PersentaseKPI: computedAchievement,
         predikat: computedPredikat,
         Predikat: computedPredikat,
-        lokasi: item.lokasi ?? item.Lokasi ?? item.Karyawan?.Lokasi ?? item.Karyawan?.lokasi ?? item.Karyawan?.lokasi_kerja ?? "",
-        Lokasi: item.Lokasi ?? item.lokasi ?? item.Karyawan?.Lokasi ?? item.Karyawan?.lokasi ?? item.Karyawan?.lokasi_kerja ?? "",
+        lokasi: item.lokasi ?? item.Lokasi ?? item.Karyawan?.Lokasi ?? item.Karyawan?.lokasi ?? item.Karyawan?.lokasi_kerja ?? item.lokasi_kerja ?? "",
+        Lokasi: item.Lokasi ?? item.lokasi ?? item.Karyawan?.Lokasi ?? item.Karyawan?.lokasi ?? item.Karyawan?.lokasi_kerja ?? item.lokasi_kerja ?? "",
+        jabatan: item.jabatan ?? item.Jabatan ?? item.Karyawan?.Jabatan ?? item.Karyawan?.jabatan ?? item.Karyawan?.role ?? item.role ?? "",
+        Jabatan: item.Jabatan ?? item.jabatan ?? item.Karyawan?.Jabatan ?? item.Karyawan?.jabatan ?? item.Karyawan?.role ?? item.role ?? "",
         weight_ahp: Number(item.weight_ahp ?? item.weightAHP ?? item.BobotAhp ?? item.bobot_ahp ?? 0),
         weight_group: Number(item.weight_group ?? item.weightGroup ?? item.bobot_group ?? 0),
         weight_global: Number(item.weight_global ?? item.weightGlobal ?? item.bobot_global ?? 0),

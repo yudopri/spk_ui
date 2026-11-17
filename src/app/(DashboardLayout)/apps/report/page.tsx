@@ -87,7 +87,7 @@ const ReportHasil = () => {
   const [reviewReportId, setReviewReportId] = useState<number | null>(null);
   const [reviewLoading, setReviewLoading] = useState(false);
   const [reviewForm, setReviewForm] = useState({
-    status: 'Reviewed' as 'Reviewed' | 'Draft' | 'Pending',
+    status: '' as '' | 'Reviewed' | 'Draft' | 'Pending',
     catatan_prestasi: '',
     catatan_indisipliner: '',
     catatan_saran: ''
@@ -141,6 +141,22 @@ const formatScore = (value?: number) => {
       render: (item: SpkReport) => {
         const divisi = item.divisi || item.Divisi || (item.Karyawan as any)?.Divisi || (item.Karyawan as any)?.divisi || "-";
         return <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-medium">{divisi || "-"}</span>;
+      },
+    },
+    {
+      header: "Jabatan",
+      cellClasses: "text-left text-xs text-gray-600 dark:text-gray-300",
+      render: (item: SpkReport) => {
+        const jabatan = item.jabatan || item.Jabatan || (item.Karyawan as any)?.Jabatan || (item.Karyawan as any)?.jabatan || (item.Karyawan as any)?.role || "-";
+        return <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-200 text-xs font-medium">{jabatan || "-"}</span>;
+      },
+    },
+    {
+      header: "Lokasi Kerja",
+      cellClasses: "text-left text-xs text-gray-600 dark:text-gray-300",
+      render: (item: SpkReport) => {
+        const lokasi = item.lokasi || item.Lokasi || (item.Karyawan as any)?.Lokasi || (item.Karyawan as any)?.lokasi || (item.Karyawan as any)?.lokasi_kerja || "-";
+        return <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-200 text-xs font-medium">{lokasi || "-"}</span>;
       },
     },
     {
@@ -224,7 +240,7 @@ const formatScore = (value?: number) => {
                 }
 
                 setReviewForm({
-                  status: (item.status as any) || (item.Status as any) || 'Reviewed',
+                  status: ((item.status || item.Status) as any) || '',
                   catatan_prestasi: p,
                   catatan_indisipliner: i,
                   catatan_saran: s
@@ -425,11 +441,16 @@ const formatScore = (value?: number) => {
       // Capture selected status BEFORE resetting form (state updates are async)
       const selectedStatus = reviewForm.status;
 
+      if (!selectedStatus) {
+        setError("Silakan pilih status review terlebih dahulu");
+        setReviewLoading(false);
+        return;
+      }
       const res = await spkService.reviewMooraResult(reviewReportId, combinedNote, selectedStatus);
       if (res.success) {
         setShowReviewModal(false);
         setReviewForm({
-            status: 'Reviewed',
+            status: '',
             catatan_prestasi: '',
             catatan_indisipliner: '',
             catatan_saran: ''
@@ -677,21 +698,16 @@ const formatScore = (value?: number) => {
               />
              
              <div className="flex gap-2 w-full md:w-auto">
-                {!isFinal && (
-                  <Tooltip content={!isManagerUI ? "Hanya Manager yang dapat mengunci snapshot" : !allReviewed ? "Semua karyawan harus direview terlebih dahulu" : "Kunci snapshot periode ini"}>
-                    <span>
-                      <Button
-                        color="success"
-                        size="sm"
-                        className="font-bold shadow-md shadow-success/20"
-                        onClick={() => handleUpdateStatus('locked')}
-                        disabled={updating || !isManagerUI || !allReviewed}
-                      >
-                        {updating ? <Spinner size="sm" className="mr-2" /> : <Icon icon="solar:lock-bold" className="mr-2 h-4 w-4" />}
-                        Kunci Periode
-                      </Button>
-                    </span>
-                  </Tooltip>
+                {!isFinal && isManagerUI && allReviewed && (
+                  <Button
+                    color="success"
+                    size="sm"
+                    onClick={() => handleUpdateStatus('locked')}
+                    disabled={updating}
+                  >
+                    {updating ? <Spinner size="sm" /> : <Icon icon="solar:check-read-linear" className="mr-2 h-4 w-4" />}
+                    Kunci Periode
+                  </Button>
                 )}
                 <Button color="dark" size="sm" className="flex items-center" onClick={handleExportSummary} disabled={!canExport}>
                     {exporting ? <Spinner size="sm" className="mr-2" /> : <Icon icon="solar:file-send-bold" className="mr-2 h-4 w-4" />}
@@ -810,6 +826,22 @@ const formatScore = (value?: number) => {
         <Modal.Header>Review Hasil Penilaian</Modal.Header>
         <Modal.Body>
           <div className="space-y-4">
+            {(() => {
+              const target = reports.find(r => Number(r.id || r.Id) === reviewReportId);
+              if (!target) return null;
+              const nama = target.nama || target.Karyawan?.name || target.Karyawan?.Nama || "-";
+              const divisi = target.divisi || target.Divisi || (target.Karyawan as any)?.Divisi || (target.Karyawan as any)?.divisi || "-";
+              const jabatan = target.jabatan || target.Jabatan || (target.Karyawan as any)?.Jabatan || (target.Karyawan as any)?.jabatan || (target.Karyawan as any)?.role || "-";
+              const lokasi = target.lokasi || target.Lokasi || (target.Karyawan as any)?.Lokasi || (target.Karyawan as any)?.lokasi || (target.Karyawan as any)?.lokasi_kerja || "-";
+              return (
+                <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60 p-3 grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                  <div><p className="text-[10px] uppercase text-gray-400 font-bold">Nama</p><p className="font-bold text-gray-800 dark:text-white">{nama}</p></div>
+                  <div><p className="text-[10px] uppercase text-gray-400 font-bold">Divisi</p><p className="font-semibold text-gray-700 dark:text-gray-200">{divisi || "-"}</p></div>
+                  <div><p className="text-[10px] uppercase text-gray-400 font-bold">Jabatan</p><p className="font-semibold text-gray-700 dark:text-gray-200">{jabatan || "-"}</p></div>
+                  <div><p className="text-[10px] uppercase text-gray-400 font-bold">Lokasi Kerja</p><p className="font-semibold text-gray-700 dark:text-gray-200">{lokasi || "-"}</p></div>
+                </div>
+              );
+            })()}
             <div>
               <Label value="Keputusan Review" />
               <Select 
@@ -859,7 +891,7 @@ const formatScore = (value?: number) => {
           </div>
         </Modal.Body>
         <Modal.Footer>
-          <Button color="primary" onClick={handleReview} disabled={reviewLoading}>
+          <Button color="primary" onClick={handleReview} disabled={reviewLoading || !reviewForm.status}>
             {reviewLoading ? <Spinner size="sm" /> : "Simpan"}
           </Button>
           <Button color="gray" onClick={() => setShowReviewModal(false)}>Batal</Button>
