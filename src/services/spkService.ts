@@ -81,6 +81,7 @@ export interface SpkReport {
   nilai_akhir?: number;
   rank?: number;
   nik?: string;
+  KaryawanId?: number;
   Status?: string;
   status?: string;
   divisi?: string;
@@ -276,6 +277,7 @@ const spkService = {
           .find((value) => Number.isFinite(value) && value !== 0) ?? 0;
 
         return {
+        KaryawanId: Number(item.KaryawanId ?? item.karyawan_id ?? item.Karyawan?.id ?? item.Karyawan?.Id ?? 0),
         id: Number(item.id ?? item.Id ?? item.karyawan_id ?? 0),
         rank: Number(item.rank ?? item.Ranking ?? item.ranking ?? 0),
         nama: item.nama || item.name || item.Karyawan?.Nama || item.Karyawan?.name || (item.KaryawanId ? `Karyawan #${item.KaryawanId}` : "Tanpa Nama"),

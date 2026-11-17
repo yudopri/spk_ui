@@ -279,7 +279,7 @@ const formatScore = (value?: number) => {
     },
   ];
 
-  const getReportRowId = (item: SpkReport) => Number(item.Karyawan?.id || item.Karyawan?.Id || item.id || item.Id || 0);
+  const getReportRowId = (item: SpkReport) => Number(item.KaryawanId || item.Karyawan?.id || item.Karyawan?.Id || 0);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -386,7 +386,24 @@ const formatScore = (value?: number) => {
       const res = await spkService.getIndividualReport(selectedPeriodeId, karyawanId);
       // res is already the full API response {success, title, columns, data, metadata, kesimpulan}
       if (res?.success && res?.metadata && res?.kesimpulan) {
-        setIndividualData(res);
+        const target = reports.find(r => Number(r.KaryawanId || r.Karyawan?.id || r.Karyawan?.Id || 0) === karyawanId);
+        const k: any = target?.Karyawan || {};
+        const divisi = target?.divisi || target?.Divisi || k?.departemen || k?.Divisi || k?.divisi || "";
+        const jabatan = target?.jabatan || target?.Jabatan || k?.jabatan || k?.Jabatan || k?.role || "";
+        const lokasi = target?.lokasi || target?.Lokasi || k?.lokasi_kerja || k?.lokasi || k?.Lokasi || "";
+        const nama = res.metadata.Nama || target?.nama || k?.name || k?.Nama || "";
+        const nik = res.metadata.NIK || target?.nik || k?.nik || k?.Nik || "";
+        setIndividualData({
+          ...res,
+          metadata: {
+            ...res.metadata,
+            Nama: nama,
+            NIK: nik,
+            Divisi: res.metadata.Divisi || res.metadata.departemen || divisi || "-",
+            Jabatan: res.metadata.Jabatan || res.metadata.jabatan || jabatan || "-",
+            Lokasi: res.metadata.Lokasi || res.metadata.lokasi || res.metadata.lokasi_kerja || lokasi || "-",
+          },
+        });
         setShowPrintModal(true);
       } else {
         setReportError(res?.message || "Gagal mengambil data laporan individual");
