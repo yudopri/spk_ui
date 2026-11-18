@@ -46,9 +46,9 @@
 
   .dark body {
     background:
-      radial-gradient(circle at 12% -10%, rgba(47, 157, 143, 0.15), transparent 35%),
-      radial-gradient(circle at 95% 5%, rgba(31, 79, 120, 0.15), transparent 30%),
-      linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+      radial-gradient(circle at 12% -10%, rgba(47, 157, 143, 0.18), transparent 35%),
+      radial-gradient(circle at 95% 5%, rgba(31, 79, 120, 0.22), transparent 30%),
+      linear-gradient(180deg, #0b1220 0%, #141f31 100%);
   }
 
   .dropdown {

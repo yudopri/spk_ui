@@ -10,7 +10,7 @@
 .menu-sidebar {
     height: 100%;
     width: 240px !important;
-    background: var(--bs-white);
+    background: var(--color-surface-ld);
     top: 0;
     left: 0;
     transition: left .4s ease-in-out;

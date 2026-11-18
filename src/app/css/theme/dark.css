@@ -1,13 +1,26 @@
+.dark {
+    --color-surface-ld: #1e293b;
+    --color-dark: #1e293b;
+    --color-darkgray: #141f31;
+    --color-darkmuted: #263449;
+    --color-darkborder: #2d3c55;
+    --color-darklink: #1c2942;
+    --color-sky: #182338;
+
+    --color-bodytext: #94a9c0;
+    --color-border: #2d3c55;
+    --color-bordergray: #22304a;
+    --color-muted: #22304a;
+    --color-lightgray: #182338;
+    --color-lighthover: #263449;
+}
+
 .dark .sidebar-nav .caption {
     border-top: 1px solid var(--color-darkborder);
 }
 
 .dark .sidebar-nav .caption.first-caption {
     border-top: 0 !important;
-}
-
-.dark:root {
-    --color-surface-ld: #1A2537;
 }
 
 .dark .timeline-tabs .timeline .timeline-icon:after {
@@ -86,4 +99,30 @@
 /* For input Date */
 .dark ::-webkit-calendar-picker-indicator {
     filter: invert(1);
+}
+
+/* Native selects & options */
+.dark select option {
+    background-color: var(--color-darkgray);
+    color: var(--color-white);
+}
+
+/* Tables: softer row dividers & hover */
+.dark table thead th {
+    color: var(--color-white);
+}
+
+/* Scrollbars */
+.dark ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.dark ::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+    background-color: var(--color-darkborder);
+    border-radius: 8px;
 }
