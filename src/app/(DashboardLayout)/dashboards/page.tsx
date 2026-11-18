@@ -23,10 +23,9 @@ const statusConfig: Record<string, { label: string; color: string; bg: string; i
 };
 
 const scoreRanges = [
-  { label: "Sangat Baik", min: 80, max: 100, color: "bg-emerald-500", textColor: "text-emerald-600" },
-  { label: "Baik",        min: 60, max: 79.99, color: "bg-blue-500", textColor: "text-blue-600" },
-  { label: "Cukup",       min: 40, max: 59.99, color: "bg-amber-500", textColor: "text-amber-600" },
-  { label: "Kurang",      min: 0,  max: 39.99, color: "bg-red-500", textColor: "text-red-600" },
+  { label: "Sangat Baik", color: "bg-emerald-500", textColor: "text-emerald-600", hint: "10% teratas" },
+  { label: "Baik",        color: "bg-blue-500", textColor: "text-blue-600", hint: "60% tengah" },
+  { label: "Kurang",      color: "bg-rose-500", textColor: "text-rose-600", hint: "30% bawah" },
 ];
 
 function formatDate(date: Date) {
@@ -220,14 +219,18 @@ const DashboardPage = () => {
     return ((lockedReportCount - prevLockedReportCount) / prevLockedReportCount) * 100;
   }, [lockedReportCount, prevLockedReportCount]);
 
-  // ── Computed: Score Distribution ──
+  // ── Computed: Score Distribution by rank position (10% / 60% / 30%) ──
   const scoreDistribution = useMemo(() => {
-    return scoreRanges.map((range) => {
-      const count = allReportItems.filter((item) => {
-        const raw = item.persentase_kpi ?? item.PersentaseKPI ?? 0;
-        const score = raw <= 1 ? raw * 100 : raw;
-        return score >= range.min && score <= range.max;
-      }).length;
+    const n = allReportItems.length;
+    return scoreRanges.map((range, idx) => {
+      let count = 0;
+      if (n > 0) {
+        const sbCut = Math.max(1, Math.floor(n * 0.1));
+        const baikCut = Math.max(sbCut, Math.floor(n * 0.7));
+        if (idx === 0) count = Math.min(sbCut, n);
+        else if (idx === 1) count = Math.max(0, baikCut - sbCut);
+        else count = Math.max(0, n - baikCut);
+      }
       return { ...range, count };
     });
   }, [allReportItems]);
@@ -561,7 +564,7 @@ const DashboardPage = () => {
                         <div className="flex items-center gap-2">
                           <div className={`w-2.5 h-2.5 rounded-full ${range.color}`} />
                           <span className="text-sm font-medium text-gray-800 dark:text-gray-200">{range.label}</span>
-                          <span className="text-[11px] text-slate-400">({range.min}–{range.max})</span>
+                          <span className="text-[11px] text-slate-400">({range.hint})</span>
                         </div>
                         <div className="text-right flex items-center gap-2">
                           <span className="text-sm font-bold text-gray-900 dark:text-white tabular-nums">{range.count}</span>

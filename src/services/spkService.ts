@@ -257,11 +257,9 @@ const spkService = {
 
         // Derive predikat from achievement percentage
         const derivePredikat = (pct: number): string => {
-          if (pct >= 90) return "Sangat Baik";
-          if (pct >= 80) return "Baik";
-          if (pct >= 70) return "Cukup";
-          if (pct >= 60) return "Kurang";
-          return "Sangat Kurang";
+          if (pct >= 80) return "Sangat Baik";
+          if (pct >= 60) return "Baik";
+          return "Kurang";
         };
         const computedPredikat = item.predikat ?? item.Predikat ?? (computedAchievement > 0 ? derivePredikat(computedAchievement) : "");
         const snapshotScore = [

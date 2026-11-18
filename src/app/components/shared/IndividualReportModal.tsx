@@ -2,6 +2,7 @@
 import React, { useMemo } from "react";
 import { Modal, Badge, Button } from "flowbite-react";
 import { Icon } from "@iconify/react";
+import { getPredikatByRank } from "@/utils/predikat";
 
 /* --- Types --- */
 interface ReportItem {
@@ -25,6 +26,8 @@ interface ReportItem {
 interface IndividualReportProps {
   show: boolean;
   onClose: () => void;
+  /** Total karyawan yang diranking pada periode ini (untuk predikat peringkat) */
+  totalParticipants?: number;
   data: {
     title?: string;
     columns?: string[];
@@ -54,6 +57,21 @@ interface IndividualReportProps {
 }
 
 /* --- Helpers --- */
+/** Predikat by rank position: top 10% Sangat Baik, next 60% Baik, rest Kurang */
+const getPredikatByRankStyle = (rankingRaw: any, total: number): {
+  label: string;
+  bsColor: "emerald" | "blue" | "rose";
+  bgClass: string;
+  textClass: string;
+  dotColor: string;
+  barColor: string;
+} => {
+  const label = getPredikatByRank(Number(rankingRaw) || 0, total);
+  if (label === "Sangat Baik") return { label, bsColor: "emerald", bgClass: "bg-emerald-100 dark:bg-emerald-900/30", textClass: "text-emerald-700 dark:text-emerald-400", dotColor: "bg-emerald-500", barColor: "bg-emerald-500" };
+  if (label === "Baik") return { label, bsColor: "blue", bgClass: "bg-blue-100 dark:bg-blue-900/30", textClass: "text-blue-700 dark:text-blue-400", dotColor: "bg-blue-500", barColor: "bg-blue-500" };
+  return { label, bsColor: "rose", bgClass: "bg-rose-100 dark:bg-rose-900/30", textClass: "text-rose-700 dark:text-rose-400", dotColor: "bg-rose-500", barColor: "bg-rose-500" };
+};
+
 const getPredikatByPct = (pct: number): {
   label: string;
   bsColor: "emerald" | "blue" | "amber" | "orange" | "rose";
@@ -62,11 +80,9 @@ const getPredikatByPct = (pct: number): {
   dotColor: string;
   barColor: string;
 } => {
-  if (pct >= 90) return { label: "Sangat Baik", bsColor: "emerald", bgClass: "bg-emerald-100 dark:bg-emerald-900/30", textClass: "text-emerald-700 dark:text-emerald-400", dotColor: "bg-emerald-500", barColor: "bg-emerald-500" };
-  if (pct >= 80) return { label: "Baik", bsColor: "blue", bgClass: "bg-blue-100 dark:bg-blue-900/30", textClass: "text-blue-700 dark:text-blue-400", dotColor: "bg-blue-500", barColor: "bg-blue-500" };
-  if (pct >= 70) return { label: "Cukup", bsColor: "amber", bgClass: "bg-amber-100 dark:bg-amber-900/30", textClass: "text-amber-700 dark:text-amber-400", dotColor: "bg-amber-500", barColor: "bg-amber-500" };
-  if (pct >= 60) return { label: "Kurang", bsColor: "orange", bgClass: "bg-orange-100 dark:bg-orange-900/30", textClass: "text-orange-700 dark:text-orange-400", dotColor: "bg-orange-500", barColor: "bg-orange-500" };
-  return { label: "Sangat Kurang", bsColor: "rose", bgClass: "bg-rose-100 dark:bg-rose-900/30", textClass: "text-rose-700 dark:text-rose-400", dotColor: "bg-rose-500", barColor: "bg-rose-500" };
+  if (pct >= 80) return { label: "Sangat Baik", bsColor: "emerald", bgClass: "bg-emerald-100 dark:bg-emerald-900/30", textClass: "text-emerald-700 dark:text-emerald-400", dotColor: "bg-emerald-500", barColor: "bg-emerald-500" };
+  if (pct >= 60) return { label: "Baik", bsColor: "blue", bgClass: "bg-blue-100 dark:bg-blue-900/30", textClass: "text-blue-700 dark:text-blue-400", dotColor: "bg-blue-500", barColor: "bg-blue-500" };
+  return { label: "Kurang", bsColor: "rose", bgClass: "bg-rose-100 dark:bg-rose-900/30", textClass: "text-rose-700 dark:text-rose-400", dotColor: "bg-rose-500", barColor: "bg-rose-500" };
 };
 
 const formatCurrency = (value: string | number): string => {
@@ -99,7 +115,7 @@ const groupByGroup = (items: ReportItem[]): { name: string; items: ReportItem[] 
 };
 
 /* --- Component --- */
-const IndividualReportModal = ({ show, onClose, data }: IndividualReportProps) => {
+const IndividualReportModal = ({ show, onClose, data, totalParticipants }: IndividualReportProps) => {
   if (!data || !data.kesimpulan) return null;
 
   const items = data.data || [];
@@ -111,14 +127,9 @@ const IndividualReportModal = ({ show, onClose, data }: IndividualReportProps) =
   const yiValue = skorRaw > 0 && skorRaw <= 1 ? skorRaw : (skorRaw > 1 ? skorRaw / 100 : 0);
 
   // Compute average achievement from item data for predikat
-  const avgAchievement = items.length > 0
-    ? items.reduce((sum, item) => sum + Math.min(item.Achievement, 150), 0) / items.length
-    : 0;
-  const score = Number(avgAchievement.toFixed(2));
-
   const ranking = data.kesimpulan.Ranking;
   const status = data.kesimpulan.Status || data.metadata.Status || "Processed";
-  const predikat = getPredikatByPct(score);
+  const predikat = getPredikatByRankStyle(data.kesimpulan.Ranking, totalParticipants ?? 0);
 
   const totalKPI = items.length;
 

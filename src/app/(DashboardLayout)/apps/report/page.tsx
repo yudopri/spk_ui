@@ -11,6 +11,7 @@ import karyawanService from "@/services/karyawanService";
 import kpiService from "@/services/kpiService";
 import { usePermission } from "@/hooks/usePermission";
 import IndividualReportModal from "@/app/components/shared/IndividualReportModal";
+import { getPredikatByRank } from "@/utils/predikat";
 import { isManagerRole } from "@/utils/accessControl";
 
 // Shared Components
@@ -175,7 +176,7 @@ const formatScore = (value?: number) => {
       cellClasses: "text-center",
       render: (item: SpkReport) => {
         const pct = Number(item.achievement ?? item.Achievement ?? item.persentase_kpi ?? item.PersentaseKPI ?? 0);
-        const predikat = getPredikat(pct);
+        const predikat = getPredikat(pct, getRankValue(item));
         return (
           <div className="flex flex-col items-center gap-1">
             <span className="font-black text-sm tabular-nums">{pct > 0 ? pct.toFixed(1) + "%" : "-"}</span>
@@ -192,7 +193,7 @@ const formatScore = (value?: number) => {
       cellClasses: "text-center",
       render: (item: SpkReport) => {
         const pct = Number(item.achievement ?? item.Achievement ?? item.persentase_kpi ?? item.PersentaseKPI ?? 0);
-        const predikat = getPredikat(pct);
+        const predikat = getPredikat(pct, getRankValue(item));
         return <Badge color={predikat.bsColor} className="text-[10px] font-bold px-2.5 py-1">{predikat.label}</Badge>;
       },
     },
@@ -608,12 +609,11 @@ const formatScore = (value?: number) => {
 
   const bestEmployee = chartReports.length > 0 ? chartReports[0] : null;
 
-  const getPredikat = (pct: number) => {
-    if (pct >= 90) return { label: "Sangat Baik", bsColor: "success" as const, barColor: "bg-emerald-500" };
-    if (pct >= 80) return { label: "Baik", bsColor: "info" as const, barColor: "bg-blue-500" };
-    if (pct >= 70) return { label: "Cukup", bsColor: "warning" as const, barColor: "bg-amber-500" };
-    if (pct >= 60) return { label: "Kurang", bsColor: "failure" as const, barColor: "bg-orange-500" };
-    return { label: "Sangat Kurang", bsColor: "failure" as const, barColor: "bg-rose-500" };
+  const getPredikat = (_pct: number, rank?: number) => {
+    const label = getPredikatByRank(rank ?? 0, totalReports);
+    if (label === "Sangat Baik") return { label, bsColor: "success" as const, barColor: "bg-emerald-500" };
+    if (label === "Baik") return { label, bsColor: "info" as const, barColor: "bg-blue-500" };
+    return { label, bsColor: "failure" as const, barColor: "bg-rose-500" };
   };
 
   const canExport = selectedPeriodeId > 0 && isFinal;
@@ -926,6 +926,7 @@ const formatScore = (value?: number) => {
           show={showPrintModal}
           onClose={() => setShowPrintModal(false)}
           data={individualData}
+          totalParticipants={totalReports}
         />
       )}
     </div>
