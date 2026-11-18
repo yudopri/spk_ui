@@ -24,6 +24,9 @@ const DataFilter: React.FC<DataFilterProps> = ({
   placeholder = "Semua",
   className = "w-full md:w-48",
 }) => {
+  const exists = options.some((o) => String(o.value) === String(value));
+  const normalized = exists ? String(value) : "";
+
   return (
     <div className={className}>
       {label && (
@@ -31,7 +34,7 @@ const DataFilter: React.FC<DataFilterProps> = ({
           <Label value={label} />
         </div>
       )}
-      <Select value={String(value ?? "")} onChange={(e) => onChange(e.target.value)} sizing="md">
+      <Select value={normalized} onChange={(e) => onChange(e.target.value)} sizing="md">
         <option value="" disabled>{placeholder}</option>
         {options.map((opt) => (
           <option key={String(opt.value)} value={opt.value}>
