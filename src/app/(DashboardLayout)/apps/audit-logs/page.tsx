@@ -59,7 +59,7 @@ const AuditLogsPage = () => {
   return (
     <PermissionGuard permission="user_manage">
       <div className="flex flex-col gap-6">
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm">
+        <div className="bg-white dark:bg-darkgray p-4 rounded-xl shadow-sm">
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <Icon icon="solar:history-bold-duotone" className="text-primary" />
             Catatan Aktivitas Sistem

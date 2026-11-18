@@ -189,7 +189,7 @@ const RolePage = () => {
 
     return (
         <div className="flex flex-col gap-6">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white dark:bg-darkgray p-4 rounded-xl shadow-sm">
                 <div>
                     <h1 className="text-2xl font-bold flex items-center gap-2">
                         <Icon icon="solar:user-rounded-bold-duotone" className="text-primary" />
@@ -239,7 +239,7 @@ const RolePage = () => {
                         </div>
                     ) : detailRole ? (
                         <div className="space-y-4">
-                            <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                            <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-darkmuted rounded-lg">
                                 <Icon icon="solar:shield-user-bold" className="text-primary text-2xl" />
                                 <div>
                                     <p className="font-bold text-lg">{detailRole.role_name}</p>
@@ -272,7 +272,7 @@ const RolePage = () => {
                                                 className={`flex items-center gap-2 p-2 rounded border transition-colors ${
                                                     isAssigned
                                                         ? "bg-primary/5 border-primary/30"
-                                                        : "bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-600"
+                                                        : "bg-white dark:bg-darkgray border-gray-100 dark:border-darkborder"
                                                 }`}
                                             >
                                                 <Checkbox

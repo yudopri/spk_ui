@@ -117,7 +117,7 @@ export default function EmployeeFilters({
 
       {/* Mobile advanced filters - collapsible */}
       {showAdvanced && (
-        <div className="md:hidden flex flex-col gap-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-ld">
+        <div className="md:hidden flex flex-col gap-3 p-3 bg-gray-50 dark:bg-darkmuted rounded-lg border border-ld">
           <div>
             <Label className="mb-1 block text-xs">Divisi</Label>
             <Select sizing="sm" value={selectedDivisi} onChange={(e) => onDivisiChange(e.target.value)}>

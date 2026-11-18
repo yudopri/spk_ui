@@ -222,7 +222,7 @@ const PenilaianKaryawan = () => {
   return (
     <div className="flex flex-col gap-6">
       {/* Stepper Progress Tracker */}
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm">
+      <div className="bg-white dark:bg-darkgray p-6 rounded-xl shadow-sm">
         <div className="flex items-center justify-between max-w-4xl mx-auto overflow-x-auto gap-4">
           {[
             { step: 1, label: "Master KPI", icon: "solar:settings-bold" },
@@ -251,7 +251,7 @@ const PenilaianKaryawan = () => {
         </div>
       </div>
 
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm gap-4">
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center bg-white dark:bg-darkgray p-4 rounded-xl shadow-sm gap-4">
         <div>
           <h1 className="text-2xl font-bold">Penilaian Karyawan</h1>
           <p className="text-sm text-gray-500">Pilih departemen dan periode untuk memulai penilaian</p>
@@ -285,7 +285,7 @@ const PenilaianKaryawan = () => {
               placeholder="Semua Lokasi"
               className="w-full md:w-36"
             />
-            <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-700/50 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 h-[42px]">
+            <div className="flex items-center gap-2 bg-gray-50 dark:bg-darkmuted px-3 py-2 rounded-lg border border-gray-200 dark:border-darkborder h-[42px]">
               <Checkbox 
                 id="includeManagement" 
                 checked={includeManagement} 

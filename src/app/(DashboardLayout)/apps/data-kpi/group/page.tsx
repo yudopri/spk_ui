@@ -91,7 +91,7 @@ const KPIGroupPage = () => {
 
     return (
         <div className="flex flex-col gap-6">
-            <div className="flex flex-col md:flex-row justify-between items-center bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm gap-4">
+            <div className="flex flex-col md:flex-row justify-between items-center bg-white dark:bg-darkgray p-4 rounded-xl shadow-sm gap-4">
                 <div>
                     <h1 className="text-2xl font-bold">KPI Groups (Level 1)</h1>
                     <p className="text-sm text-gray-500">Struktur Hierarki Penilaian Kinerja</p>
@@ -138,7 +138,7 @@ const KPIGroupPage = () => {
                         <Table.Row><Table.Cell colSpan={2} className="text-center py-10"><Spinner /></Table.Cell></Table.Row>
                     ) : (groups || []).length > 0 ? (groups || []).map((group) => (
                             <Table.Row key={group.Id || group.id} className="bg-white dark:bg-darkgray">
-                                <Table.Cell className="font-bold text-gray-900">{group.NamaGroup}</Table.Cell>
+                                <Table.Cell className="font-bold text-gray-900 dark:text-white">{group.NamaGroup}</Table.Cell>
                                 <Table.Cell className="text-center">
                                     <div className="flex justify-center gap-2">
                                         <Button

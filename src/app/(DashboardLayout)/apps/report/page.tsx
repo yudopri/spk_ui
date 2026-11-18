@@ -630,7 +630,7 @@ const formatScore = (value?: number) => {
   return (
     <div className="flex flex-col gap-6">
       {/* Stepper for Laporan */}
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm">
+      <div className="bg-white dark:bg-darkgray p-6 rounded-xl shadow-sm">
         <div className="flex items-center justify-between max-w-4xl mx-auto overflow-x-auto gap-4">
           {[ 
             { step: 1, label: "Grup KPI", icon: "solar:settings-bold" },
@@ -659,7 +659,7 @@ const formatScore = (value?: number) => {
         </div>
       </div>
 
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm gap-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white dark:bg-darkgray p-4 rounded-xl shadow-sm gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Ranking Kinerja Karyawan</h1>
           <p className="text-sm text-gray-500">Hasil perhitungan penilaian kinerja per periode</p>
@@ -842,7 +842,7 @@ const formatScore = (value?: number) => {
               const jabatan = target.jabatan || target.Jabatan || (target.Karyawan as any)?.Jabatan || (target.Karyawan as any)?.jabatan || (target.Karyawan as any)?.role || "-";
               const lokasi = target.lokasi || target.Lokasi || (target.Karyawan as any)?.Lokasi || (target.Karyawan as any)?.lokasi || (target.Karyawan as any)?.lokasi_kerja || "-";
               return (
-                <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60 p-3 grid grid-cols-2 md:grid-cols-5 gap-3 text-xs">
+                <div className="rounded-lg border border-gray-200 dark:border-darkborder bg-gray-50 dark:bg-darkmuted p-3 grid grid-cols-2 md:grid-cols-5 gap-3 text-xs">
                   <div><p className="text-[10px] uppercase text-gray-400 font-bold">Status Saat Ini</p><p className="font-bold text-gray-800 dark:text-white">{String(target.status || target.Status || 'Draft')}</p></div>
                   <div><p className="text-[10px] uppercase text-gray-400 font-bold">Nama</p><p className="font-bold text-gray-800 dark:text-white">{nama}</p></div>
                   <div><p className="text-[10px] uppercase text-gray-400 font-bold">Divisi</p><p className="font-semibold text-gray-700 dark:text-gray-200">{divisi || "-"}</p></div>

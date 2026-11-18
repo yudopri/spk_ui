@@ -143,7 +143,7 @@ const customTheme = {
       popup: "border-b-0 p-2",
       title: "text-xl font-semibold text-dark dark:text-white leading-[normal]",
       close: {
-        base: "ltr:ml-auto rtl:mr-auto items-center rounded-lg bg-transparent p-1.5 text-sm text-gray-400 hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-gray-600 dark:hover:text-white",
+        base: "ltr:ml-auto rtl:mr-auto items-center rounded-lg bg-transparent p-1.5 text-sm text-gray-400 hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-darkmuted dark:hover:text-white",
         icon: "h-5 w-5",
       },
     },
@@ -208,12 +208,12 @@ const customTheme = {
       base: "group/row bg-transparent ",
       hovered: "bg-hover dark:bg-transparent",
       striped:
-        "odd:bg-transparent  even:bg-gray-50 odd:dark:bg-dark even:dark:bg-gray-700",
+        "odd:bg-transparent  even:bg-gray-50 odd:dark:bg-dark even:dark:bg-darkmuted",
     },
   },
 
   progress: {
-    base: "w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700",
+    base: "w-full overflow-hidden rounded-full bg-gray-200 dark:bg-darkmuted",
     label: "mb-1 flex justify-between font-medium dark:text-white",
     bar: "space-x-2 rounded-full text-center font-medium leading-none text-cyan-300 dark:text-cyan-100",
     color: {
@@ -310,11 +310,11 @@ const customTheme = {
     tablist: {
       base: "flex text-center",
       styles: {
-        default: "flex-wrap border-b border-ld dark:border-gray-700",
-        underline: "-mb-px flex-wrap border-b border-ld dark:border-gray-700 ",
+        default: "flex-wrap border-b border-ld dark:border-darkborder",
+        underline: "-mb-px flex-wrap border-b border-ld dark:border-darkborder ",
         pills: "flex-wrap space-x-2 text-sm  text-gray-500 dark:text-gray-400 ",
         fullWidth:
-          "grid w-full grid-flow-col divide-x divide-gray-200 rounded-none text-sm  shadow dark:divide-gray-700 dark:text-gray-400",
+          "grid w-full grid-flow-col divide-x divide-gray-200 rounded-none text-sm  shadow dark:divide-darkborder dark:text-gray-400",
       },
       tabitem: {
         base: "flex items-center gap-2 justify-center rounded-t-lg p-4 text-sm  first:ml-0 focus:outline-none focus:ring-0 disabled:cursor-not-allowed disabled:text-gray-400 disabled:dark:text-gray-500",
@@ -323,7 +323,7 @@ const customTheme = {
             base: "rounded-t-lg",
             active: {
               on: "bg-lightprimary text-primary ",
-              off: "text-gray-500 hover:bg-gray-50 hover:text-gray-600 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-300",
+              off: "text-gray-500 hover:bg-gray-50 hover:text-gray-600 dark:text-gray-400 dark:hover:bg-darkmuted dark:hover:text-gray-300",
             },
           },
           underline: {
@@ -337,14 +337,14 @@ const customTheme = {
             base: "rounded-t-lg",
             active: {
               on: "rounded-lg bg-cyan-600 text-white",
-              off: "rounded-lg hover:bg-lightprimary hover:text-gray-900 dark:hover:bg-gray-800 dark:hover:text-white",
+              off: "rounded-lg hover:bg-lightprimary hover:text-gray-900 dark:hover:bg-darkmuted dark:hover:text-white",
             },
           },
           fullWidth: {
             base: "ml-0 flex w-full  first:ml-0 ",
             active: {
               on: " active text-primary  bg-lightprimary p-4 ",
-              off: "bg-white dark:bg-dark hover:bg-lightprimary hover:text-primary dark:hover:bg-gray-800 ",
+              off: "bg-white dark:bg-dark hover:bg-lightprimary hover:text-primary dark:hover:bg-darkmuted ",
             },
           },
         },
@@ -460,7 +460,7 @@ const customTheme = {
       base: "relative rounded-full border after:absolute after:rounded-full after:bg-white after:transition-all group-focus:ring-0 group-focus:ring-0",
       checked: {
         on: "after:translate-x-full after:border-white rtl:after:-translate-x-full",
-        off: "border-ld bg-gray-200 dark:border-gray-600 dark:bg-gray-700",
+        off: "border-ld bg-gray-200 dark:border-darkborder dark:bg-darkmuted",
         color: {
           blue: "border-primary bg-primary",
         },
@@ -475,7 +475,7 @@ const customTheme = {
 
   hr: {
     root: {
-      base: "my-8 h-px border-0 bg-gray-200 dark:bg-gray-700",
+      base: "my-8 h-px border-0 bg-gray-200 dark:bg-darkmuted",
     },
     text: {
       base: "inline-flex relative w-full items-center justify-center",
@@ -493,7 +493,7 @@ const customTheme = {
         base: "absolute top-10 z-50 block pt-2",
         inline: "relative top-0 z-auto",
         inner:
-          "inline-block rounded-lg bg-white p-4 shadow-lg dark:bg-gray-700",
+          "inline-block rounded-lg bg-white p-4 shadow-lg dark:bg-darkmuted",
       },
       header: {
         base: "",
@@ -502,7 +502,7 @@ const customTheme = {
         selectors: {
           base: "mb-2 flex justify-between",
           button: {
-            base: "rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600",
+            base: "rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:bg-darkmuted dark:text-white dark:hover:bg-darkmuted",
             prev: "",
             next: "",
             view: "",
@@ -519,7 +519,7 @@ const customTheme = {
           today:
             "bg-primary text-white hover:bg-primaryemphasis dark:bg-primary dark:hover:bg-primaryemphasis",
           clear:
-            "border border-gray-300 bg-white text-gray-900 hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600",
+            "border border-gray-300 bg-white text-gray-900 hover:bg-gray-100 dark:border-darkborder dark:bg-darkmuted dark:text-white dark:hover:bg-darkmuted",
         },
       },
     },
@@ -533,7 +533,7 @@ const customTheme = {
         items: {
           base: "grid w-64 grid-cols-7",
           item: {
-            base: "block flex-1 cursor-pointer rounded-lg border-0 text-center text-sm font-semibold leading-9 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-600",
+            base: "block flex-1 cursor-pointer rounded-lg border-0 text-center text-sm font-semibold leading-9 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-darkmuted",
             selected: "bg-primary text-white hover:bg-primaryemphasis",
             disabled: "text-gray-500",
           },
@@ -543,7 +543,7 @@ const customTheme = {
         items: {
           base: "grid w-64 grid-cols-4",
           item: {
-            base: "block flex-1 cursor-pointer rounded-lg border-0 text-center text-sm font-semibold leading-9 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-600",
+            base: "block flex-1 cursor-pointer rounded-lg border-0 text-center text-sm font-semibold leading-9 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-darkmuted",
             selected: "bg-primary text-white hover:bg-primaryemphasis",
             disabled: "text-gray-500",
           },
@@ -553,7 +553,7 @@ const customTheme = {
         items: {
           base: "grid w-64 grid-cols-4",
           item: {
-            base: "block flex-1 cursor-pointer rounded-lg border-0 text-center text-sm font-semibold leading-9 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-600",
+            base: "block flex-1 cursor-pointer rounded-lg border-0 text-center text-sm font-semibold leading-9 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-darkmuted",
             selected: "bg-primary text-white hover:bg-primaryemphasis",
             disabled: "text-gray-500",
           },
@@ -563,7 +563,7 @@ const customTheme = {
         items: {
           base: "grid w-64 grid-cols-4",
           item: {
-            base: "block flex-1 cursor-pointer rounded-lg border-0 text-center text-sm font-semibold leading-9 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-600",
+            base: "block flex-1 cursor-pointer rounded-lg border-0 text-center text-sm font-semibold leading-9 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-darkmuted",
             selected: "bg-primary text-white hover:bg-primaryemphasis",
             disabled: "text-gray-500",
           },
@@ -573,10 +573,10 @@ const customTheme = {
   },
 
   popover: {
-    base: "absolute z-20 inline-block w-max max-w-[100vw] bg-white rounded-lg outline-none shadow-sm dark:border-gray-600 dark:bg-gray-800",
+    base: "absolute z-20 inline-block w-max max-w-[100vw] bg-white rounded-lg outline-none shadow-sm dark:border-darkborder dark:bg-darkgray",
     content: "z-10 overflow-hidden rounded-[7px]",
     arrow: {
-      base: "absolute h-2 w-2 z-0 rotate-45 rounded-md mix-blend-lighten bg-white border border-ld dark:border-gray-600 dark:bg-gray-800 dark:mix-blend-color",
+      base: "absolute h-2 w-2 z-0 rotate-45 rounded-md mix-blend-lighten bg-white border border-ld dark:border-darkborder dark:bg-darkgray dark:mix-blend-color",
       placement: "-4px rounded-md",
     },
   },
@@ -613,7 +613,7 @@ const customTheme = {
     root: {
       direction: {
         horizontal: "sm:flex",
-        vertical: "relative border-l border-ld dark:border-gray-700",
+        vertical: "relative border-l border-ld dark:border-darkborder",
       },
     },
     item: {
@@ -639,13 +639,13 @@ const customTheme = {
       },
       point: {
         horizontal: "flex items-center",
-        line: "hidden h-0.5 w-full bg-gray-200 dark:bg-gray-700 sm:flex",
+        line: "hidden h-0.5 w-full bg-gray-200 dark:bg-darkmuted sm:flex",
         marker: {
           base: {
             horizontal:
-              "absolute -left-1.5 h-3 w-3 rounded-full border border-white bg-gray-200 dark:border-gray-900 dark:bg-gray-700",
+              "absolute -left-1.5 h-3 w-3 rounded-full border border-white bg-gray-200 dark:border-gray-900 dark:bg-darkmuted",
             vertical:
-              "absolute -left-1.5 mt-1.5 h-3 w-3 rounded-full border border-white bg-gray-200 dark:border-gray-900 dark:bg-gray-700",
+              "absolute -left-1.5 mt-1.5 h-3 w-3 rounded-full border border-white bg-gray-200 dark:border-gray-900 dark:bg-darkmuted",
           },
           icon: {
             base: "h-3 w-3 text-cyan-600 dark:text-cyan-300",
@@ -660,15 +660,15 @@ const customTheme = {
 
   listGroup: {
     root: {
-      base: "list-none rounded-lg border border-gray-200 bg-white text-left text-sm font-medium text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white",
+      base: "list-none rounded-lg border border-gray-200 bg-white text-left text-sm font-medium text-gray-900 dark:border-darkborder dark:bg-darkmuted dark:text-white",
     },
     item: {
       base: "[&>*]:first:rounded-t-lg [&>*]:last:rounded-b-lg [&>*]:last:border-b-0",
       link: {
-        base: "flex w-full items-center border-b border-gray-200 px-4 py-2 dark:border-gray-600",
+        base: "flex w-full items-center border-b border-gray-200 px-4 py-2 dark:border-darkborder",
         active: {
-          off: "hover:bg-lightprimary  focus:outline-none focus:ring-2 focus:ring-cyan-700 dark:border-gray-600 dark:hover:text-white dark:focus:text-white dark:focus:ring-gray-500",
-          on: "bg-cyan-700 text-white dark:bg-gray-800",
+          off: "hover:bg-lightprimary  focus:outline-none focus:ring-2 focus:ring-cyan-700 dark:border-darkborder dark:hover:text-white dark:focus:text-white dark:focus:ring-gray-500",
+          on: "bg-cyan-700 text-white dark:bg-darkgray",
         },
         disabled: {
           off: "",

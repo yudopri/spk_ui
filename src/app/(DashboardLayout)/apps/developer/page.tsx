@@ -199,7 +199,7 @@ const DeveloperPage = () => {
     <RoleGuard allow={["Dev", "Manager"]}>
       <div className="flex flex-col gap-6">
         {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm gap-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white dark:bg-darkgray p-4 rounded-xl shadow-sm gap-4">
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2">
               <Icon icon="solar:code-bold-duotone" className="text-primary" />
@@ -273,16 +273,16 @@ const DeveloperPage = () => {
                     <table className="w-full text-sm text-center border-collapse">
                       <thead>
                         <tr>
-                          <th className="p-2 border bg-gray-50 dark:bg-gray-700 text-left">KPI \ KPI</th>
+                          <th className="p-2 border bg-gray-50 dark:bg-darkmuted text-left">KPI \ KPI</th>
                           {ahpData.kpis.map(k => (
-                            <th key={k.id} className="p-2 border bg-gray-50 dark:bg-gray-700">{k.namaKpi}</th>
+                            <th key={k.id} className="p-2 border bg-gray-50 dark:bg-darkmuted">{k.namaKpi}</th>
                           ))}
                         </tr>
                       </thead>
                       <tbody>
                         {ahpData.matrix.map((row, i) => (
                           <tr key={i}>
-                            <td className="p-2 border font-bold bg-gray-50 dark:bg-gray-700 text-left whitespace-nowrap">
+                            <td className="p-2 border font-bold bg-gray-50 dark:bg-darkmuted text-left whitespace-nowrap">
                               {ahpData.kpis[i].namaKpi}
                             </td>
                             {row.map((val, j) => (
@@ -309,7 +309,7 @@ const DeveloperPage = () => {
                         <span className="text-sm font-medium w-40 truncate" title={ahpData.kpis[i].namaKpi}>
                           {ahpData.kpis[i].namaKpi}
                         </span>
-                        <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-6 overflow-hidden">
+                        <div className="flex-1 bg-gray-200 dark:bg-darkmuted rounded-full h-6 overflow-hidden">
                           <div
                             className="bg-primary h-full rounded-full flex items-center justify-end pr-2 transition-all"
                             style={{ width: `${Math.max(w * 100, 5)}%` }}

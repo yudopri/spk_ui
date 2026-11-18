@@ -97,7 +97,7 @@ const DataTable = <T extends any>({
               data.map((item, rowIdx) => (
                 <Table.Row
                   key={rowKey ? rowKey(item) : (item as any).id || (item as any).Id || rowIdx}
-                  className={`bg-white dark:border-gray-700 dark:bg-gray-800 ${
+                  className={`bg-white dark:border-darkborder dark:bg-darkgray ${
                     onRowClick ? "cursor-pointer" : ""
                   }`}
                   onClick={() => onRowClick && onRowClick(item)}
@@ -134,8 +134,8 @@ const DataTable = <T extends any>({
               {data.map((item, rowIdx) => (
                 <div
                   key={rowKey ? rowKey(item) : (item as any).id || (item as any).Id || rowIdx}
-                  className={`bg-white dark:bg-gray-800 rounded-lg border border-ld p-4 ${
-                    onRowClick ? "cursor-pointer active:bg-gray-50 dark:active:bg-gray-700" : ""
+                  className={`bg-white dark:bg-darkgray rounded-lg border border-ld p-4 ${
+                    onRowClick ? "cursor-pointer active:bg-gray-50 dark:active:bg-darkmuted" : ""
                   }`}
                   onClick={() => onRowClick && onRowClick(item)}
                 >
@@ -146,7 +146,7 @@ const DataTable = <T extends any>({
                       <div
                         key={colIdx}
                         className={`flex justify-between items-start gap-3 ${
-                          colIdx > 0 ? "mt-2 pt-2 border-t border-gray-100 dark:border-gray-700" : ""
+                          colIdx > 0 ? "mt-2 pt-2 border-t border-gray-100 dark:border-darkborder" : ""
                         }`}
                       >
                         <span className="text-xs text-gray-500 dark:text-gray-400 font-medium shrink-0">

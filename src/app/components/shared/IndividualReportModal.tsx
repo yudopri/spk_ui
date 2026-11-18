@@ -164,7 +164,7 @@ const IndividualReportModal = ({ show, onClose, data }: IndividualReportProps) =
 
       {/* Modal Body */}
       <Modal.Body className="p-0" id="printable-report">
-        <div className="divide-y divide-gray-100 dark:divide-gray-700">
+        <div className="divide-y divide-gray-100 dark:divide-darkborder">
 
           {/* -- Section 1: Informasi Karyawan -- */}
           <div className="p-6 bg-gradient-to-r from-slate-50 to-blue-50/30 dark:from-slate-900/40 dark:to-blue-900/10">
@@ -278,7 +278,7 @@ const IndividualReportModal = ({ show, onClose, data }: IndividualReportProps) =
                 <h4 className="text-sm font-black uppercase tracking-widest text-gray-500 dark:text-gray-400">Detail KPI</h4>
                 <span className="text-xs text-gray-400 ml-auto">{totalKPI} item</span>
               </div>
-              <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700">
+              <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-darkborder">
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="bg-slate-50 dark:bg-slate-800/60">
@@ -292,7 +292,7 @@ const IndividualReportModal = ({ show, onClose, data }: IndividualReportProps) =
                       <th className="px-3 py-2.5 text-left font-black uppercase tracking-wider text-[10px] text-gray-500">Predikat</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                  <tbody className="divide-y divide-gray-100 dark:divide-darkborder">
                     {items.map((item, idx) => {
                       const tipeEntry = Object.entries(item as any).find(([k]) => /^(tipe|jenis|type|tipe_kpi|jenis_kpi|kpi_tipe|kpi_jenis)$/i.test(k));
                       const tipeRaw = String(tipeEntry?.[1] ?? "").toLowerCase().trim();
@@ -305,7 +305,7 @@ const IndividualReportModal = ({ show, onClose, data }: IndividualReportProps) =
                       const itemPredikat = getPredikatByPct(achievementPct);
 
                       return (
-                        <tr key={idx} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors">
+                        <tr key={idx} className="hover:bg-gray-50/50 dark:hover:bg-darkmuted/30 transition-colors">
                           <td className="px-3 py-2 text-gray-400 font-mono">{item.No}</td>
                           <td className="px-3 py-2 font-semibold text-gray-800 dark:text-gray-100 max-w-[200px] truncate" title={item.Kriteria}>{item.Kriteria}</td>
                           <td className="px-3 py-2 text-gray-500 text-[10px]">{item.Group}</td>

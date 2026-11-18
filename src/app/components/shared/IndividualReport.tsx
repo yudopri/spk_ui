@@ -150,7 +150,7 @@ const IndividualReportModal = ({
       <Modal.Body className="p-0">
         <div className="print:block">
           {/* Mobile-friendly tab buttons */}
-          <div className="print:hidden border-b border-gray-200 dark:border-gray-700 px-4 pt-2 flex gap-2">
+          <div className="print:hidden border-b border-gray-200 dark:border-darkborder px-4 pt-2 flex gap-2">
             <button
               type="button"
               onClick={() => setActiveTab("preview")}

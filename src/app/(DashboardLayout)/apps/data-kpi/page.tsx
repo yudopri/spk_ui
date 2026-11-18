@@ -44,7 +44,7 @@ const DataKPI = () => {
       header: "Nama KPI",
       render: (item: KPI) => (
         <div className="flex flex-col">
-          <span className="font-bold text-gray-900">{item.NamaKpi}</span>
+          <span className="font-bold text-gray-900 dark:text-white">{item.NamaKpi}</span>
           <span className="text-[10px] text-gray-500 uppercase tracking-tighter">
             {item.GrupKpi?.namaGrup || "Tanpa Grup"}
           </span>
@@ -256,7 +256,7 @@ const DataKPI = () => {
   return (
     <div className="flex flex-col gap-6">
       {/* Stepper Progress Tracker */}
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm">
+      <div className="bg-white dark:bg-darkgray p-6 rounded-xl shadow-sm">
         <div className="flex items-center justify-between max-w-4xl mx-auto overflow-x-auto gap-4">
           {[
             { step: 1, label: "Master KPI", icon: "solar:settings-bold" },
@@ -285,7 +285,7 @@ const DataKPI = () => {
         </div>
       </div>
 
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm gap-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white dark:bg-darkgray p-4 rounded-xl shadow-sm gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Master Kriteria KPI</h1>
           <p className="text-sm text-gray-500">

@@ -271,7 +271,7 @@ const PeriodeKPI = () => {
   return (
     <div className="flex flex-col gap-6">
 
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm gap-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white dark:bg-darkgray p-4 rounded-xl shadow-sm gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Periode Penilaian</h1>
           <p className="text-sm text-gray-500">Tentukan rentang waktu penilaian untuk setiap divisi</p>
