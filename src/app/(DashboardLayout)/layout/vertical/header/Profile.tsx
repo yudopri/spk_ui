@@ -1,6 +1,6 @@
 import { Icon } from "@iconify/react";
 import { Badge, Dropdown, Button } from "flowbite-react";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import * as profileData from "./Data";
 import Link from "next/link";
 import Image from "next/image";
@@ -8,9 +8,11 @@ import SimpleBar from "simplebar-react";
 import { useRouter } from "next/navigation";
 import axiosServices from "@/utils/axios";
 import { clearSession, getStoredUser } from "@/utils/authSession";
+import { CustomizerContext } from "@/app/context/CustomizerContext";
 
 const Profile = () => {
   const router = useRouter();
+  const { setActiveMode } = useContext(CustomizerContext) || {};
   const [userData, setUserData] = useState({
     name: "User",
     role: "User"
@@ -32,6 +34,7 @@ const Profile = () => {
     } catch (_error) {
       // Ignore logout API failure; local session is still cleared below.
     } finally {
+      if (typeof setActiveMode === "function") setActiveMode("light");
       clearSession();
       
       router.push("/auth/auth1/login");

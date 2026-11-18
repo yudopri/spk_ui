@@ -2,7 +2,7 @@ import React from "react";
 import type { Metadata } from "next";
 import { Outfit } from "next/font/google";
 import "./css/globals.css";
-import { Flowbite, ThemeModeScript } from "flowbite-react";
+import { Flowbite } from "flowbite-react";
 import customTheme from "@/utils/theme/custom-theme";
 import { CustomizerContextProvider } from "@/app/context/CustomizerContext";
 import "@/utils/i18n";
@@ -23,7 +23,12 @@ export default function RootLayout({
     <html lang="id">
       <head>
         <link rel="icon" href="/images/logos/ptwba.jpg" type="image/jpeg" />
-        <ThemeModeScript />
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{var m=localStorage.getItem('app-theme-mode');if(m){document.documentElement.className=(document.documentElement.className?document.documentElement.className+' ':'')+m;}}catch(e){}",
+          }}
+        />
       </head>
       <body className={`${outfit.className}`}>
         <Flowbite theme={{ theme: customTheme }}>

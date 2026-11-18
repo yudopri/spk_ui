@@ -39,7 +39,30 @@ export const CustomizerContextProvider: React.FC<CustomizerContextProps> = ({ ch
   const [isMobileSidebar, setIsMobileSidebar] = useState<boolean>(false);
   const [selectedIconId, setSelectedIconId] = useState<number>(1);
   const [activeDir, setActiveDir] = useState<string>(config.activeDir);
-  const [activeMode, setActiveMode] = useState<string>(config.activeMode);
+  const [activeMode, setActiveModeState] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        return window.localStorage.getItem("app-theme-mode") || config.activeMode;
+      } catch {
+        return config.activeMode;
+      }
+    }
+    return config.activeMode;
+  });
+
+  const setActiveMode: React.Dispatch<React.SetStateAction<string>> = (mode) => {
+    setActiveModeState((prev) => {
+      const next = typeof mode === "function" ? (mode as (p: string) => string)(prev) : mode;
+      if (typeof window !== "undefined") {
+        try {
+          window.localStorage.setItem("app-theme-mode", next);
+        } catch {
+          // ignore storage errors
+        }
+      }
+      return next;
+    });
+  };
   const [activeTheme, setActiveTheme] = useState<string>(config.activeTheme);
   const [activeLayout, setActiveLayout] = useState<string>(config.activeLayout);
   const [isCardShadow, setIsCardShadow] = useState<boolean>(config.isCardShadow);
