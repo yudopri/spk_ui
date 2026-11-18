@@ -137,7 +137,7 @@ const KPIGroupPage = () => {
                     {loading ? (
                         <Table.Row><Table.Cell colSpan={2} className="text-center py-10"><Spinner /></Table.Cell></Table.Row>
                     ) : (groups || []).length > 0 ? (groups || []).map((group) => (
-                            <Table.Row key={group.Id || group.id} className="bg-white">
+                            <Table.Row key={group.Id || group.id} className="bg-white dark:bg-darkgray">
                                 <Table.Cell className="font-bold text-gray-900">{group.NamaGroup}</Table.Cell>
                                 <Table.Cell className="text-center">
                                     <div className="flex justify-center gap-2">

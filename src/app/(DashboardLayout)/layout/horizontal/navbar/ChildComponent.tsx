@@ -48,7 +48,7 @@ const ChildComponent = ({
         </p>
       </Link>
       {isSubMenuOpen && item.children && (
-        <div className="absolute left-full rtl:right-full  top-0 mt-0 w-56 bg-white dark:bg-dark rounded-md shadow-lg ">
+        <div className="absolute left-full rtl:right-full  top-0 mt-0 w-56 bg-white dark:bg-dark rounded-md shadow-lg border border-ld overflow-hidden">
           <ul className="p-3 flex flex-col gap-2">
             {item.children.map((child: any) => (
               <li key={child.id}>

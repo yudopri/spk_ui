@@ -110,6 +110,7 @@ const config: Config = {
         erroremphasis: "var(--color-error-emphasis)",
         successemphasis: "var(--color-success-emphasis)",
         infoemphasis: "var(--color-info-emphasis)",
+        darkminisidebar: "var(--color-darkmuted)",
         darkmuted: "var( --color-darkmuted)",
       },
     },

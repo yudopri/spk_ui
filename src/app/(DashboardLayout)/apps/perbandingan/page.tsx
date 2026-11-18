@@ -138,6 +138,16 @@ const NilaiPerbandingan = () => {
     }
   }
 
+  // Format nilai perbandingan AHP: tampilkan pecahan (1/3) atau desimal ringkas
+  const formatAhpValue = (val: number): string => {
+    if (val === 1) return "1";
+    if (val > 1) return Number.isInteger(val) ? String(val) : val.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
+    for (let n = 2; n <= 9; n++) {
+      if (Math.abs(val - 1 / n) < 1e-9) return `1/${n}`;
+    }
+    return val.toFixed(4).replace(/0+$/, "").replace(/\.$/, "");
+  };
+
   // Helper untuk mendapatkan label text dari value
   const getSaatyLabel = (val: number) => {
     if (val === 1) return "Sama Penting";
@@ -158,16 +168,16 @@ const NilaiPerbandingan = () => {
 
   // Helper untuk mendapatkan status resiprokal (apakah input inverse existe)
   const getInverseStatus = (val: number) => {
-    if (val === 1) return { text: "↓ A=B", class: "bg-green-100 text-green-700" };
-    if (val === 3) return { text: "↑ B>A", class: "bg-green-100 text-green-700" };
-    if (val === 5) return { text: "↑ B>A", class: "bg-green-100 text-green-700" };
-    if (val === 7) return { text: "↑ B>A", class: "bg-green-100 text-green-700" };
-    if (val === 9) return { text: "↑ B>A", class: "bg-green-100 text-green-700" };
-    if (val === 1/3) return { text: "↑ A>B", class: "bg-green-100 text-green-700" };
-    if (val === 1/5) return { text: "↑ A>B", class: "bg-green-100 text-green-700" };
-    if (val === 1/7) return { text: "↑ A>B", class: "bg-green-100 text-green-700" };
-    if (val === 1/9) return { text: "↑ A>B", class: "bg-green-100 text-green-700" };
-    return { text: "?", class: "bg-yellow-100 text-yellow-700" };
+    if (val === 1) return { text: "↓ A=B", class: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300" };
+    if (val === 3) return { text: "↑ B>A", class: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300" };
+    if (val === 5) return { text: "↑ B>A", class: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300" };
+    if (val === 7) return { text: "↑ B>A", class: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300" };
+    if (val === 9) return { text: "↑ B>A", class: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300" };
+    if (val === 1/3) return { text: "↑ A>B", class: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300" };
+    if (val === 1/5) return { text: "↑ A>B", class: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300" };
+    if (val === 1/7) return { text: "↑ A>B", class: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300" };
+    if (val === 1/9) return { text: "↑ A>B", class: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300" };
+    return { text: "?", class: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300" };
   };
 
   // Helper untuk mendapatkan label direction (A > B atau B > A)
@@ -363,7 +373,7 @@ const NilaiPerbandingan = () => {
   return (
     <div className="flex flex-col gap-6">
       {/* Stepper Progress Tracker */}
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm">
+      <div className="bg-white dark:bg-darkgray p-6 rounded-xl shadow-sm">
         <div className="flex items-center justify-between max-w-4xl mx-auto overflow-x-auto gap-4">
           {[
             { step: 1, label: "Master KPI", icon: "solar:settings-bold" },
@@ -379,20 +389,20 @@ const NilaiPerbandingan = () => {
                 <div className="flex flex-col items-center min-w-[100px] text-center">
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 transition-colors ${
                     isCurrent ? "bg-primary text-white ring-4 ring-primary/20" : 
-                    isDone ? "bg-green-500 text-white" : "bg-gray-100 text-gray-400"
+                    isDone ? "bg-green-500 text-white" : "bg-gray-100 text-gray-400 dark:bg-darkmuted dark:text-gray-500"
                   }`}>
                     <Icon icon={isDone ? "solar:check-read-bold" : s.icon} className="h-5 w-5" />
                   </div>
                   <span className={`text-xs font-bold whitespace-nowrap ${isCurrent ? "text-primary" : "text-gray-500"}`}>{s.label}</span>
                 </div>
-                {idx < 4 && <div className={`flex-1 h-[2px] min-w-[20px] mb-6 ${isDone ? "bg-green-500" : "bg-gray-100"}`} />}
+                {idx < 4 && <div className={`flex-1 h-[2px] min-w-[20px] mb-6 ${isDone ? "bg-green-500" : "bg-gray-100 dark:bg-darkmuted"}`} />}
               </React.Fragment>
             );
           })}
         </div>
       </div>
 
-      <div className="flex flex-col md:flex-row justify-between items-center bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm gap-4">
+      <div className="flex flex-col md:flex-row justify-between items-center bg-white dark:bg-darkgray p-4 rounded-xl shadow-sm gap-4">
         <div>
            <h1 className="text-2xl font-bold">Perbandingan Prioritas Kriteria</h1>
            <p className="text-sm text-gray-500">Bandingkan prioritas antar kriteria penilaian untuk menentukan bobot masing-masing</p>
@@ -410,11 +420,11 @@ const NilaiPerbandingan = () => {
 
       {cr !== null && (
         <div className={`p-4 rounded-xl border-l-4 shadow-sm flex items-center gap-4 transition-all duration-300 ${
-          cr <= 0.1 
-            ? "bg-green-50 border-green-500 text-green-800" 
-            : "bg-red-50 border-red-500 text-red-800 animate-pulse"
+          cr <= 0.1
+            ? "bg-green-50 border-green-500 text-green-800 dark:bg-green-950/40 dark:border-green-600 dark:text-green-300"
+            : "bg-red-50 border-red-500 text-red-800 dark:bg-red-950/40 dark:border-red-600 dark:text-red-300 animate-pulse"
         }`}>
-          <div className={`p-2 rounded-full ${cr <= 0.1 ? "bg-green-100" : "bg-red-100"}`}>
+          <div className={`p-2 rounded-full ${cr <= 0.1 ? "bg-green-100 dark:bg-green-900/40" : "bg-red-100 dark:bg-red-900/40"}`}>
             <Icon 
               icon={cr <= 0.1 ? "solar:check-circle-bold" : "solar:danger-triangle-bold"} 
               className={`h-6 w-6 ${cr <= 0.1 ? "text-green-600" : "text-red-600"}`} 
@@ -425,26 +435,26 @@ const NilaiPerbandingan = () => {
               Indeks Konsistensi Saaty
             </h4>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2">
-              <div className="rounded-lg bg-white/70 dark:bg-gray-900/40 px-3 py-2 border border-white/50">
+              <div className="rounded-lg bg-white/70 dark:bg-darkmuted px-3 py-2 border border-white/50 dark:border-darkborder">
                 <p className="text-[10px] uppercase font-bold text-gray-500">Lambda max</p>
                 <p className="text-lg font-black tabular-nums">{lambdaMax !== null ? lambdaMax.toFixed(4) : "-"}</p>
               </div>
-              <div className="rounded-lg bg-white/70 dark:bg-gray-900/40 px-3 py-2 border border-white/50">
+              <div className="rounded-lg bg-white/70 dark:bg-darkmuted px-3 py-2 border border-white/50 dark:border-darkborder">
                 <p className="text-[10px] uppercase font-bold text-gray-500">CI</p>
                 <p className="text-lg font-black tabular-nums">{ci !== null ? ci.toFixed(4) : "-"}</p>
               </div>
-              <div className="rounded-lg bg-white/70 dark:bg-gray-900/40 px-3 py-2 border border-white/50">
+              <div className="rounded-lg bg-white/70 dark:bg-darkmuted px-3 py-2 border border-white/50 dark:border-darkborder">
                 <p className="text-[10px] uppercase font-bold text-gray-500">RI</p>
                 <p className="text-lg font-black tabular-nums">{riValue !== null ? riValue.toFixed(4) : "-"}</p>
               </div>
-              <div className="rounded-lg bg-white/70 dark:bg-gray-900/40 px-3 py-2 border border-white/50">
+              <div className="rounded-lg bg-white/70 dark:bg-darkmuted px-3 py-2 border border-white/50 dark:border-darkborder">
                 <p className="text-[10px] uppercase font-bold text-gray-500">CR</p>
                 <p className="text-lg font-black tabular-nums">{cr.toFixed(4)}</p>
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-2 mt-3">
               <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${
-                cr <= 0.1 ? "bg-green-200 text-green-700" : "bg-red-200 text-red-700"
+                cr <= 0.1 ? "bg-green-200 text-green-700 dark:bg-green-900/40 dark:text-green-300" : "bg-red-200 text-red-700 dark:bg-red-900/40 dark:text-red-300"
               }`}>
                 {cr <= 0.1 ? "Konsisten" : "Tidak Konsisten"}
               </span>
@@ -464,7 +474,7 @@ const NilaiPerbandingan = () => {
       {error && <Alert color="failure" onDismiss={() => setError(null)}>{error}</Alert>}
       {success && <Alert color="success" onDismiss={() => setSuccess(null)}>{success}</Alert>}
 
-      <CardBox className="overflow-hidden border-none shadow-xl bg-white dark:bg-gray-800">
+      <CardBox className="overflow-hidden border-none shadow-xl bg-white dark:bg-darkgray">
         {loading ? <div className="flex justify-center p-10"><Spinner size="xl" /></div> : pairs.length === 0 ? (
             <div className="text-center py-20 text-gray-400 italic">Dibutuhkan minimal 2 kriteria untuk dibandingkan.</div>
         ) : (
@@ -636,7 +646,7 @@ const NilaiPerbandingan = () => {
                                 ];
 
                                 return (
-                                <Table.Row key={p.key} className="group hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                                <Table.Row key={p.key} className="group hover:bg-gray-50 dark:hover:bg-darkmuted transition-colors">
                                     {/* Kriteria A */}
                                     <Table.Cell className="font-black text-gray-900 dark:text-gray-100 uppercase text-xs w-[15%]">
                                       <div className="flex flex-col gap-1">
@@ -650,9 +660,9 @@ const NilaiPerbandingan = () => {
                                         <div className="py-3 px-4">
                                             {/* Status Direction */}
                                             <div className={`text-center text-[10px] font-bold uppercase tracking-wider mb-3 px-2 py-1 rounded ${
-                                                currentVal > 1 ? "bg-blue-100 text-blue-700" :
-                                                currentVal < 1 ? "bg-orange-100 text-orange-700" :
-                                                "bg-gray-100 text-gray-600"
+                                                currentVal > 1 ? "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300" :
+                                                currentVal < 1 ? "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300" :
+                                                "bg-gray-100 text-gray-600 dark:bg-darkmuted dark:text-gray-300"
                                             }`}>
                                                 {currentVal > 1 && "▲ A lebih penting dari B"}
                                                 {currentVal < 1 && "▼ B lebih penting dari A"}
@@ -735,7 +745,7 @@ const NilaiPerbandingan = () => {
                                             </div>
 
                                             {/* Separator */}
-                                            <div className="h-px bg-gray-200 dark:bg-gray-600 my-2" />
+                                            <div className="h-px bg-gray-200 dark:bg-darkborder my-2" />
 
                                             {/* Info Row: Current Value + Reset */}
                                             <div className="flex items-center justify-between gap-2">
@@ -743,16 +753,16 @@ const NilaiPerbandingan = () => {
                                                 <div className="flex items-center gap-2">
                                                     <div className={`px-3 py-1 rounded-lg border-2 flex flex-col items-center shadow-sm ${
                                                         currentVal === 1 
-                                                            ? "border-gray-300 bg-gray-50" 
+                                                            ? "border-gray-300 bg-gray-50 dark:border-darkborder dark:bg-darkmuted" 
                                                             : currentVal > 1 
-                                                                ? "border-blue-400 bg-blue-50" 
-                                                                : "border-orange-400 bg-orange-50"
+                                                                ? "border-blue-400 bg-blue-50 dark:border-blue-700 dark:bg-blue-950/40" 
+                                                                : "border-orange-400 bg-orange-50 dark:border-orange-700 dark:bg-orange-950/40"
                                                     }`}>
-                                                        <span className={`text-lg font-black leading-none ${
+                                                         <span className={`text-lg font-black leading-none tabular-nums whitespace-nowrap ${
                                                             currentVal > 1 ? "text-blue-600" : 
                                                             currentVal < 1 ? "text-orange-600" : "text-gray-600"
                                                         }`}>
-                                                            {currentVal === 1 ? "1" : currentVal}
+                                                             {formatAhpValue(currentVal)}
                                                         </span>
                                                         <span className="text-[8px] font-bold uppercase tracking-tighter text-gray-500 mt-0.5">
                                                             {getSaatyLabel(currentVal)}
@@ -778,11 +788,11 @@ const NilaiPerbandingan = () => {
                                             </div>
 
                                             {/* Reciprocal info */}
-                                            <div className="mt-2 flex items-center justify-center gap-2 bg-gray-50 dark:bg-gray-700/50 px-3 py-1.5 rounded text-[9px] font-bold text-gray-500 uppercase tracking-tighter">
+                                            <div className="mt-2 flex items-center justify-center gap-2 bg-gray-50 dark:bg-darkmuted px-3 py-1.5 rounded text-[9px] font-bold text-gray-500 uppercase tracking-tighter">
                                                 <Icon icon="solar:reorder-linear" className="h-3 w-3" />
                                                 <span>
-                                                    Resiprokal: B = 1/{currentVal}
-                                                    {currentVal === 1 ? " = 1" : ` ≈ ${typeof currentVal === 'number' ? (1/currentVal).toFixed(4) : ''}`}
+                                                     Resiprokal: B = 1/({formatAhpValue(currentVal)})
+                                                     {currentVal === 1 ? " = 1" : ` ≈ ${(1/currentVal).toFixed(4).replace(/0+$/, "").replace(/\.$/, "")}`}
                                                 </span>
                                             </div>
                                         </div>
@@ -830,14 +840,14 @@ const NilaiPerbandingan = () => {
                             const idA = itemA.Id || itemA.id;
                             return (
                               <Table.Row key={idA}>
-                                <Table.Cell className="font-bold text-[10px] bg-gray-100 dark:bg-gray-700">
+                                <Table.Cell className="font-bold text-[10px] bg-gray-100 dark:bg-darkmuted">
                                   {itemA.NamaGroup || itemA.NamaKpi}
                                 </Table.Cell>
                                 {kpis.map((itemB, idxB) => {
                                   const idB = itemB.Id || itemB.id;
                                   if (idxA === idxB) {
                                     return (
-                                      <Table.Cell key={idB} className="text-center bg-gray-100 dark:bg-gray-700 text-gray-400 font-bold text-xs">
+                                      <Table.Cell key={idB} className="text-center bg-gray-100 dark:bg-darkmuted text-gray-400 font-bold text-xs">
                                         1
                                       </Table.Cell>
                                     );
@@ -878,7 +888,7 @@ const NilaiPerbandingan = () => {
       </CardBox>
 
       {/* Action Buttons */}
-      <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-700/30 rounded-xl">
+      <div className="mt-6 p-4 bg-gray-50 dark:bg-darkmuted rounded-xl">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div className="flex items-center gap-3 text-xs sm:text-sm font-bold text-gray-500 uppercase">
                <Icon icon="solar:info-circle-bold" className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500 shrink-0" />

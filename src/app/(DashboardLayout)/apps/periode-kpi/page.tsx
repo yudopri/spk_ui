@@ -115,7 +115,7 @@ const PeriodeKPI = () => {
               <Icon icon="solar:chart-square-bold" className="h-4 w-4 text-secondary" />
             </Button>
           </Tooltip>
-          <div className="w-px h-6 bg-gray-200 mx-1" />
+          <div className="w-px h-6 bg-gray-200 dark:bg-darkborder mx-1" />
           {!isReadOnly && (
             <>
               <Tooltip content={item.Status === 'locked' ? "Terkunci" : "Edit Periode"}>
@@ -337,7 +337,7 @@ const PeriodeKPI = () => {
 
       {/* Modal Create/Edit/Detail */}
       <Modal show={openModal} onClose={() => setOpenModal(false)} size="lg">
-        <Modal.Header className={`${selectedItem?.Status === 'locked' ? 'bg-gray-100' : ''}`}>
+        <Modal.Header className={`${selectedItem?.Status === 'locked' ? 'bg-gray-100 dark:bg-darkmuted' : ''}`}>
           <div className="flex items-center gap-2">
             {modalMode === "create" ? "Tambah Periode Baru" : modalMode === "edit" ? "Modifikasi Periode" : "Rincian Periode"}
             {selectedItem?.Status === 'locked' && (

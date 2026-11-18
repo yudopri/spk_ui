@@ -620,7 +620,7 @@ const DashboardPage = () => {
                   >
                     <div className={`h-8 w-8 rounded-lg flex items-center justify-center mt-0.5 transition-colors duration-200 ${
                       step.done
-                        ? "bg-emerald-100 text-emerald-600 group-hover:bg-emerald-500 group-hover:text-white"
+                        ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 group-hover:bg-emerald-500 group-hover:text-white"
                         : "bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white"
                     }`}>
                       {step.done

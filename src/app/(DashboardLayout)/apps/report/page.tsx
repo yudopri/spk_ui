@@ -646,13 +646,13 @@ const formatScore = (value?: number) => {
                 <div className="flex flex-col items-center min-w-[100px] text-center">
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 transition-colors ${
                     isCurrent ? "bg-primary text-white ring-4 ring-primary/20" : 
-                    isDone ? "bg-green-500 text-white" : "bg-gray-100 text-gray-400"
+                    isDone ? "bg-green-500 text-white" : "bg-gray-100 text-gray-400 dark:bg-darkmuted dark:text-gray-500"
                   }`}>
                     <Icon icon={isDone ? "solar:check-read-bold" : s.icon} className="h-5 w-5" />
                   </div>
                   <span className={`text-xs font-bold whitespace-nowrap ${isCurrent ? "text-primary" : "text-gray-500"}`}>{s.label}</span>
                 </div>
-                {idx < 4 && <div className={`flex-1 h-[2px] min-w-[20px] mb-6 ${isDone ? "bg-green-500" : "bg-gray-100"}`} />}
+                {idx < 4 && <div className={`flex-1 h-[2px] min-w-[20px] mb-6 ${isDone ? "bg-green-500" : "bg-gray-100 dark:bg-darkmuted"}`} />}
               </React.Fragment>
             );
           })}

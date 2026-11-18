@@ -61,7 +61,7 @@ const Header = ({ layoutType }: HeaderPropsType) => {
         className={`top-0 z-[5] transition-all duration-300 ${
           isSticky
             ? "bg-white dark:bg-darkgray sticky shadow-sm border-b border-ld"
-            : "bg-white/80 dark:bg-darkgray/80 backdrop-blur-sm"
+            : "bg-white/80 dark:bg-[#141f31e6] backdrop-blur-sm"
         }`}
       >
         <Navbar
@@ -73,7 +73,7 @@ const Header = ({ layoutType }: HeaderPropsType) => {
           {/* Mobile Toggle Icon */}
           <span
             onClick={() => setIsMobileSidebar(true)}
-            className="h-10 w-10 flex text-slate-500 dark:text-white dark:text-opacity-65 xl:hidden hover:text-primary hover:bg-lightprimary rounded-lg justify-center items-center cursor-pointer touch-target no-select transition-colors"
+            className="h-10 w-10 flex text-slate-500 dark:text-white/65 xl:hidden hover:text-primary hover:bg-lightprimary rounded-lg justify-center items-center cursor-pointer touch-target no-select transition-colors"
             aria-label="Open menu"
           >
             <Icon icon="solar:hamburger-menu-line-duotone" height={21} />
