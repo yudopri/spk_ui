@@ -335,6 +335,10 @@ const DashboardPage = () => {
     return counts;
   }, [periodes]);
 
+  const reportPeriodeHref = latestLockedPeriode?.Id
+    ? `/apps/report?periodeId=${latestLockedPeriode.Id}`
+    : "/apps/report";
+
   /* ════════════ Render ════════════ */
   return (
     <div className="flex flex-col gap-7">
@@ -449,7 +453,7 @@ const DashboardPage = () => {
                     : "Belum ada data ranking terkunci"}
                 </p>
               </div>
-              <Link href="/apps/report" className="text-xs font-semibold text-primary hover:text-primary/80 transition-colors">
+              <Link href={reportPeriodeHref} className="text-xs font-semibold text-primary hover:text-primary/80 transition-colors">
                 Lihat Semua →
               </Link>
             </div>
@@ -538,7 +542,7 @@ const DashboardPage = () => {
                         <Icon icon="solar:play-bold" className="h-3.5 w-3.5" />
                         Mulai Penilaian
                       </Link>
-                      <Link href="/apps/report" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+                      <Link href={reportPeriodeHref} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
                         Lihat Laporan
                       </Link>
                     </div>
@@ -573,7 +577,7 @@ const DashboardPage = () => {
                     : "Belum ada data penilaian"}
                 </p>
               </div>
-              <Link href="/apps/report" className="text-xs font-semibold text-primary hover:text-primary/80 transition-colors">Full Report →</Link>
+              <Link href={reportPeriodeHref} className="text-xs font-semibold text-primary hover:text-primary/80 transition-colors">Full Report →</Link>
             </div>
 
             {loading ? (

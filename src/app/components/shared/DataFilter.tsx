@@ -32,7 +32,7 @@ const DataFilter: React.FC<DataFilterProps> = ({
         </div>
       )}
       <Select value={String(value ?? "")} onChange={(e) => onChange(e.target.value)} sizing="md">
-        <option value="">{placeholder}</option>
+        <option value="" disabled>{placeholder}</option>
         {options.map((opt) => (
           <option key={String(opt.value)} value={opt.value}>
             {opt.label}

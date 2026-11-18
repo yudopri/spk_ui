@@ -293,14 +293,14 @@ const formatScore = (value?: number) => {
         setPeriodes(resP.data);
         setLokasiOptions(resL.data);
         if (resP.data.length > 0) {
-          // Dukungan deep link ?periodeId= (dari halaman Periode KPI)
-          let target = resP.data[0];
-          if (typeof window !== 'undefined') {
-            const q = new URLSearchParams(window.location.search).get('periodeId');
-            const found = q ? resP.data.find((p: any) => Number(p.id || p.Id) === Number(q)) : null;
-            if (found) target = found;
-          }
-          setSelectedPeriodeId(Number(target.id || target.Id));
+          // Tanpa default: hanya terpilih jika ada deep link ?periodeId= (mis. dari dashboard)
+          const q = typeof window !== 'undefined'
+            ? new URLSearchParams(window.location.search).get('periodeId')
+            : null;
+          const target = q
+            ? resP.data.find((p: any) => Number(p.id || p.Id) === Number(q)) ?? null
+            : null;
+          if (target) setSelectedPeriodeId(Number(target.id || target.Id));
         }
       } catch (err: any) {
         setError("Gagal mengambil data filter");
@@ -324,7 +324,13 @@ const formatScore = (value?: number) => {
 
   useEffect(() => {
     const fetchReport = async () => {
-      if (!selectedPeriodeId) return;
+      if (!selectedPeriodeId) {
+        setLoading(false);
+        setReports([]);
+        setChartReports([]);
+        setTotalReports(0);
+        return;
+      }
       const requestId = ++reportRequestRef.current;
       try {
         setLoading(true);
@@ -752,6 +758,8 @@ const formatScore = (value?: number) => {
                   height={Math.max(320, chartReports.length * 42)}
                   width="100%"
                 />
+              ) : !selectedPeriodeId ? (
+                <div className="text-center py-20 text-gray-400 italic">Silakan pilih periode terlebih dahulu</div>
               ) : (
                 <div className="text-center py-20 text-gray-500 italic">Tidak ada data untuk periode ini</div>
               )}
