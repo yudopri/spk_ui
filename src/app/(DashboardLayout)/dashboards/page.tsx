@@ -38,6 +38,24 @@ function formatShortDate(date: Date) {
   return date.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
 }
 
+/* ── Fetch ALL report items across pages (pageSize 200) ── */
+async function fetchAllReportItems(periodeId: number): Promise<{ items: SpkReport[]; total: number }> {
+  const first = await spkService.getReport(periodeId, 1, 200);
+  const total = first.meta?.total ?? first.data?.length ?? 0;
+  let items = [...(first.data || [])];
+  const actualPageSize = first.data?.length || 200;
+  if (items.length < total && actualPageSize > 0) {
+    const totalPages = Math.ceil(total / actualPageSize);
+    for (let p = 2; p <= totalPages; p++) {
+      const next = await spkService.getReport(periodeId, p, actualPageSize);
+      const nextItems = next.data || [];
+      if (nextItems.length === 0) break;
+      items = items.concat(nextItems);
+    }
+  }
+  return { items, total };
+}
+
 /* ════════════════════════════════════════════ */
 const DashboardPage = () => {
   // ── State ──
@@ -146,11 +164,16 @@ const DashboardPage = () => {
 
       // 3. Report data from best available periode (full + top 5)
       if (reportPeriode) {
-        const reportRes = await spkService.getReport(reportPeriode.Id, 1, 200);
-        const items = reportRes.data || [];
+        const { items, total } = await fetchAllReportItems(reportPeriode.Id);
         setAllReportItems(items);
-        setTopPerformers(items.slice(0, 5));
-        setLockedReportCount(reportRes.meta?.total ?? items.length);
+        const ranked = [...items].sort((a, b) => {
+          const ra = Number(a.rank ?? a.Ranking ?? 0);
+          const rb = Number(b.rank ?? b.Ranking ?? 0);
+          if (ra > 0 && rb > 0 && ra !== rb) return ra - rb;
+          return Number(b.nilai_akhir ?? b.NilaiSkala ?? 0) - Number(a.nilai_akhir ?? a.NilaiSkala ?? 0);
+        });
+        setTopPerformers(ranked.slice(0, 5));
+        setLockedReportCount(total);
       } else {
         setAllReportItems([]);
         setTopPerformers([]);
@@ -183,11 +206,16 @@ const DashboardPage = () => {
   // ── Fetch report data for the user-selected periode (ranking/distribution) ──
   const fetchReportFor = useCallback(async (periodeId: number) => {
     try {
-      const res = await spkService.getReport(periodeId, 1, 200);
-      const items = res.data || [];
+      const { items, total } = await fetchAllReportItems(periodeId);
       setAllReportItems(items);
-      setTopPerformers(items.slice(0, 5));
-      setLockedReportCount(res.meta?.total ?? items.length);
+      const ranked = [...items].sort((a, b) => {
+        const ra = Number(a.rank ?? a.Ranking ?? 0);
+        const rb = Number(b.rank ?? b.Ranking ?? 0);
+        if (ra > 0 && rb > 0 && ra !== rb) return ra - rb;
+        return Number(b.nilai_akhir ?? b.NilaiSkala ?? 0) - Number(a.nilai_akhir ?? a.NilaiSkala ?? 0);
+      });
+      setTopPerformers(ranked.slice(0, 5));
+      setLockedReportCount(total);
 
       const sortedLocal = [...periodes].sort(
         (a, b) => (b.Tahun || 0) - (a.Tahun || 0) || b.Id - a.Id

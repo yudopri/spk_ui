@@ -581,9 +581,10 @@ const formatScore = (value?: number) => {
       categories: chartReports.map(r => r.nama || r.Karyawan?.name || r.Karyawan?.Nama || "Unknown"),
       axisBorder: { show: false },
       axisTicks: { show: false },
+      tickAmount: 5,
       labels: {
         style: { colors: '#5A6A85', fontSize: '11px' },
-        formatter: (val: string) => Number(val).toFixed(0)
+        formatter: (val: string) => Number(val).toFixed(1)
       }
     },
     yaxis: {
@@ -784,7 +785,7 @@ const formatScore = (value?: number) => {
                           {(() => {
                             const rawPct = bestEmployee.persentase_kpi || bestEmployee.PersentaseKPI || 0;
                             const pct = rawPct > 0 && rawPct <= 1 ? rawPct * 100 : rawPct;
-                            const pred = getPredikat(pct);
+                            const pred = getPredikat(pct, getRankValue(bestEmployee));
                             return pct > 0 ? (
                               <>
                                 <div className="flex justify-between text-xs bg-primary/5 px-3 py-1.5 rounded-lg">
