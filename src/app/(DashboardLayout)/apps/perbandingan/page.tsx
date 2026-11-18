@@ -140,43 +140,45 @@ const NilaiPerbandingan = () => {
 
   // Format nilai perbandingan AHP: tampilkan pecahan (1/3) atau desimal ringkas
   const formatAhpValue = (val: number): string => {
-    if (val === 1) return "1";
+    if (Math.abs(val - 1) < 1e-9) return "1";
     if (val > 1) return Number.isInteger(val) ? String(val) : val.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
     for (let n = 2; n <= 9; n++) {
-      if (Math.abs(val - 1 / n) < 1e-9) return `1/${n}`;
+      if (Math.abs(val - 1 / n) < 1e-4) return `1/${n}`;
     }
     return val.toFixed(4).replace(/0+$/, "").replace(/\.$/, "");
   };
 
+  const close = (a: number, b: number) => Math.abs(a - b) < 1e-3;
+
   // Helper untuk mendapatkan label text dari value
   const getSaatyLabel = (val: number) => {
-    if (val === 1) return "Sama Penting";
-    if (val === 3) return "Sedikit Lebih Penting";
-    if (val === 5) return "Lebih Penting";
-    if (val === 7) return "Sangat Kuat Penting";
-    if (val === 9) return "Mutlak Lebih Penting";
-    if (val === 1/3) return "Sedikit Lebih Penting (B)";
-    if (val === 1/5) return "Lebih Penting (B)";
-    if (val === 1/7) return "Sangat Kuat Penting (B)";
-    if (val === 1/9) return "Mutlak Lebih Penting (B)";
-    if (val === 2) return "Di antara 1 & 3";
-    if (val === 4) return "Di antara 3 & 5";
-    if (val === 6) return "Di antara 5 & 7";
-    if (val === 8) return "Di antara 7 & 9";
-    return val;
+    if (close(val, 1)) return "Sama Penting";
+    if (close(val, 3)) return "Sedikit Lebih Penting";
+    if (close(val, 5)) return "Lebih Penting";
+    if (close(val, 7)) return "Sangat Kuat Penting";
+    if (close(val, 9)) return "Mutlak Lebih Penting";
+    if (close(val, 1/3)) return "Sedikit Lebih Penting (B)";
+    if (close(val, 1/5)) return "Lebih Penting (B)";
+    if (close(val, 1/7)) return "Sangat Kuat Penting (B)";
+    if (close(val, 1/9)) return "Mutlak Lebih Penting (B)";
+    if (close(val, 2)) return "Di antara 1 & 3";
+    if (close(val, 4)) return "Di antara 3 & 5";
+    if (close(val, 6)) return "Di antara 5 & 7";
+    if (close(val, 8)) return "Di antara 7 & 9";
+    return formatAhpValue(val);
   };
 
   // Helper untuk mendapatkan status resiprokal (apakah input inverse existe)
   const getInverseStatus = (val: number) => {
-    if (val === 1) return { text: "↓ A=B", class: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300" };
-    if (val === 3) return { text: "↑ B>A", class: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300" };
-    if (val === 5) return { text: "↑ B>A", class: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300" };
-    if (val === 7) return { text: "↑ B>A", class: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300" };
-    if (val === 9) return { text: "↑ B>A", class: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300" };
-    if (val === 1/3) return { text: "↑ A>B", class: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300" };
-    if (val === 1/5) return { text: "↑ A>B", class: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300" };
-    if (val === 1/7) return { text: "↑ A>B", class: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300" };
-    if (val === 1/9) return { text: "↑ A>B", class: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300" };
+    if (close(val, 1)) return { text: "↓ A=B", class: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300" };
+    if (close(val, 3)) return { text: "↑ B>A", class: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300" };
+    if (close(val, 5)) return { text: "↑ B>A", class: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300" };
+    if (close(val, 7)) return { text: "↑ B>A", class: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300" };
+    if (close(val, 9)) return { text: "↑ B>A", class: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300" };
+    if (close(val, 1/3)) return { text: "↑ A>B", class: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300" };
+    if (close(val, 1/5)) return { text: "↑ A>B", class: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300" };
+    if (close(val, 1/7)) return { text: "↑ A>B", class: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300" };
+    if (close(val, 1/9)) return { text: "↑ A>B", class: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300" };
     return { text: "?", class: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300" };
   };
 
@@ -660,13 +662,13 @@ const NilaiPerbandingan = () => {
                                         <div className="py-3 px-4">
                                             {/* Status Direction */}
                                             <div className={`text-center text-[10px] font-bold uppercase tracking-wider mb-3 px-2 py-1 rounded ${
-                                                currentVal > 1 ? "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300" :
-                                                currentVal < 1 ? "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300" :
+                                                !close(currentVal,1) && currentVal > 1 ? "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300" :
+                                                currentVal < 1 && !close(currentVal,1) ? "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300" :
                                                 "bg-gray-100 text-gray-600 dark:bg-darkmuted dark:text-gray-300"
                                             }`}>
                                                 {currentVal > 1 && "▲ A lebih penting dari B"}
                                                 {currentVal < 1 && "▼ B lebih penting dari A"}
-                                                {currentVal === 1 && "═ Sama penting"}
+                                                {close(currentVal, 1) && "═ Sama penting"}
                                             </div>
 
                                             {/* Preset Buttons - A lebih penting */}
@@ -678,9 +680,9 @@ const NilaiPerbandingan = () => {
                                                     <Button
                                                         key={val}
                                                         size="xs"
-                                                        color={currentVal === val ? "blue" : "light"}
+                                                        color={close(currentVal, val) ? "blue" : "light"}
                                                         className={`text-[11px] px-2 min-w-[44px] ${
-                                                            currentVal === val 
+                                                            close(currentVal, val) 
                                                                 ? "font-black ring-2 ring-blue-300 shadow-md" 
                                                                 : "font-semibold hover:scale-105"
                                                         } transition-all`}
@@ -699,9 +701,9 @@ const NilaiPerbandingan = () => {
                                             <div className="flex gap-1 justify-center mb-3">
                                                 <Button
                                                     size="xs"
-                                                    color={currentVal === 1 ? "gray" : "light"}
+                                                    color={close(currentVal, 1) ? "gray" : "light"}
                                                     className={`text-[11px] px-4 min-w-[60px] ${
-                                                        currentVal === 1 
+                                                        close(currentVal, 1) 
                                                             ? "font-black ring-2 ring-gray-300 shadow-md" 
                                                             : "font-semibold hover:scale-105"
                                                     } transition-all`}
@@ -726,9 +728,9 @@ const NilaiPerbandingan = () => {
                                                         <Button
                                                             key={`inv-${val}`}
                                                             size="xs"
-                                                            color={currentVal === invVal ? "warning" : "light"}
+                                                            color={close(currentVal, invVal) ? "warning" : "light"}
                                                             className={`text-[11px] px-2 min-w-[44px] ${
-                                                                currentVal === invVal 
+                                                                close(currentVal, invVal) 
                                                                     ? "font-black ring-2 ring-orange-300 shadow-md" 
                                                                     : "font-semibold hover:scale-105"
                                                             } transition-all`}
@@ -752,7 +754,7 @@ const NilaiPerbandingan = () => {
                                                 {/* Current value display */}
                                                 <div className="flex items-center gap-2">
                                                     <div className={`px-3 py-1 rounded-lg border-2 flex flex-col items-center shadow-sm ${
-                                                        currentVal === 1 
+                                                        close(currentVal, 1) 
                                                             ? "border-gray-300 bg-gray-50 dark:border-darkborder dark:bg-darkmuted" 
                                                             : currentVal > 1 
                                                                 ? "border-blue-400 bg-blue-50 dark:border-blue-700 dark:bg-blue-950/40" 
@@ -779,7 +781,7 @@ const NilaiPerbandingan = () => {
                                                     size="xs"
                                                     color="warning"
                                                     onClick={() => setComparisonValues({...comparisonValues, [p.key]: 1})}
-                                                    disabled={isLocked || currentVal === 1}
+                                                    disabled={isLocked || close(currentVal, 1)}
                                                     className="text-[10px] px-2 py-1 shadow-none"
                                                 >
                                                     <Icon icon="solar:restart-bold" className="h-3 w-3 mr-1" />
@@ -791,8 +793,8 @@ const NilaiPerbandingan = () => {
                                             <div className="mt-2 flex items-center justify-center gap-2 bg-gray-50 dark:bg-darkmuted px-3 py-1.5 rounded text-[9px] font-bold text-gray-500 uppercase tracking-tighter">
                                                 <Icon icon="solar:reorder-linear" className="h-3 w-3" />
                                                 <span>
-                                                     Resiprokal: B = 1/({formatAhpValue(currentVal)})
-                                                     {currentVal === 1 ? " = 1" : ` ≈ ${(1/currentVal).toFixed(4).replace(/0+$/, "").replace(/\.$/, "")}`}
+                                                     Resiprokal: B = 1 / {formatAhpValue(currentVal)}
+                                                     {close(currentVal, 1) ? " = 1" : ` ≈ ${formatAhpValue(1 / currentVal)}`}
                                                 </span>
                                             </div>
                                         </div>

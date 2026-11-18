@@ -4,8 +4,10 @@ import CardBox from "../../shared/CardBox";
 import dynamic from "next/dynamic";
 import spkService from "@/services/spkService";
 import periodeService from "@/services/periodeService";
+import { CustomizerContext } from "@/app/context/CustomizerContext";
 import { Spinner, Button } from "flowbite-react";
 import { Icon } from "@iconify/react";
+import { useContext } from "react";
 
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
@@ -28,6 +30,8 @@ function normalizeScore(raw: number): number {
 }
 
 const TrendChart = () => {
+  const { activeMode } = useContext(CustomizerContext);
+  const isDark = activeMode === "dark";
   const [loading, setLoading] = useState(true);
   const [periodeList, setPeriodeList] = useState<PeriodeOption[]>([]);
   const [selectedPeriodeIds, setSelectedPeriodeIds] = useState<number[]>([]);
@@ -145,30 +149,34 @@ const TrendChart = () => {
       toolbar: { show: false },
       animations: { enabled: true, easing: "easeinout", speed: 800 },
       zoom: { enabled: false },
+      background: "transparent",
     },
+    theme: { mode: isDark ? "dark" : "light" },
     dataLabels: { enabled: false },
     stroke: { curve: "smooth", width: 3 },
     xaxis: {
       categories: trendData.map((d) => d.periodeName.replace(/\s*\(\d+\)\s*$/, "")),
       axisBorder: { show: false },
       axisTicks: { show: false },
-      labels: { rotate: -30, style: { fontSize: "11px" } },
+      labels: { rotate: -30, style: { fontSize: "11px", colors: isDark ? "#94a3b8" : "#64748b" } },
     },
     yaxis: {
-      title: { text: "Nilai Skala" },
+      title: { text: "Nilai Skala", style: { color: isDark ? "#94a3b8" : "#64748b" } },
+      labels: { style: { colors: isDark ? "#94a3b8" : "#64748b" } },
       min: 0,
       max: 100,
     },
     fill: { opacity: 0.15, type: "solid" },
     tooltip: {
       shared: true,
+      theme: isDark ? "dark" : "light",
       y: { formatter: (val: number) => val.toFixed(2) + " poin" },
     },
     markers: { size: 4, hover: { size: 6 } },
-    grid: { borderColor: "rgba(0,0,0,0.05)", strokeDashArray: 4 },
+    grid: { borderColor: isDark ? "rgba(148,163,184,0.15)" : "rgba(100,116,139,0.15)", strokeDashArray: 4 },
     colors: ["#5D87FF", "#49BEFF", "#FFAE1F"],
-    legend: { show: true, position: "top" },
-  }), [trendData]);
+    legend: { show: true, position: "top", labels: { colors: isDark ? "#cbd5e1" : "#475569" } },
+  }), [trendData, isDark]);
 
   const chartSeries = useMemo(() => [
     { name: "Rata-rata Nilai", data: trendData.map((d) => d.avgScore) },

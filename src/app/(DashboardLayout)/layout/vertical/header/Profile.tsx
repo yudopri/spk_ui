@@ -42,7 +42,7 @@ const Profile = () => {
     <div className="relative ">
       <Dropdown
         label=""
-        className="w-screen sm:w-[360px] pb-4 rounded-sm"
+        className="w-[calc(100vw-1.5rem)] max-w-sm sm:w-[360px] pb-4 rounded-sm"
         dismissOnClick={false}
         renderTrigger={() => (
           <div className="flex items-center gap-1">

@@ -359,13 +359,14 @@ const PenilaianKaryawan = () => {
             <div className="space-y-10">
               {groups.length === 0 ? (
                 <div className="bg-white dark:bg-darkgray rounded-2xl shadow-sm overflow-hidden border border-gray-100 dark:border-darkborder">
-                  <Table hoverable className="border-none">
+                  <div className="overflow-x-auto">
+                    <Table hoverable className="border-none">
                     <Table.Head className="bg-gray-50/80 dark:bg-darkmuted">
                       <Table.HeadCell className="py-5 pl-8 text-gray-600 font-black uppercase text-[10px] tracking-widest w-72">Informasi Karyawan</Table.HeadCell>
                       {kpis.map((kpi) => (
                         <Table.HeadCell key={kpi.Id || kpi.id} className="text-center py-5">
                            <div className="flex flex-col items-center gap-1">
-                              <span className="text-gray-700 font-black uppercase text-[10px] tracking-widest">{kpi.NamaKpi}</span>
+                              <span className="text-gray-700 dark:text-gray-200 font-black uppercase text-[10px] tracking-widest">{kpi.NamaKpi}</span>
                               <Badge color="gray" size="xs" className="font-normal">{kpi.Attribute || kpi.nama_satuan || kpi.simbol || 'Satuan'}</Badge>
                            </div>
                         </Table.HeadCell>
@@ -380,7 +381,7 @@ const PenilaianKaryawan = () => {
                                 {emp.nama.charAt(0)}
                               </div>
                               <div className="flex flex-col">
-                                <span className="font-bold text-gray-900 leading-none mb-1">{emp.nama}</span>
+                                <span className="font-bold text-gray-900 dark:text-white leading-none mb-1">{emp.nama}</span>
                                 <span className="text-[10px] text-gray-500 font-mono">{emp.nik}</span>
                               </div>
                             </div>
@@ -408,6 +409,7 @@ const PenilaianKaryawan = () => {
                       ))}
                     </Table.Body>
                   </Table>
+                  </div>
                 </div>
               ) : (
                 groups.map((group) => {
@@ -421,7 +423,7 @@ const PenilaianKaryawan = () => {
                             <Icon icon="solar:folder-2-bold" className="text-primary h-5 w-5" />
                           </div>
                           <div>
-                            <h3 className="font-bold text-gray-800 uppercase tracking-tight">{group.NamaGroup}</h3>
+                            <h3 className="font-bold text-gray-800 dark:text-white uppercase tracking-tight">{group.NamaGroup}</h3>
                             <p className="text-[10px] text-gray-500 font-medium">KELOMPOK KRITERIA LEVEL 1</p>
                           </div>
                         </div>

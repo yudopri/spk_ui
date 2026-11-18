@@ -4,7 +4,7 @@ import TrendChart from "@/app/components/dashboards/Dashboard1/TrendChart";
 import CardBox from "@/app/components/shared/CardBox";
 import { Icon } from "@iconify/react";
 import Link from "next/link";
-import { Spinner } from "flowbite-react";
+import { Spinner, Select } from "flowbite-react";
 import karyawanService from "@/services/karyawanService";
 import periodeService from "@/services/periodeService";
 import kpiService from "@/services/kpiService";
@@ -44,6 +44,7 @@ const DashboardPage = () => {
   // ── State ──
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [reportPeriodeOverride, setReportPeriodeOverride] = useState<number | null>(null);
   const [totalKaryawan, setTotalKaryawan] = useState(0);
   const [totalPeriode, setTotalPeriode] = useState(0);
   const [periodes, setPeriodes] = useState<Periode[]>([]);
@@ -180,6 +181,39 @@ const DashboardPage = () => {
     fetchDashboardData(false);
   }, [fetchDashboardData]);
 
+  // ── Fetch report data for the user-selected periode (ranking/distribution) ──
+  const fetchReportFor = useCallback(async (periodeId: number) => {
+    try {
+      const res = await spkService.getReport(periodeId, 1, 200);
+      const items = res.data || [];
+      setAllReportItems(items);
+      setTopPerformers(items.slice(0, 5));
+      setLockedReportCount(res.meta?.total ?? items.length);
+
+      const sortedLocal = [...periodes].sort(
+        (a, b) => (b.Tahun || 0) - (a.Tahun || 0) || b.Id - a.Id
+      );
+      const idx = sortedLocal.findIndex((p) => p.Id === periodeId);
+      const prev = sortedLocal.slice(Math.max(0, idx + 1))
+        .find((p) => p.Status === "locked" || p.Status === "processed") || null;
+      if (prev) {
+        const prevRes = await spkService.getReport(prev.Id, 1, 1);
+        setPrevLockedReportCount(prevRes.meta?.total ?? prevRes.data?.length ?? 0);
+      } else {
+        setPrevLockedReportCount(0);
+      }
+      const picked = sortedLocal.find((p) => p.Id === periodeId) || null;
+      if (picked) setLatestLockedPeriode(picked);
+    } catch (err) {
+      console.error("Failed to fetch report for selected periode", err);
+      setLoadError("Gagal memuat data laporan untuk periode terpilih.");
+    }
+  }, [periodes]);
+
+  useEffect(() => {
+    if (reportPeriodeOverride !== null) fetchReportFor(reportPeriodeOverride);
+  }, [reportPeriodeOverride, fetchReportFor]);
+
   // ── Computed: Trend % ──
   const trendPct = useMemo(() => {
     if (!prevLockedReportCount || !lockedReportCount) return null;
@@ -274,7 +308,7 @@ const DashboardPage = () => {
   return (
     <div className="flex flex-col gap-7">
       {/* ══════════ 1. HEADER BAR ══════════ */}
-      <div className="bg-white dark:bg-boxdark rounded-xl border border-ld p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="bg-white dark:bg-darkgray rounded-xl border border-ld p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-xl bg-primary/10 dark:bg-primary/20 flex items-center justify-center shrink-0">
             <Icon icon="solar:dashboard-bold-duotone" className="text-primary h-5 w-5" />
@@ -284,7 +318,24 @@ const DashboardPage = () => {
             <p className="text-xs text-slate-400">Ringkasan operasional penilaian kinerja · {formatDate(new Date())}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {periodes.filter((p) => p.Status === "locked" || p.Status === "processed").length > 0 && (
+            <Select
+              sizing="sm"
+              aria-label="Pilih periode laporan"
+              value={reportPeriodeOverride ?? latestLockedPeriode?.Id ?? ""}
+              onChange={(e) => setReportPeriodeOverride(Number(e.target.value))}
+              className="min-w-[180px]"
+            >
+              {periodes
+                .filter((p) => p.Status === "locked" || p.Status === "processed")
+                .map((p) => (
+                  <option key={p.Id} value={p.Id}>
+                    Laporan: {p.NamaPeriode}
+                  </option>
+                ))}
+            </Select>
+          )}
           {activePeriode && (
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-xs font-semibold text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -536,7 +587,7 @@ const DashboardPage = () => {
                       <div key={range.label} className="flex items-center gap-1.5">
                         <div className={`w-2 h-2 rounded-full ${range.color}`} />
                         <span className="text-[11px] text-gray-500">{range.label}</span>
-                        <span className="text-[11px] font-semibold text-gray-900">{range.count}</span>
+                        <span className="text-[11px] font-semibold text-gray-900 dark:text-white">{range.count}</span>
                       </div>
                     ))}
                   </div>
@@ -574,7 +625,7 @@ const DashboardPage = () => {
                     <div className="flex items-center justify-between mb-1.5">
                       <span className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate max-w-[180px]">{name}</span>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-bold text-gray-900 tabular-nums">{count}</span>
+                        <span className="text-sm font-bold text-gray-900 dark:text-white tabular-nums">{count}</span>
                         <span className="text-[11px] text-slate-400">
                           ({totalKaryawan ? ((count / totalKaryawan) * 100).toFixed(0) : 0}%)
                         </span>
