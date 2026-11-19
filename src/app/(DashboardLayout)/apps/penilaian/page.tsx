@@ -454,7 +454,7 @@ const PenilaianKaryawan = () => {
                                       {emp.nama.charAt(0)}
                                     </div>
                                     <div className="flex flex-col">
-                                      <span className="text-sm font-bold text-gray-900 leading-none mb-1">{emp.nama}</span>
+                                      <span className="text-sm font-bold text-gray-900 dark:text-white leading-none mb-1">{emp.nama}</span>
                                       <span className="text-[10px] text-gray-400 font-mono tracking-tighter">{emp.nik}</span>
                                     </div>
                                   </div>
