@@ -51,7 +51,7 @@ const Header = ({ layoutType }: HeaderPropsType) => {
         className={`top-0 z-[5] transition-all duration-300 ${
           isSticky
             ? "bg-white dark:bg-darkgray sticky shadow-sm border-b border-ld"
-            : "bg-white/80 dark:bg-darkgray/90 backdrop-blur-sm"
+            : "bg-white/80 dark:bg-darkgray backdrop-blur-sm"
         }`}
       >
         <Navbar
