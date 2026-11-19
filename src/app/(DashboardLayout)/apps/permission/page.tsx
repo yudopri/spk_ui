@@ -5,6 +5,7 @@ import CardBox from "@/app/components/shared/CardBox";
 import { Icon } from "@iconify/react";
 import permissionService, { Permission } from "@/services/permissionService";
 import { usePermission } from "@/hooks/usePermission";
+import { alertDialog, confirmDialog } from "@/app/components/shared/GlobalDialog";
 
 const PermissionPage = () => {
     const { hasPermission } = usePermission();
@@ -49,7 +50,7 @@ const PermissionPage = () => {
 
     const handleSave = async () => {
         if (!formData.permission_name.trim() || !formData.path.trim()) {
-            alert("Nama hak akses dan path wajib diisi.");
+            alertDialog("Nama hak akses dan path wajib diisi.");
             return;
         }
         setSaving(true);
@@ -62,21 +63,21 @@ const PermissionPage = () => {
             setShowModal(false);
             fetchPermissions();
         } catch (err: any) {
-            alert(err?.response?.data?.message || "Gagal menyimpan data");
+            alertDialog(err?.response?.data?.message || "Gagal menyimpan data");
         } finally {
             setSaving(false);
         }
     };
 
     const handleDelete = async (item: Permission) => {
-        if (!confirm(`Hapus permission "${item.permission_name}"? Permission yang masih digunakan oleh role tidak dapat dihapus.`)) return;
+        if (!(await confirmDialog(`Hapus permission "${item.permission_name}"? Permission yang masih digunakan oleh role tidak dapat dihapus.`))) return;
         setDeleting(item.id);
         try {
             await permissionService.delete(item.id);
             fetchPermissions();
         } catch (err: any) {
             const msg = err?.response?.data?.message || "Gagal menghapus permission.";
-            alert(msg);
+            alertDialog(msg);
         } finally {
             setDeleting(null);
         }

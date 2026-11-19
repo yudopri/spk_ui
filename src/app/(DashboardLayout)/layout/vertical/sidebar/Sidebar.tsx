@@ -84,7 +84,7 @@ const SidebarLayout = () => {
       <div className="xl:block hidden">
         <Sidebar
           className="fixed menu-sidebar bg-white dark:bg-darkgray rtl:pe-4 rtl:ps-0 border-r-0 shadow-none"
-          aria-label="Sidebar with multi-level dropdown example"
+          aria-label="Navigasi utama"
         >
           <div className="px-5 py-5 flex items-center sidebarlogo border-b border-ld mx-4 mb-1">
             <FullLogo />

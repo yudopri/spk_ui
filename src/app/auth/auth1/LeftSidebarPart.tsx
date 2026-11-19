@@ -8,7 +8,7 @@ const LeftSidebarPart = () => {
     <>
       <div className="circle-top"></div>
       <div>
-        <Image src={Bgimg} alt="materilm" className="circle-bottom" />
+        <Image src={Bgimg} alt="" className="circle-bottom" />
       </div>
       <div className="flex xl:justify-start justify-center xl:ps-56 h-screen items-center z-10 relative px-10">
         <div className="max-w-md">

@@ -6,6 +6,7 @@ import { Icon } from "@iconify/react";
 import kpiService, { KPIGroup } from "@/services/kpiService";
 import periodeService, { Periode } from "@/services/periodeService";
 import { usePermission } from "@/hooks/usePermission";
+import { confirmDialog } from "@/app/components/shared/GlobalDialog";
 
 const KPIGroupPage = () => {
     const { isAdminLike, user } = usePermission();
@@ -80,7 +81,7 @@ const KPIGroupPage = () => {
     };
 
     const handleDelete = async (id: number) => {
-        if (!confirm("Hapus grup kriteria ini? Semua KPI di dalamnya mungkin terpengaruh.")) return;
+        if (!(await confirmDialog("Hapus grup kriteria ini? Semua KPI di dalamnya mungkin terpengaruh."))) return;
         try {
             await kpiService.deleteGroup(id);
             setGroups(groups.filter(g => (g.Id || g.id) !== id));

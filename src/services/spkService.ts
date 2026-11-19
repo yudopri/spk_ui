@@ -1,4 +1,5 @@
 import axiosServices from '@/utils/axios';
+import { alertDialog } from '@/app/components/shared/GlobalDialog';
 
 export interface AhpPerbandingan {
   id: number;
@@ -453,9 +454,9 @@ const spkService = {
         const decoder = new TextDecoder('utf-8');
         const jsonStr = decoder.decode(error.data);
         const errorData = JSON.parse(jsonStr);
-        alert(errorData.message || 'Gagal mengunduh file');
+        alertDialog(errorData.message || 'Gagal mengunduh file');
       } else {
-        alert(error.message || 'Gagal mengunduh file');
+        alertDialog(error.message || 'Gagal mengunduh file');
       }
       throw error;
     }

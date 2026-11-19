@@ -1,12 +1,14 @@
 "use client";
 import React from "react";
-import { Table, Checkbox, Spinner } from "flowbite-react";
+import { Table, Spinner } from "flowbite-react";
 
 export interface Column<T> {
   header: string;
   accessor?: keyof T | string;
+  /** @deprecated Gunakan `accessor`. */
   key?: keyof T | string;
   render?: (item: T, index: number) => React.ReactNode;
+  /** @deprecated Gunakan `render`. */
   cell?: (item: T, index: number) => React.ReactNode;
   className?: string; // Legacy
   headerClasses?: string;
@@ -39,7 +41,7 @@ const hideOnClasses: Record<string, string> = {
   xl: "hidden xl:table-cell",
 };
 
-const DataTable = <T extends any>({
+const DataTable = <T,>({
   columns,
   data,
   loading = false,
@@ -59,6 +61,31 @@ const DataTable = <T extends any>({
     if (col.accessor || col.key) return item[(col.accessor || col.key) as keyof T] as React.ReactNode;
     return null;
   };
+
+  const rowKeyOf = (item: T, rowIdx: number): string | number => {
+    if (rowKey) return rowKey(item);
+    const rec = item as Record<string, unknown>;
+    const id = rec.id ?? rec.Id;
+    return typeof id === "string" || typeof id === "number" ? id : rowIdx;
+  };
+
+  const handleRowKeyDown = (item: T) => (e: React.KeyboardEvent) => {
+    if (!onRowClick) return;
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      onRowClick(item);
+    }
+  };
+
+  const rowClickProps = (item: T) =>
+    onRowClick
+      ? {
+          role: "button" as const,
+          tabIndex: 0,
+          onClick: () => onRowClick(item),
+          onKeyDown: handleRowKeyDown(item),
+        }
+      : {};
 
   return (
     <>
@@ -96,11 +123,11 @@ const DataTable = <T extends any>({
             ) : (
               data.map((item, rowIdx) => (
                 <Table.Row
-                  key={rowKey ? rowKey(item) : (item as any).id || (item as any).Id || rowIdx}
+                  key={rowKeyOf(item, rowIdx)}
                   className={`bg-white dark:border-darkborder dark:bg-darkgray ${
                     onRowClick ? "cursor-pointer" : ""
                   }`}
-                  onClick={() => onRowClick && onRowClick(item)}
+                  {...rowClickProps(item)}
                 >
                   {columns.map((col, colIdx) => (
                     <Table.Cell
@@ -133,11 +160,11 @@ const DataTable = <T extends any>({
             <div className="flex flex-col gap-3">
               {data.map((item, rowIdx) => (
                 <div
-                  key={rowKey ? rowKey(item) : (item as any).id || (item as any).Id || rowIdx}
+                  key={rowKeyOf(item, rowIdx)}
                   className={`bg-white dark:bg-darkgray rounded-lg border border-ld p-4 ${
                     onRowClick ? "cursor-pointer active:bg-gray-50 dark:active:bg-darkmuted" : ""
                   }`}
-                  onClick={() => onRowClick && onRowClick(item)}
+                  {...rowClickProps(item)}
                 >
                   {mobileVisibleColumns.map((col, colIdx) => {
                     const value = getCellValue(col, item, rowIdx);

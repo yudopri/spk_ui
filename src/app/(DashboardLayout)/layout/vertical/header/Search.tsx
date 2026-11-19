@@ -12,7 +12,9 @@ const Search = () => {
   return (
     <div>
       <button
+        type="button"
         onClick={() => setOpenModal(true)}
+        aria-label="Buka pencarian"
         className="h-10 w-10 text-darklink  dark:text-white text-sm hover:text-primary  hover:bg-lightprimary dark:hover:text-primary dark:hover:bg-darkminisidebar  rounded-full flex justify-center items-center cursor-pointer"
       >
         <Icon icon="solar:magnifer-line-duotone" height={20} />
@@ -20,7 +22,7 @@ const Search = () => {
 
       <Modal dismissible show={openModal} onClose={() => setOpenModal(false)}>
         <div className="p-6 border-b border-ld">
-          <TextInput placeholder="Search here" className="form-control" sizing="md" required />
+          <TextInput aria-label="Cari halaman" placeholder="Cari halaman..." className="form-control" sizing="md" required />
         </div>
         <Modal.Body className="pt-0 "  >
           <SimpleBar className="max-h-72">

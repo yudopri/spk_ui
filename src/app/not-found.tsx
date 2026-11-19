@@ -13,7 +13,7 @@ const Error = () => {
     <>
       <div className="h-screen flex items-center justify-center bg-white dark:bg-darkgray">
         <div className="text-center max-w-lg mx-auto">
-          <Image src={ErrorImg} alt="error" className="mb-4" />
+          <Image src={ErrorImg} alt="Halaman tidak ditemukan" className="mb-4" />
           <h1 className="text-dark dark:text-white text-4xl mb-6">404</h1>
           <h6 className="text-xl text-dark dark:text-white">
             Halaman yang Anda cari tidak ditemukan atau sudah dipindahkan.

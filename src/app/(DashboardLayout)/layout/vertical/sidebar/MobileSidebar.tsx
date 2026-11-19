@@ -47,7 +47,7 @@ const MobileSidebar = () => {
       <div>
         <Sidebar
           className="fixed menu-sidebar pt-8 bg-white dark:bg-darkgray transition-all"
-          aria-label="Sidebar with multi-level dropdown example"
+          aria-label="Navigasi utama"
         >
           <SimpleBar className="h-[calc(100vh_-_85px)]">
             <Sidebar.Items className="ps-4 pe-4">

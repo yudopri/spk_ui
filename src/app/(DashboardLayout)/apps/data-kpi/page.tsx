@@ -7,6 +7,7 @@ import { Icon } from "@iconify/react";
 import kpiService, { KPI, KPIGroup } from "@/services/kpiService";
 import periodeService, { Periode } from "@/services/periodeService";
 import { usePermission } from "@/hooks/usePermission";
+import { alertDialog, confirmDialog } from "@/app/components/shared/GlobalDialog";
 
 // Shared Components
 import DataTable, { Column } from "@/app/components/shared/DataTable";
@@ -228,23 +229,23 @@ const DataKPI = () => {
       setShowModal(false);
       fetchKpis();
     } catch (err: any) {
-      console.error("Submit Error:", err.response?.data || err.message);
-      alert(getApiErrorMessage(err, "Gagal menyimpan data"));
+      console.error("Submit Error:", err?.message || err);
+      alertDialog(getApiErrorMessage(err, "Gagal menyimpan data"));
     } finally {
       setBtnLoading(false);
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (confirm("Apakah Anda yakin ingin menghapus kriteria ini?")) {
+    if (await confirmDialog("Apakah Anda yakin ingin menghapus kriteria ini?")) {
       try {
         await kpiService.delete(id);
         fetchKpis();
       } catch (err: any) {
         if (getApiErrorStatus(err) === 409) {
-          alert(getApiErrorMessage(err, "KPI tidak dapat dihapus karena sudah memiliki data penilaian terkait."));
+          alertDialog(getApiErrorMessage(err, "KPI tidak dapat dihapus karena sudah memiliki data penilaian terkait."));
         } else {
-          alert(getApiErrorMessage(err, "Gagal menghapus kriteria"));
+          alertDialog(getApiErrorMessage(err, "Gagal menghapus kriteria"));
         }
       }
     }

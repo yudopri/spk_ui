@@ -10,6 +10,7 @@ import periodeService, { Periode } from "@/services/periodeService";
 import karyawanService from "@/services/karyawanService";
 import kpiService from "@/services/kpiService";
 import { usePermission } from "@/hooks/usePermission";
+import { confirmDialog } from "@/app/components/shared/GlobalDialog";
 import IndividualReportModal from "@/app/components/shared/IndividualReportModal";
 import { getPredikatByRank } from "@/utils/predikat";
 import { isManagerRole } from "@/utils/accessControl";
@@ -494,8 +495,8 @@ const formatScore = (value?: number) => {
 
   const handleUpdateStatus = async (status: 'locked' | 'draft') => {
     if (!selectedPeriodeId) return;
-    if (!confirm(`Apakah Anda yakin ingin mengubah status periode ini menjadi ${status}?` + 
-      (status === 'locked' ? '\n\nSnapshot akan dikunci untuk periode ini.' : ''))) return;
+    if (!(await confirmDialog(`Apakah Anda yakin ingin mengubah status periode ini menjadi ${status}?` +
+      (status === 'locked' ? '\n\nSnapshot akan dikunci untuk periode ini.' : '')))) return;
 
     try {
       setUpdating(true);
@@ -772,11 +773,19 @@ const formatScore = (value?: number) => {
                 {bestEmployee ? (
                   <div className="flex flex-col items-center justify-center space-y-3 py-6 text-center">
                       <div className="relative">
-                          <img 
-                              src={`https://ui-avatars.com/api/?name=${bestEmployee.nama || bestEmployee.Karyawan?.name || bestEmployee.Karyawan?.Nama}&background=random&size=128`}
-                              alt="Best Employee" 
-                              className="w-24 h-24 rounded-full border-4 border-yellow-400 p-1"
-                          />
+                          {(() => {
+                            const fullName = String(bestEmployee.nama || bestEmployee.Karyawan?.name || bestEmployee.Karyawan?.Nama || "?");
+                            const initials = fullName.trim().split(/\s+/).slice(0, 2).map((w: string) => w.charAt(0).toUpperCase()).join("");
+                            return (
+                              <div
+                                role="img"
+                                aria-label={fullName}
+                                className="w-24 h-24 rounded-full border-4 border-yellow-400 bg-primary text-white flex items-center justify-center text-2xl font-bold select-none"
+                              >
+                                {initials}
+                              </div>
+                            );
+                          })()}
                           <div className="absolute -top-2 -right-2 bg-yellow-400 text-white p-1.5 rounded-full shadow-lg">
                               <Icon icon="solar:crown-minimalistic-bold" className="h-5 w-5" />
                           </div>

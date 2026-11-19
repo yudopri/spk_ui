@@ -9,6 +9,7 @@ import divisiService from "@/services/divisiService";
 import { usePermission } from "@/hooks/usePermission";
 import { formatDateSafe } from "@/utils/formatDate";
 import { getApiErrorMessage, getApiErrorStatus } from "@/utils/apiError";
+import { alertDialog, confirmDialog } from "@/app/components/shared/GlobalDialog";
 
 import DataTable, { Column } from "@/app/components/shared/DataTable";
 import DataPagination from "@/app/components/shared/DataPagination";
@@ -203,11 +204,11 @@ const PeriodeKPI = () => {
     const selesai = selectedItem.tanggalSelesai || selectedItem.TanggalSelesai || "";
     // Divisi wajib dipilih (opsi lintas divisi sudah tidak tersedia)
     const divisiRawVal = selectedItem.divisiId ?? selectedItem.DivisiId;
-    if (divisiRawVal === null || divisiRawVal === undefined || divisiRawVal === "" || divisiRawVal === "all" || Number(divisiRawVal) === 0) { alert("Target Divisi wajib dipilih."); return; }
-    if (!nama) { alert("Nama Periode wajib diisi."); return; }
-    if (!mulai) { alert("Tanggal Mulai wajib diisi."); return; }
-    if (!selesai) { alert("Tanggal Selesai wajib diisi."); return; }
-    if (mulai && selesai && new Date(mulai) > new Date(selesai)) { alert("Tanggal Mulai tidak boleh melebihi Tanggal Selesai."); return; }
+    if (divisiRawVal === null || divisiRawVal === undefined || divisiRawVal === "" || divisiRawVal === "all" || Number(divisiRawVal) === 0) { alertDialog("Target Divisi wajib dipilih."); return; }
+    if (!nama) { alertDialog("Nama Periode wajib diisi."); return; }
+    if (!mulai) { alertDialog("Tanggal Mulai wajib diisi."); return; }
+    if (!selesai) { alertDialog("Tanggal Selesai wajib diisi."); return; }
+    if (mulai && selesai && new Date(mulai) > new Date(selesai)) { alertDialog("Tanggal Mulai tidak boleh melebihi Tanggal Selesai."); return; }
 
     try {
       setBtnLoading(true);
@@ -246,24 +247,24 @@ const PeriodeKPI = () => {
       setOpenModal(false);
       fetchData();
     } catch (err: any) {
-      console.error("Submit Error:", err.response?.data || err.message);
-      alert(getApiErrorMessage(err, "Gagal menyimpan data."));
+      console.error("Submit Error:", err?.message || err);
+      alertDialog(getApiErrorMessage(err, "Gagal menyimpan data."));
     } finally {
       setBtnLoading(false);
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (confirm("Apakah Anda yakin ingin menghapus periode ini?")) {
+    if (await confirmDialog("Apakah Anda yakin ingin menghapus periode ini?")) {
       try {
         await periodeService.delete(id);
         fetchData();
       } catch (err: any) {
         if (getApiErrorStatus(err) === 409) {
-          alert(getApiErrorMessage(err, "Periode tidak dapat dihapus karena masih dipakai data lain."));
+          alertDialog(getApiErrorMessage(err, "Periode tidak dapat dihapus karena masih dipakai data lain."));
           return;
         }
-        alert(getApiErrorMessage(err, "Gagal menghapus data"));
+        alertDialog(getApiErrorMessage(err, "Gagal menghapus data"));
       }
     }
   };

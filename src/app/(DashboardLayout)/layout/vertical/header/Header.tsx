@@ -33,18 +33,8 @@ const Header = ({ layoutType }: HeaderPropsType) => {
     };
   }, []);
 
-  const { setIsCollapse, isCollapse, isLayout, activeMode, setActiveMode, isMobileSidebar,setIsMobileSidebar } =
+  const { isLayout, activeMode, setActiveMode, isMobileSidebar, setIsMobileSidebar } =
     useContext(CustomizerContext);
-
-  const [mobileMenu, setMobileMenu] = useState("");
-
-  const handleMobileMenu = () => {
-    if (mobileMenu === "active") {
-      setMobileMenu("");
-    } else {
-      setMobileMenu("active");
-    }
-  };
 
   const toggleMode = () => {
     setActiveMode((prevMode: string) =>
@@ -61,7 +51,7 @@ const Header = ({ layoutType }: HeaderPropsType) => {
         className={`top-0 z-[5] transition-all duration-300 ${
           isSticky
             ? "bg-white dark:bg-darkgray sticky shadow-sm border-b border-ld"
-            : "bg-white/80 dark:bg-[#141f31e6] backdrop-blur-sm"
+            : "bg-white/80 dark:bg-darkgray/90 backdrop-blur-sm"
         }`}
       >
         <Navbar
@@ -71,13 +61,14 @@ const Header = ({ layoutType }: HeaderPropsType) => {
           }  ${isLayout == "full" ? "!max-w-full " : ""}`}
         >
           {/* Mobile Toggle Icon */}
-          <span
+          <button
+            type="button"
             onClick={() => setIsMobileSidebar(true)}
             className="h-10 w-10 flex text-slate-500 dark:text-white/65 xl:hidden hover:text-primary hover:bg-lightprimary rounded-lg justify-center items-center cursor-pointer touch-target no-select transition-colors"
             aria-label="Open menu"
           >
             <Icon icon="solar:hamburger-menu-line-duotone" height={21} />
-          </span>
+          </button>
           {/* Toggle Icon   */}
           <Navbar.Collapse className="xl:block ">
             <div className="flex gap-3 items-center relative">
@@ -101,15 +92,14 @@ const Header = ({ layoutType }: HeaderPropsType) => {
           {/* Mobile right side actions */}
           <div className="flex xl:hidden items-center gap-1">
             {/* Theme Toggle - Mobile */}
-            <span
+            <button
+              type="button"
               className="h-10 w-10 flex hover:text-primary hover:bg-lightprimary dark:hover:bg-darkminisidebar dark:hover:text-primary focus:ring-0 rounded-lg justify-center items-center cursor-pointer text-slate-500 dark:text-white touch-target no-select transition-colors"
               onClick={toggleMode}
               aria-label="Toggle theme"
             >
-              <span className="flex items-center">
-                <Icon icon={activeMode === "light" ? "solar:moon-line-duotone" : "solar:sun-bold-duotone"} width="20" />
-              </span>
-            </span>
+              <Icon icon={activeMode === "light" ? "solar:moon-line-duotone" : "solar:sun-bold-duotone"} width="20" />
+            </button>
             {/* Profile - Mobile */}
             <Profile />
           </div>
@@ -120,44 +110,19 @@ const Header = ({ layoutType }: HeaderPropsType) => {
 
               {/* Theme Toggle */}
 
-              {/* Light Mode Button */}
-              {activeMode === "light" ? (
-                <div
-                  className="h-10 w-10 hover:text-primary hover:bg-lightprimary dark:hover:bg-darkminisidebar dark:hover:text-primary focus:ring-0 rounded-lg flex justify-center items-center cursor-pointer text-slate-500 dark:text-white transition-colors"
-                  onClick={toggleMode}
-                >
-                  <span className="flex items-center">
-                    <Icon icon="solar:moon-line-duotone" width="20" />
-                  </span>
-                </div>
-              ) : (
-                // Dark Mode Button
-                <div
-                  className="h-10 w-10 hover:text-primary hover:bg-lightprimary dark:hover:bg-darkminisidebar dark:hover:text-primary focus:ring-0 rounded-lg flex justify-center items-center cursor-pointer text-slate-500 dark:text-white transition-colors"
-                  onClick={toggleMode}
-                >
-                  <span className="flex items-center">
-                    <Icon icon="solar:sun-bold-duotone" width="20" />
-                  </span>
-                </div>
-              )}
+              <button
+                type="button"
+                className="h-10 w-10 hover:text-primary hover:bg-lightprimary dark:hover:bg-darkminisidebar dark:hover:text-primary focus:ring-0 rounded-lg flex justify-center items-center cursor-pointer text-slate-500 dark:text-white transition-colors"
+                onClick={toggleMode}
+                aria-label="Toggle theme"
+              >
+                <Icon icon={activeMode === "light" ? "solar:moon-line-duotone" : "solar:sun-bold-duotone"} width="20" />
+              </button>
 
-              {/* Notification Dropdown */}
-              {/* <Notifications /> */}
-
-              {/* Language Dropdown*/}
-              {/* <Language /> */}
-
-              {/* Profile Dropdown */}
               <Profile />
             </div>
           </Navbar.Collapse>
         </Navbar>
-        <div
-          className={`w-full xl:hidden hidden mobile-header-menu ${mobileMenu}`}
-        >
-          {/* <MobileHeaderItems /> */}
-        </div>
 
         {/* Horizontal Menu  */}
         {layoutType == "horizontal" ? (

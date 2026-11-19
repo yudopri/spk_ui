@@ -1,5 +1,5 @@
 import { Icon } from "@iconify/react";
-import { Badge, Dropdown, Button } from "flowbite-react";
+import { Dropdown, Button } from "flowbite-react";
 import React, { useEffect, useState, useContext } from "react";
 import * as profileData from "./Data";
 import Link from "next/link";
@@ -52,7 +52,7 @@ const Profile = () => {
             <span className="h-10 w-10 hover:text-primary rounded-full flex justify-center items-center cursor-pointer group-hover/menu:bg-lightprimary group-hover/menu:text-primary">
               <Image
                 src="/images/profile/user-1.jpg"
-                alt="logo"
+                alt="Foto profil pengguna"
                 height="35"
                 width="35"
                 className="rounded-full"
@@ -70,7 +70,7 @@ const Profile = () => {
           <div className="flex items-center gap-6 pb-5 border-b dark:border-darkborder mt-5 mb-3">
             <Image
               src="/images/profile/user-1.jpg"
-              alt="logo"
+              alt="Foto profil pengguna"
               height="56"
               width="56"
               className="rounded-full"
@@ -90,16 +90,12 @@ const Profile = () => {
                 as={Link}
                 href={items.url}
                 className="px-3 py-2 flex justify-between items-center bg-hover group/link w-full rounded-md"
-                key={index}
               >
                 <div className="flex items-center w-full ">
                   <div className=" flex gap-3 w-full ">
                     <h5 className="text-15 font-normal group-hover/link:text-primary">
                       {items.title}
                     </h5>
-                    {items.url == "/apps/invoice" ? (
-                      <Badge color={"lightprimary"}>4</Badge>
-                    ) : null}
                   </div>
                 </div>
               </Dropdown.Item>

@@ -5,6 +5,7 @@ import { Icon } from "@iconify/react";
 import CardBox from "@/app/components/shared/CardBox";
 import kpiService, { Attribute } from "@/services/kpiService";
 import { usePermission } from "@/hooks/usePermission";
+import { alertDialog, confirmDialog } from "@/app/components/shared/GlobalDialog";
 
 // Shared Components
 import DataTable, { Column } from "@/app/components/shared/DataTable";
@@ -101,7 +102,7 @@ const AttributePage = () => {
     const simbol = String(selected.simbol || "").trim();
 
     if (!nama || !simbol) {
-      alert("Nama dan simbol wajib diisi");
+      alertDialog("Nama dan simbol wajib diisi");
       return;
     }
 
@@ -128,14 +129,14 @@ const AttributePage = () => {
     } catch (err: any) {
       const errorMsg = err?.response?.data?.message || err?.message || "Gagal menyimpan attribute";
       setError(errorMsg);
-      alert(errorMsg);
+      alertDialog(errorMsg);
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm("Apakah Anda yakin ingin menghapus attribute ini?")) return;
+    if (!(await confirmDialog("Apakah Anda yakin ingin menghapus attribute ini?"))) return;
     try {
       const res = await kpiService.deleteAttribute(id);
       if (!res.success) {
@@ -146,7 +147,7 @@ const AttributePage = () => {
     } catch (err: any) {
       const errorMsg = err?.response?.data?.message || err?.message || "Gagal menghapus attribute";
       setError(errorMsg);
-      alert(errorMsg);
+      alertDialog(errorMsg);
     }
   };
 
